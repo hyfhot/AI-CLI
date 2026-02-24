@@ -1,12 +1,12 @@
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Drawing
-
 # ==========================================
 # 参数解析
 # ==========================================
 param(
     [switch]$Uninstall
 )
+
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
 
 # 如果指定了 --uninstall 参数，执行卸载
 if ($Uninstall) {
