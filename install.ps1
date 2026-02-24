@@ -7,7 +7,7 @@
 
 param(
     [switch]$Uninstall,
-    [string]$SourceUrl = "https://raw.githubusercontent.com/hyfhot/AI-CLI/main"
+    [string]$SourceUrl = "https://raw.githubusercontent.com/hyfhot/AI-CLI/master"
 )
 
 $ErrorActionPreference = "Stop"
@@ -166,7 +166,7 @@ Write-Success "文件复制完成"
 $targetScriptPath = Join-Path $installDir $scriptName
 $launcherPath = Join-Path $installDir "AI-CLI.bat"
 $launcherContent = "@echo off
-powershell.exe -ExecutionPolicy Bypass -File "%~dp0ai-cli.ps1" %*
+powershell.exe -ExecutionPolicy Bypass -File `"%LOCALAPPDATA%\AI-CLI\ai-cli.ps1`" %*
 "
 $utf8Bom = New-Object System.Text.UTF8Encoding $true
 [System.IO.File]::WriteAllText($launcherPath, $launcherContent, $utf8Bom)

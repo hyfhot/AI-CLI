@@ -39,7 +39,7 @@
 项目提供了自动安装脚本，只需运行以下命令即可完成安装：
 
 ```powershell
-irm https://raw.githubusercontent.com/hyfhot/AI-CLI/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.ps1 | iex
 ```
 
 或者使用更简短的方式：
