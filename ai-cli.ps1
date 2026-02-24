@@ -2,9 +2,51 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 # ==========================================
-# 多语言支持
+# 参数解析
+# ==========================================
+param(
+    [switch]$Uninstall
+)
+
+# 如果指定了 --uninstall 参数，执行卸载
+if ($Uninstall) {
+    $installDir = "$env:LOCALAPPDATA\AI-CLI"
+
+    # 删除安装目录
+    if (Test-Path $installDir) {
+        Remove-Item -Recurse -Force $installDir
+        Write-Host "已删除安装目录: $installDir" -ForegroundColor Green
+    }
+
+    # 删除桌面快捷方式
+    $desktopPath = [Environment]::GetFolderPath("Desktop")
+    $shortcutPath = Join-Path $desktopPath "AI-CLI.lnk"
+    if (Test-Path $shortcutPath) {
+        Remove-Item -Force $shortcutPath
+        Write-Host "已删除桌面快捷方式" -ForegroundColor Green
+    }
+
+    # 删除开始菜单快捷方式
+    $startMenuPath = Join-Path ([Environment]::GetFolderPath("StartMenu")) "Programs"
+    $startShortcutPath = Join-Path $startMenuPath "AI-CLI.lnk"
+    if (Test-Path $startShortcutPath) {
+        Remove-Item -Force $startShortcutPath
+        Write-Host "已删除开始菜单快捷方式" -ForegroundColor Green
+    }
+
+    Write-Host "卸载完成！" -ForegroundColor Green
+    exit 0
+}
+
+# ==========================================
+# 全局变量
 # ==========================================
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$configPath = Join-Path $scriptDir "tools-config.json"
+
+# ==========================================
+# 多语言支持
+# ==========================================
 $langDir = Join-Path $scriptDir "lang"
 
 function Get-SystemLanguage {
@@ -50,6 +92,326 @@ function ConvertTo-WslPath {
         $linuxPath = "/mnt/$drive" + $Matches[2]
     }
     return $linuxPath
+}
+
+# ==========================================
+# 工具配置加载
+# ==========================================
+function Load-ToolsConfig {
+    if (Test-Path $configPath) {
+        $content = Get-Content $configPath -Raw -Encoding UTF8
+        return $content | ConvertFrom-Json
+    }
+    return $null
+}
+
+# ==========================================
+# 检查工具是否已安装
+# ==========================================
+function Test-ToolInstalled {
+    param([string]$checkCommand, [string]$envType)
+
+    if ($envType -eq "Win") {
+        $cmd = $checkCommand.Split(' ')[0]
+        return $null -ne (Get-Command $cmd -ErrorAction SilentlyContinue)
+    } else {
+        $cmd = $checkCommand.Split(' ')[0]
+        $result = wsl.exe -e bash -lc "command -v $cmd" 2>$null
+        return -not [string]::IsNullOrWhiteSpace($result)
+    }
+}
+
+# ==========================================
+# 安装工具
+# ==========================================
+function Install-Tool {
+    param([PSCustomObject]$tool, [string]$envType)
+
+    $installCmd = if ($envType -eq "Win") { $tool.winInstall } else { $tool.wslInstall }
+
+    if ([string]::IsNullOrWhiteSpace($installCmd)) {
+        return $false
+    }
+
+    try {
+        if ($envType -eq "Win") {
+            $process = Start-Process -FilePath "cmd.exe" -ArgumentList "/k", $installCmd -Wait -PassThru
+            return $process.ExitCode -eq 0
+        } else {
+            $result = wsl.exe -e bash -lc $installCmd 2>&1
+            return $LASTEXITCODE -eq 0
+        }
+    } catch {
+        return $false
+    }
+}
+
+# ==========================================
+# 显示工具安装对话框
+# ==========================================
+function Show-ToolInstallDialog {
+    param($parentForm, $toolsConfig, $currentLang)
+
+    $dialog = New-Object System.Windows.Forms.Form
+    $dialog.Text = $currentLang["InstallTool"]
+    $dialog.Size = New-Object System.Drawing.Size(550, 420)
+    $dialog.StartPosition = "CenterParent"
+    $dialog.FormBorderStyle = "FixedDialog"
+    $dialog.MaximizeBox = $false
+
+    $fontBold = New-Object System.Drawing.Font("Microsoft YaHei", 10, [System.Drawing.FontStyle]::Bold)
+    $fontNormal = New-Object System.Drawing.Font("Microsoft YaHei", 9, [System.Drawing.FontStyle]::Regular)
+
+    # 标签
+    $lblTitle = New-Object System.Windows.Forms.Label
+    $lblTitle.Text = $currentLang["InstallTool"]
+    $lblTitle.Location = New-Object System.Drawing.Point(15, 15)
+    $lblTitle.AutoSize = $true
+    $lblTitle.Font = $fontBold
+    $dialog.Controls.Add($lblTitle)
+
+    # 环境选择
+    $lblEnv = New-Object System.Windows.Forms.Label
+    $lblEnv.Text = $currentLang["EnvLabel"]
+    $lblEnv.Location = New-Object System.Drawing.Point(15, 50)
+    $lblEnv.AutoSize = $true
+    $dialog.Controls.Add($lblEnv)
+
+    $cmbEnv = New-Object System.Windows.Forms.ComboBox
+    $cmbEnv.Location = New-Object System.Drawing.Point(120, 47)
+    $cmbEnv.Size = New-Object System.Drawing.Size(100, 25)
+    $cmbEnv.Items.AddRange(@("Win", "WSL"))
+    $cmbEnv.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
+    $cmbEnv.SelectedIndex = 0
+    $dialog.Controls.Add($cmbEnv)
+
+    # 使用 Panel + FlowLayoutPanel 来显示工具列表，每个工具一行
+    $toolsPanel = New-Object System.Windows.Forms.Panel
+    $toolsPanel.Location = New-Object System.Drawing.Point(15, 85)
+    $toolsPanel.Size = New-Object System.Drawing.Size(505, 220)
+    $toolsPanel.AutoScroll = $true
+    $dialog.Controls.Add($toolsPanel)
+
+    # 存储工具行的引用
+    $toolRows = @{}
+
+    # 函数：刷新工具列表
+    function Refresh-ToolList {
+        $toolsPanel.Controls.Clear()
+        $script:toolRows = @{}
+
+        $allTools = @()
+        if ($toolsConfig -and $toolsConfig.tools) {
+            $allTools += $toolsConfig.tools
+        }
+
+        $yPos = 0
+        foreach ($tool in $allTools) {
+            $envType = $cmbEnv.Text
+
+            # 检查当前环境是否支持该工具
+            $isSupported = $true
+            if ($envType -eq "Win" -and $null -eq $tool.winInstall) {
+                $isSupported = $false
+            } elseif ($envType -eq "WSL" -and $null -eq $tool.wslInstall) {
+                $isSupported = $false
+            }
+
+            $installed = $false
+            if ($isSupported) {
+                $installed = Test-ToolInstalled -checkCommand $tool.checkCommand -envType $envType
+            }
+
+            # 工具行面板
+            $rowPanel = New-Object System.Windows.Forms.Panel
+            $rowPanel.Location = New-Object System.Drawing.Point(0, $yPos)
+            $rowPanel.Size = New-Object System.Drawing.Size(490, 40)
+            $rowPanel.Tag = $tool
+
+            # 工具名称
+            $lblName = New-Object System.Windows.Forms.Label
+            $lblName.Text = $tool.displayName
+            $lblName.Location = New-Object System.Drawing.Point(10, 10)
+            $lblName.Size = New-Object System.Drawing.Size(150, 20)
+            $lblName.Font = $fontNormal
+            $rowPanel.Controls.Add($lblName)
+
+            # 状态
+            $lblStatus = New-Object System.Windows.Forms.Label
+            if (-not $isSupported) {
+                $lblStatus.Text = $currentLang["NotSupported"]
+                $lblStatus.ForeColor = [System.Drawing.Color]::Red
+            } elseif ($installed) {
+                $lblStatus.Text = $currentLang["Installed"]
+                $lblStatus.ForeColor = [System.Drawing.Color]::Green
+            } else {
+                $lblStatus.Text = $currentLang["NotInstalled"]
+                $lblStatus.ForeColor = [System.Drawing.Color]::Gray
+            }
+            $lblStatus.Location = New-Object System.Drawing.Point(170, 10)
+            $lblStatus.Size = New-Object System.Drawing.Size(100, 20)
+            $lblStatus.Font = $fontNormal
+            $rowPanel.Controls.Add($lblStatus)
+
+            # 安装按钮（仅支持且未安装时显示）
+            if ($isSupported -and -not $installed) {
+                $btnInstall = New-Object System.Windows.Forms.Button
+                $btnInstall.Text = $currentLang["InstallTool"]
+                $btnInstall.Location = New-Object System.Drawing.Point(280, 5)
+                $btnInstall.Size = New-Object System.Drawing.Size(80, 28)
+                $btnInstall.Font = $fontNormal
+                $rowPanel.Controls.Add($btnInstall)
+
+                # 安装按钮事件
+                $btnInstall.Add_Click({
+                    $toolObj = $this.Parent.Tag
+                    $envType = $cmbEnv.Text
+
+                    # 更新状态为安装中
+                    $statusLabel = $this.Parent.Controls | Where-Object { $_.Name -eq "StatusLabel" }
+                    if ($statusLabel) {
+                        $statusLabel.Text = $currentLang["Installing"]
+                        $statusLabel.ForeColor = [System.Drawing.Color]::Blue
+                    }
+
+                    # 执行安装
+                    $result = Install-Tool -tool $toolObj -envType $envType
+
+                    if ($result) {
+                        $statusLabel.Text = $currentLang["InstallSuccess"]
+                        $statusLabel.ForeColor = [System.Drawing.Color]::Green
+                        $this.Visible = $false
+                        [System.Windows.Forms.MessageBox]::Show($parentForm, $currentLang["InstallSuccess"], $currentLang["InstallResult"], 0, 64)
+                    } else {
+                        $statusLabel.Text = $currentLang["InstallFailed"]
+                        $statusLabel.ForeColor = [System.Drawing.Color]::Red
+                        [System.Windows.Forms.MessageBox]::Show($parentForm, $currentLang["InstallFailed"], $currentLang["InstallResult"], 0, 16)
+                    }
+                })
+            }
+
+            # URL 链接
+            $lblUrl = New-Object System.Windows.Forms.Label
+            $lblUrl.Text = $tool.url
+            $lblUrl.Location = New-Object System.Drawing.Point(370, 10)
+            $lblUrl.Size = New-Object System.Drawing.Size(120, 20)
+            $lblUrl.ForeColor = [System.Drawing.Color]::Blue
+            $lblUrl.Font = $fontNormal
+            $lblUrl.Cursor = [System.Windows.Forms.Cursors]::Hand
+            $lblUrl.Name = "UrlLabel"
+
+            # 点击打开URL
+            $lblUrl.Add_Click({
+                if ($this.Text) {
+                    Start-Process $this.Text
+                }
+            })
+            $rowPanel.Controls.Add($lblUrl)
+
+            $toolsPanel.Controls.Add($rowPanel)
+            $yPos += 45
+        }
+    }
+
+    # 初始加载工具列表
+    Refresh-ToolList
+
+    # 添加自定义工具按钮
+    $btnAddCustom = New-Object System.Windows.Forms.Button
+    $btnAddCustom.Text = $currentLang["AddCustom"]
+    $btnAddCustom.Location = New-Object System.Drawing.Point(15, 320)
+    $btnAddCustom.Size = New-Object System.Drawing.Size(140, 35)
+    $btnAddCustom.Font = $fontNormal
+    $dialog.Controls.Add($btnAddCustom)
+
+    # 添加自定义工具事件
+    $btnAddCustom.Add_Click({
+        $customDialog = New-Object System.Windows.Forms.Form
+        $customDialog.Text = $currentLang["AddCustom"]
+        $customDialog.Size = New-Object System.Drawing.Size(400, 250)
+        $customDialog.StartPosition = "CenterParent"
+        $customDialog.FormBorderStyle = "FixedDialog"
+
+        $lblName = New-Object System.Windows.Forms.Label
+        $lblName.Text = $currentLang["ToolName"]
+        $lblName.Location = New-Object System.Drawing.Point(15, 20)
+        $lblName.AutoSize = $true
+        $customDialog.Controls.Add($lblName)
+
+        $txtName = New-Object System.Windows.Forms.TextBox
+        $txtName.Location = New-Object System.Drawing.Point(15, 45)
+        $txtName.Size = New-Object System.Drawing.Size(350, 25)
+        $customDialog.Controls.Add($txtName)
+
+        $lblInstall = New-Object System.Windows.Forms.Label
+        $lblInstall.Text = $currentLang["InstallCmd"]
+        $lblInstall.Location = New-Object System.Drawing.Point(15, 80)
+        $lblInstall.AutoSize = $true
+        $customDialog.Controls.Add($lblInstall)
+
+        $txtInstall = New-Object System.Windows.Forms.TextBox
+        $txtInstall.Location = New-Object System.Drawing.Point(15, 105)
+        $txtInstall.Size = New-Object System.Drawing.Size(350, 25)
+        $customDialog.Controls.Add($txtInstall)
+
+        $lblCheck = New-Object System.Windows.Forms.Label
+        $lblCheck.Text = $currentLang["CheckCmd"]
+        $lblCheck.Location = New-Object System.Drawing.Point(15, 140)
+        $lblCheck.AutoSize = $true
+        $customDialog.Controls.Add($lblCheck)
+
+        $txtCheck = New-Object System.Windows.Forms.TextBox
+        $txtCheck.Location = New-Object System.Drawing.Point(15, 165)
+        $txtCheck.Size = New-Object System.Drawing.Size(350, 25)
+        $customDialog.Controls.Add($txtCheck)
+
+        $btnOk = New-Object System.Windows.Forms.Button
+        $btnOk.Text = $currentLang["Add"]
+        $btnOk.Location = New-Object System.Drawing.Point(150, 180)
+        $btnOk.Size = New-Object System.Drawing.Size(80, 30)
+        $btnOk.DialogResult = [System.Windows.Forms.DialogResult]::OK
+        $customDialog.Controls.Add($btnOk)
+
+        if ($customDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+            if ([string]::IsNullOrWhiteSpace($txtName.Text) -or [string]::IsNullOrWhiteSpace($txtInstall.Text)) {
+                [System.Windows.Forms.MessageBox]::Show($dialog, $currentLang["RequiredFieldsError"], "Error", 0, 16)
+                return
+            }
+
+            $newTool = [PSCustomObject]@{
+                name = $txtName.Text
+                displayName = $txtName.Text
+                winInstall = $txtInstall.Text
+                wslInstall = $txtInstall.Text
+                checkCommand = if ($txtCheck.Text) { $txtCheck.Text } else { "$($txtName.Text) --version" }
+                url = ""
+            }
+
+            # 添加到配置
+            if ($toolsConfig -and $toolsConfig.tools) {
+                $toolsConfig.tools += $newTool
+            }
+
+            # 刷新列表
+            Refresh-ToolList
+        }
+    })
+
+    # 关闭按钮
+    $btnClose = New-Object System.Windows.Forms.Button
+    $btnClose.Text = $currentLang["Close"]
+    $btnClose.Location = New-Object System.Drawing.Point(435, 320)
+    $btnClose.Size = New-Object System.Drawing.Size(85, 35)
+    $btnClose.Font = $fontNormal
+    $btnClose.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+    $dialog.Controls.Add($btnClose)
+
+    # 环境切换刷新列表
+    $cmbEnv.Add_SelectedIndexChanged({
+        Refresh-ToolList
+    })
+
+    $dialog.ShowDialog() | Out-Null
 }
 
 # ==========================================
@@ -111,7 +473,7 @@ $form.MaximizeBox = $false
 $fontBold = New-Object System.Drawing.Font("Microsoft YaHei", 10, [System.Drawing.FontStyle]::Bold)
 $fontNormal = New-Object System.Drawing.Font("Microsoft YaHei", 9, [System.Drawing.FontStyle]::Regular)
 
-# --- 第1行：工具标签(左) + 语言标签(右) ---
+# --- 第1行：工具标签 ---
 $lblTool = New-Object System.Windows.Forms.Label
 $lblTool.Text = $lang["ToolLabel"]
 $lblTool.Location = New-Object System.Drawing.Point(15, 20)
@@ -119,18 +481,10 @@ $lblTool.AutoSize = $true
 $lblTool.Font = $fontBold
 $form.Controls.Add($lblTool)
 
-$lblLang = New-Object System.Windows.Forms.Label
-$lblLang.Text = $lang["LangLabel"]
-$lblLang.Location = New-Object System.Drawing.Point(360, 20)
-$lblLang.Size = New-Object System.Drawing.Size(120, 20)
-$lblLang.Font = $fontNormal
-$lblLang.TextAlign = [System.Drawing.ContentAlignment]::MiddleRight
-$form.Controls.Add($lblLang)
-
-# --- 第2行：工具下拉框(左) + 语言下拉框(右) ---
+# --- 第2行：工具下拉框 + 管理按钮 ---
 $cmbTool = New-Object System.Windows.Forms.ComboBox
 $cmbTool.Location = New-Object System.Drawing.Point(15, 48)
-$cmbTool.Size = New-Object System.Drawing.Size(330, 25)
+$cmbTool.Size = New-Object System.Drawing.Size(400, 25)
 $cmbTool.Font = $fontNormal
 $cmbTool.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDown
 
@@ -145,21 +499,50 @@ if ($cmbTool.Items.Count -gt 0) {
 }
 $form.Controls.Add($cmbTool)
 
-$cmbLang = New-Object System.Windows.Forms.ComboBox
-$cmbLang.Location = New-Object System.Drawing.Point(390, 48)
-$cmbLang.Size = New-Object System.Drawing.Size(90, 25)
-$cmbLang.Font = $fontNormal
-$cmbLang.Items.AddRange(@("English", "中文", "日本語", "Deutsch"))
-$cmbLang.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
+# --- 管理按钮 (带图标) ---
+$btnManage = New-Object System.Windows.Forms.Button
+$btnManage.Location = New-Object System.Drawing.Point(420, 45)
+$btnManage.Size = New-Object System.Drawing.Size(32, 30)
+$btnManage.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$btnManage.FlatAppearance.BorderSize = 0
+# 使用齿轮符号 (Unicode)
+$btnManage.Text = [char]0x2699
+$btnManage.Font = New-Object System.Drawing.Font("Segoe UI Symbol", 14, [System.Drawing.FontStyle]::Regular)
+$btnManage.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
 
-# Set current language
-switch ($currentLangCode) {
-    "en-US" { $cmbLang.SelectedIndex = 0 }
-    "zh-CN" { $cmbLang.SelectedIndex = 1 }
-    "ja-JP" { $cmbLang.SelectedIndex = 2 }
-    "de-DE" { $cmbLang.SelectedIndex = 3 }
-}
-$form.Controls.Add($cmbLang)
+# 加载工具配置
+$toolsConfig = Load-ToolsConfig
+
+$btnManage.Add_Click({
+    Show-ToolInstallDialog -parentForm $form -toolsConfig $toolsConfig -currentLang $lang
+    # 刷新工具列表
+    $script:availableTools = @()
+    $cmbTool.Items.Clear()
+
+    foreach ($t in $toolsToCheck) {
+        if (Get-Command $t -ErrorAction SilentlyContinue) {
+            $script:availableTools += "[Win] $t"
+        }
+    }
+
+    $wslCheckScript = "for cmd in $($toolsToCheck -join ' '); do if command -v `$cmd >/dev/null 2>&1; then echo `$cmd; fi; done"
+    $wslOutput = wsl.exe -e bash -lc $wslCheckScript 2>$null
+    if ($wslOutput) {
+        foreach ($t in $wslOutput) {
+            if (-not [string]::IsNullOrWhiteSpace($t)) {
+                $script:availableTools += "[WSL] $($t.Trim())"
+            }
+        }
+    }
+
+    foreach ($tool in $script:availableTools) {
+        $cmbTool.Items.Add($tool) | Out-Null
+    }
+    if ($cmbTool.Items.Count -gt 0) {
+        $cmbTool.SelectedIndex = 0
+    }
+})
+$form.Controls.Add($btnManage)
 
 # --- 项目选择区域 ---
 $lblProject = New-Object System.Windows.Forms.Label
@@ -207,19 +590,6 @@ $btnOk.Font = $fontBold
 $btnOk.DialogResult = [System.Windows.Forms.DialogResult]::OK
 $form.AcceptButton = $btnOk
 $form.Controls.Add($btnOk)
-
-# 语言切换事件处理
-$cmbLang.add_SelectedIndexChanged({
-    $langCodes = @("en-US", "zh-CN", "ja-JP", "de-DE")
-    $newLangCode = $langCodes[$cmbLang.SelectedIndex]
-    $script:lang = Load-Language $newLangCode
-
-    $form.Text = $lang["AppTitle"]
-    $lblTool.Text = $lang["ToolLabel"]
-    $lblProject.Text = $lang["ProjectLabel"]
-    $btnOk.Text = $lang["LaunchBtn"]
-    $lblLang.Text = $lang["LangLabel"]
-})
 
 $listView.add_DoubleClick({
     if ($listView.SelectedItems.Count -gt 0) {

@@ -34,7 +34,43 @@
 * 运行环境：PowerShell 5.1 或更高版本
 * 依赖组件：已安装并配置好 WSL（如需使用 Linux 下的工具）
 
-### 3.2 部署步骤
+### 3.2 快速安装（推荐）
+
+项目提供了自动安装脚本，只需运行以下命令即可完成安装：
+
+```powershell
+irm https://raw.githubusercontent.com/hyfhot/AI-CLI/main/install.ps1 | iex
+```
+
+或者使用更简短的方式：
+
+```powershell
+iwr https://bit.ly/ai-cli-install | iex
+```
+
+安装脚本会自动：
+1. 从 GitHub 下载最新版本
+2. 将程序文件复制到 `%LOCALAPPDATA%\AI-CLI` 目录
+3. 创建桌面快捷方式（带图标）
+4. 创建开始菜单快捷方式
+5. 添加到系统 PATH 环境变量
+
+安装完成后，您可以通过以下方式启动：
+- 双击桌面上的 "AI-CLI" 快捷方式
+- 从开始菜单中选择 "AI-CLI"
+- 在命令行中运行 `ai-cli`（需重新打开终端）
+
+**卸载命令：**
+```powershell
+ai-cli --uninstall
+```
+
+或者重新运行安装脚本：
+```powershell
+irm https://raw.githubusercontent.com/hyfhot/AI-CLI/main/install.ps1 | iex -Uninstall
+```
+
+### 3.3 手动部署步骤
 
 **第一步：保存脚本文件**
 将核心脚本代码保存为 `.ps1` 文件。例如，存放在 `C:\Scripts\Launcher.ps1`。
@@ -134,3 +170,54 @@ $toolsToCheck = @("kiro-cli", "claude", "kimi", "opencode", "gemini", "cursor", 
 
 **Q3：WSL 启动后提示 `No such file or directory`？**
 检查环境变量中配置的 Windows 路径是否正确，确保该盘符（如 C盘、D盘）已经被 WSL 正常挂载。
+
+---
+
+## 7. 下载安装功能
+
+### 7.1 功能概述
+
+点击工具下拉框右侧的 **"下载"** 按钮，可弹出工具安装管理对话框：
+
+* 显示预设的 AI 编程工具列表及其安装状态
+* 支持选择运行环境（Windows / WSL）
+* 支持安装未安装的工具
+* 支持添加自定义工具
+
+### 7.2 预设工具
+
+`tools-config.json` 中预设了以下常用 AI 编程工具：
+
+| 工具名称 | Windows 安装命令 | WSL 安装命令 |
+|---------|-----------------|-------------|
+| Kiro CLI | (不支持，仅 WSL) | `npm install -g kiro-cli` |
+| Claude Code | `npm install -g @anthropic-ai/claude-code` | `npm install -g @anthropic-ai/claude-code` |
+| Cursor | `winget install Cursor.Cursor` | (不支持) |
+| Kimi CLI | `npm install -g kimi-cli` | `npm install -g kimi-cli` |
+
+### 7.3 添加自定义工具
+
+在下载对话框中点击 **"添加自定义"** 按钮，可添加自定义工具：
+
+* **Tool Name**：工具显示名称
+* **Install Command**：安装命令
+* **Check Command**：检测命令（可选，默认使用 `工具名 --version`）
+
+### 7.4 修改预设工具配置
+
+编辑 `tools-config.json` 文件可修改预设工具列表：
+
+```json
+{
+  "tools": [
+    {
+      "name": "tool-name",
+      "displayName": "Display Name",
+      "winInstall": "npm install -g tool-name",
+      "wslInstall": "npm install -g tool-name",
+      "checkCommand": "tool-name --version",
+      "url": "https://example.com"
+    }
+  ]
+}
+```

@@ -1,0 +1,36 @@
+{
+  "tools": [
+    {
+      "name": "kiro-cli",
+      "displayName": "Kiro CLI",
+      "winInstall": null,
+      "wslInstall": "npm install -g kiro-cli",
+      "checkCommand": "kiro-cli --version",
+      "url": "https://github.com/hedronlabs/kiro-cli"
+    },
+    {
+      "name": "claude",
+      "displayName": "Claude Code",
+      "winInstall": "npm install -g @anthropic-ai/claude-code",
+      "wslInstall": "npm install -g @anthropic-ai/claude-code",
+      "checkCommand": "claude --version",
+      "url": "https://docs.anthropic.com/en/docs/claude-code/overview"
+    },
+    {
+      "name": "cursor",
+      "displayName": "Cursor",
+      "winInstall": "winget install Cursor.Cursor",
+      "wslInstall": null,
+      "checkCommand": "cursor --version",
+      "url": "https://cursor.sh"
+    },
+    {
+      "name": "kimi",
+      "displayName": "Kimi CLI",
+      "winInstall": "npm install -g kimi-cli",
+      "wslInstall": "npm install -g kimi-cli",
+      "checkCommand": "kimi --version",
+      "url": "https://kimi.moonshot.cn"
+    }
+  ]
+}
