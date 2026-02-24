@@ -1,5 +1,14 @@
 # AI CLI Launcher (AI 编程工作台启动器)
 
+## 多语言支持
+
+本工具支持 **English**, **中文**, **日本語**, **Deutsch** 四种语言。
+
+- **自动检测**：启动时自动根据系统语言环境选择对应语言
+- **手动切换**：在界面右上角的下拉框中可随时切换语言
+
+---
+
 ## 1. 简介
 
 **AI CLI Launcher** 是一款基于 PowerShell 编写的轻量级桌面可视化启动工具。它专为现代 AI 辅助编程场景设计，旨在统一管理和快速启动各类 AI CLI 工具（如 `kiro-cli`, `Claude Code`, `Kimi CLI`, `Cursor`, `OpenCode` 等）。

@@ -2,6 +2,44 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 # ==========================================
+# 多语言支持
+# ==========================================
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$langDir = Join-Path $scriptDir "lang"
+
+function Get-SystemLanguage {
+    $culture = [System.Globalization.CultureInfo]::CurrentUICulture
+    $name = $culture.Name
+    if ($name.StartsWith("zh")) { return "zh-CN" }
+    if ($name.StartsWith("ja")) { return "ja-JP" }
+    if ($name.StartsWith("de")) { return "de-DE" }
+    return "en-US"
+}
+
+function Load-Language {
+    param([string]$langCode)
+    $langFile = Join-Path $langDir "$langCode.ps1"
+    if (Test-Path $langFile) {
+        . $langFile
+        return $lang
+    }
+    # Fallback to Chinese
+    $fallback = Join-Path $langDir "zh-CN.ps1"
+    if (Test-Path $fallback) {
+        . $fallback
+        return $lang
+    }
+    return $null
+}
+
+$currentLangCode = Get-SystemLanguage
+$lang = Load-Language $currentLangCode
+if ($null -eq $lang) {
+    [System.Windows.Forms.MessageBox]::Show("Failed to load language files!", "Error", 0, 16)
+    exit
+}
+
+# ==========================================
 # 辅助函数：Windows路径转WSL路径
 # ==========================================
 function ConvertTo-WslPath {
@@ -48,7 +86,7 @@ if ([string]::IsNullOrWhiteSpace($envString)) {
 }
 
 if ([string]::IsNullOrWhiteSpace($envString)) {
-    [System.Windows.Forms.MessageBox]::Show("未找到环境变量 AI_PROJECTS！`n请按格式设置：Name1=Path1;Name2=Path2;", "缺少配置", 0, 16)
+    [System.Windows.Forms.MessageBox]::Show($lang["EnvVarError"], $lang["ConfigError"], 0, 16)
     exit
 }
 
@@ -64,8 +102,8 @@ foreach ($item in $envString.Split(';', [System.StringSplitOptions]::RemoveEmpty
 # 3. 构建 UI 界面 (跨环境升级版)
 # ==========================================
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "AI 编程工作台"
-$form.Size = New-Object System.Drawing.Size(520, 360) # 进一步增加高度以容纳新控件
+$form.Text = $lang["AppTitle"]
+$form.Size = New-Object System.Drawing.Size(520, 400)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
@@ -73,19 +111,28 @@ $form.MaximizeBox = $false
 $fontBold = New-Object System.Drawing.Font("Microsoft YaHei", 10, [System.Drawing.FontStyle]::Bold)
 $fontNormal = New-Object System.Drawing.Font("Microsoft YaHei", 9, [System.Drawing.FontStyle]::Regular)
 
-# --- 新增：工具选择区域 ---
+# --- 第1行：工具标签(左) + 语言标签(右) ---
 $lblTool = New-Object System.Windows.Forms.Label
-$lblTool.Text = "AI 编程工具："
-$lblTool.Location = New-Object System.Drawing.Point(15, 18)
+$lblTool.Text = $lang["ToolLabel"]
+$lblTool.Location = New-Object System.Drawing.Point(15, 20)
 $lblTool.AutoSize = $true
 $lblTool.Font = $fontBold
 $form.Controls.Add($lblTool)
 
+$lblLang = New-Object System.Windows.Forms.Label
+$lblLang.Text = $lang["LangLabel"]
+$lblLang.Location = New-Object System.Drawing.Point(360, 20)
+$lblLang.Size = New-Object System.Drawing.Size(120, 20)
+$lblLang.Font = $fontNormal
+$lblLang.TextAlign = [System.Drawing.ContentAlignment]::MiddleRight
+$form.Controls.Add($lblLang)
+
+# --- 第2行：工具下拉框(左) + 语言下拉框(右) ---
 $cmbTool = New-Object System.Windows.Forms.ComboBox
-$cmbTool.Location = New-Object System.Drawing.Point(120, 16)
-$cmbTool.Size = New-Object System.Drawing.Size(365, 25)
+$cmbTool.Location = New-Object System.Drawing.Point(15, 48)
+$cmbTool.Size = New-Object System.Drawing.Size(330, 25)
 $cmbTool.Font = $fontNormal
-$cmbTool.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDown 
+$cmbTool.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDown
 
 # 将探测到的工具加入下拉菜单
 foreach ($tool in $availableTools) {
@@ -94,24 +141,41 @@ foreach ($tool in $availableTools) {
 if ($cmbTool.Items.Count -gt 0) {
     $cmbTool.SelectedIndex = 0
 } else {
-    $cmbTool.Text = "[WSL] kiro-cli" # 如果都没探测到，给个默认值
+    $cmbTool.Text = $lang["DefaultTool"]
 }
 $form.Controls.Add($cmbTool)
 
-# --- 原有：项目选择区域 ---
+$cmbLang = New-Object System.Windows.Forms.ComboBox
+$cmbLang.Location = New-Object System.Drawing.Point(390, 48)
+$cmbLang.Size = New-Object System.Drawing.Size(90, 25)
+$cmbLang.Font = $fontNormal
+$cmbLang.Items.AddRange(@("English", "中文", "日本語", "Deutsch"))
+$cmbLang.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
+
+# Set current language
+switch ($currentLangCode) {
+    "en-US" { $cmbLang.SelectedIndex = 0 }
+    "zh-CN" { $cmbLang.SelectedIndex = 1 }
+    "ja-JP" { $cmbLang.SelectedIndex = 2 }
+    "de-DE" { $cmbLang.SelectedIndex = 3 }
+}
+$form.Controls.Add($cmbLang)
+
+# --- 项目选择区域 ---
 $lblProject = New-Object System.Windows.Forms.Label
-$lblProject.Text = "选择目标项目："
-$lblProject.Location = New-Object System.Drawing.Point(15, 60)
+$lblProject.Text = $lang["ProjectLabel"]
+$lblProject.Location = New-Object System.Drawing.Point(15, 85)
 $lblProject.AutoSize = $true
 $lblProject.Font = $fontBold
 $form.Controls.Add($lblProject)
 
 $listView = New-Object System.Windows.Forms.ListView
-$listView.Location = New-Object System.Drawing.Point(15, 85)
-$listView.Size = New-Object System.Drawing.Size(470, 160)
+$listView.Location = New-Object System.Drawing.Point(15, 110)
+$listView.Size = New-Object System.Drawing.Size(470, 150)
 $listView.View = [System.Windows.Forms.View]::Details
 $listView.FullRowSelect = $true
 $listView.MultiSelect = $false
+$listView.HideSelection = $false  # 保持选中高亮，即使失去焦点
 $listView.HeaderStyle = [System.Windows.Forms.ColumnHeaderStyle]::None 
 
 $imageList = New-Object System.Windows.Forms.ImageList
@@ -136,13 +200,26 @@ foreach ($i in $items) {
 $form.Controls.Add($listView)
 
 $btnOk = New-Object System.Windows.Forms.Button
-$btnOk.Text = "启动工作台"
-$btnOk.Location = New-Object System.Drawing.Point(200, 265)
-$btnOk.Size = New-Object System.Drawing.Size(100, 35)
+$btnOk.Text = $lang["LaunchBtn"]
+$btnOk.Location = New-Object System.Drawing.Point(200, 280)
+$btnOk.Size = New-Object System.Drawing.Size(120, 45)
 $btnOk.Font = $fontBold
 $btnOk.DialogResult = [System.Windows.Forms.DialogResult]::OK
 $form.AcceptButton = $btnOk
 $form.Controls.Add($btnOk)
+
+# 语言切换事件处理
+$cmbLang.add_SelectedIndexChanged({
+    $langCodes = @("en-US", "zh-CN", "ja-JP", "de-DE")
+    $newLangCode = $langCodes[$cmbLang.SelectedIndex]
+    $script:lang = Load-Language $newLangCode
+
+    $form.Text = $lang["AppTitle"]
+    $lblTool.Text = $lang["ToolLabel"]
+    $lblProject.Text = $lang["ProjectLabel"]
+    $btnOk.Text = $lang["LaunchBtn"]
+    $lblLang.Text = $lang["LangLabel"]
+})
 
 $listView.add_DoubleClick({
     if ($listView.SelectedItems.Count -gt 0) {
