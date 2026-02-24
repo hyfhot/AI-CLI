@@ -23,6 +23,9 @@ $installDir = "$env:LOCALAPPDATA\AI-CLI"
 $scriptName = "ai-cli.ps1"
 $iconName = "ai-cli.ico"
 
+# 检测是否为远程安装模式（通过检查命令路径或自动模式参数）
+$isRemoteInstall = ($null -eq $MyInvocation.MyCommand.Path) -or ($MyInvocation.MyCommand.Path -like "$env:TEMP*") -or ($MyInvocation.MyCommand.Path -eq "")
+
 # 卸载逻辑
 if ($Uninstall) {
     Write-Step "开始卸载 AI-CLI..."
