@@ -65,9 +65,13 @@ iwr https://bit.ly/ai-cli-install | iex
 ai-cli --uninstall
 ```
 
-或者重新运行安装脚本：
+如果尚未添加到 PATH，可使用以下方式卸载：
 ```powershell
-irm https://raw.githubusercontent.com/hyfhot/AI-CLI/main/install.ps1 | iex -Uninstall
+# 方式1：使用完整路径
+& "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall
+
+# 方式2：下载安装脚本并执行
+irm https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.ps1 | Invoke-Expression -ArgumentList @("-Uninstall")
 ```
 
 ### 3.3 手动部署步骤

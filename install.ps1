@@ -165,13 +165,13 @@ Write-Success "文件复制完成"
 
 # 创建 PowerShell 启动器
 $targetScriptPath = Join-Path $installDir $scriptName
-$launcherPath = Join-Path $installDir "AI-CLI.bat"
+$launcherPath = Join-Path $installDir "ai-cli.bat"
 $launcherContent = "@echo off
 powershell.exe -ExecutionPolicy Bypass -File `"%LOCALAPPDATA%\AI-CLI\ai-cli.ps1`" %*
 "
 $utf8Bom = New-Object System.Text.UTF8Encoding $true
 [System.IO.File]::WriteAllText($launcherPath, $launcherContent, $utf8Bom)
-Write-Info "已创建启动器"
+Write-Info "已创建启动器: $launcherPath"
 
 # 创建桌面快捷方式
 Write-Step "创建桌面快捷方式..."
@@ -243,4 +243,5 @@ Write-Host "  2. 从开始菜单中选择 'AI-CLI'"
 Write-Host "  3. 在命令行中运行 'ai-cli' (需重新打开终端)"
 Write-Host ""
 Write-Host "卸载命令: ai-cli --uninstall" -ForegroundColor Gray
+Write-Host "         或: & `"$installDir\ai-cli.ps1`" -Uninstall" -ForegroundColor Gray
 Write-Host ""
