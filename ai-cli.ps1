@@ -5,6 +5,11 @@ param(
     [switch]$Uninstall
 )
 
+# 备用检查：如果 param 没收到参数，检查 $args
+if (-not $Uninstall -and $args -contains '--uninstall') {
+    $Uninstall = $true
+}
+
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
