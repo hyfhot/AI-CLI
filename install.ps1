@@ -166,9 +166,15 @@ Write-Success "文件复制完成"
 # 创建 PowerShell 启动器
 $targetScriptPath = Join-Path $installDir $scriptName
 $launcherPath = Join-Path $installDir "ai-cli.bat"
-$launcherContent = "@echo off
-powershell.exe -ExecutionPolicy Bypass -File `"%LOCALAPPDATA%\AI-CLI\ai-cli.ps1`" %*
-"
+$launcherContent = '@echo off
+setlocal enabledelayedexpansion
+set args=%*
+if defined args (
+    powershell.exe -ExecutionPolicy Bypass -File "%LOCALAPPDATA%\AI-CLI\ai-cli.ps1" !args!
+) else (
+    powershell.exe -ExecutionPolicy Bypass -File "%LOCALAPPDATA%\AI-CLI\ai-cli.ps1"
+)
+'
 $utf8Bom = New-Object System.Text.UTF8Encoding $true
 [System.IO.File]::WriteAllText($launcherPath, $launcherContent, $utf8Bom)
 Write-Info "已创建启动器: $launcherPath"
