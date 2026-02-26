@@ -70,7 +70,9 @@ cd AI-CLI
 .\ai-cli.ps1 -Init
 ```
 
-这将在用户配置目录（`%APPDATA%\AI-CLI\config.json`）创建配置文件。您可以手动编辑此文件添加项目：
+这将在用户配置目录（`%APPDATA%\AI-CLI\config.json`）创建配置文件。如果程序目录存在默认配置，会自动复制；否则创建新配置。
+
+您可以手动编辑配置文件添加项目：
 
 ```json
 {
@@ -222,6 +224,11 @@ cd AI-CLI
 ## 7. 配置文件说明
 
 配置文件位置：`%APPDATA%\AI-CLI\config.json`（通常为 `C:\Users\<用户名>\AppData\Roaming\AI-CLI\config.json`）
+
+**配置优先级**：
+1. 优先读取用户配置目录的 `config.json`
+2. 如果不存在，则读取程序目录的默认 `config.json`
+3. 所有修改都保存到用户配置目录
 
 **注意**：配置文件与程序分离存储，卸载程序时配置不会丢失。
 

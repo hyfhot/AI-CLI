@@ -11,9 +11,10 @@ param(
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $configDir = Join-Path $env:APPDATA "AI-CLI"
-$configPath = Join-Path $configDir "config.json"
+$userConfigPath = Join-Path $configDir "config.json"
+$defaultConfigPath = Join-Path $scriptDir "config.json"
 
-# 确保配置目录存在
+# 确保用户配置目录存在
 if (-not (Test-Path $configDir)) {
     New-Item -ItemType Directory -Path $configDir -Force | Out-Null
 }
@@ -22,33 +23,39 @@ if (-not (Test-Path $configDir)) {
 # 配置管理
 # ==========================================
 function Load-Config {
-    # 如果新位置不存在配置，尝试从旧位置迁移
-    if (-not (Test-Path $configPath)) {
-        $oldConfigPath = Join-Path $scriptDir "config.json"
-        if (Test-Path $oldConfigPath) {
-            Write-Host "Migrating config to user directory..." -ForegroundColor Yellow
-            Copy-Item $oldConfigPath $configPath -Force
-            Write-Host "  Config migrated to: $configPath" -ForegroundColor Green
-        }
+    # 优先读取用户配置目录
+    if (Test-Path $userConfigPath) {
+        return Get-Content $userConfigPath -Raw | ConvertFrom-Json
     }
     
-    if (Test-Path $configPath) {
-        return Get-Content $configPath -Raw | ConvertFrom-Json
+    # 如果用户配置不存在，读取程序目录的默认配置
+    if (Test-Path $defaultConfigPath) {
+        return Get-Content $defaultConfigPath -Raw | ConvertFrom-Json
     }
+    
     return $null
 }
 
 function Save-Config {
     param($config)
-    $config | ConvertTo-Json -Depth 10 | Set-Content $configPath -Encoding UTF8
+    # 始终保存到用户配置目录
+    $config | ConvertTo-Json -Depth 10 | Set-Content $userConfigPath -Encoding UTF8
 }
 
 function Initialize-Config {
-    if (Test-Path $configPath) {
-        Write-Host "Config already exists at: $configPath" -ForegroundColor Yellow
+    if (Test-Path $userConfigPath) {
+        Write-Host "Config already exists at: $userConfigPath" -ForegroundColor Yellow
         return
     }
     
+    # 如果程序目录有默认配置，复制到用户目录
+    if (Test-Path $defaultConfigPath) {
+        Copy-Item $defaultConfigPath $userConfigPath -Force
+        Write-Host "Config copied to: $userConfigPath" -ForegroundColor Green
+        return
+    }
+    
+    # 否则创建默认配置
     $defaultConfig = @{
         projects = @()
         tools = @(
@@ -58,8 +65,8 @@ function Initialize-Config {
         settings = @{language="auto"; defaultEnv="wsl"; terminalEmulator="default"}
     }
     
-    $defaultConfig | ConvertTo-Json -Depth 10 | Set-Content $configPath -Encoding UTF8
-    Write-Host "Config initialized at: $configPath" -ForegroundColor Green
+    $defaultConfig | ConvertTo-Json -Depth 10 | Set-Content $userConfigPath -Encoding UTF8
+    Write-Host "Config initialized at: $userConfigPath" -ForegroundColor Green
 }
 
 # ==========================================
@@ -622,11 +629,12 @@ if ($Init) {
 }
 
 if ($Config) {
-    if (Test-Path $configPath) {
+    $configToEdit = if (Test-Path $userConfigPath) { $userConfigPath } else { $defaultConfigPath }
+    if (Test-Path $configToEdit) {
         if (Get-Command "code" -ErrorAction SilentlyContinue) {
-            code $configPath
+            code $configToEdit
         } else {
-            notepad $configPath
+            notepad $configToEdit
         }
     } else {
         Write-Host "Config not found. Run with -Init first." -ForegroundColor Red

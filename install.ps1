@@ -14,8 +14,8 @@ function Install-AICLI {
         New-Item -ItemType Directory -Path $installDir -Force | Out-Null
     }
     
-    # 下载文件（不包含 config.json，配置文件将存储在用户目录）
-    $files = @("ai-cli.ps1", "ai-cli.ico")
+    # 下载文件
+    $files = @("ai-cli.ps1", "config.json", "ai-cli.ico")
     foreach ($file in $files) {
         $url = "$repoUrl/$file"
         $dest = Join-Path $installDir $file
@@ -24,6 +24,20 @@ function Install-AICLI {
             Write-Host "  Downloaded: $file" -ForegroundColor Green
         } catch {
             Write-Host "  Failed to download: $file" -ForegroundColor Red
+        }
+    }
+    
+    # 复制默认配置到用户目录
+    $userConfigDir = Join-Path $env:APPDATA "AI-CLI"
+    $userConfigPath = Join-Path $userConfigDir "config.json"
+    if (-not (Test-Path $userConfigDir)) {
+        New-Item -ItemType Directory -Path $userConfigDir -Force | Out-Null
+    }
+    if (-not (Test-Path $userConfigPath)) {
+        $defaultConfig = Join-Path $installDir "config.json"
+        if (Test-Path $defaultConfig) {
+            Copy-Item $defaultConfig $userConfigPath -Force
+            Write-Host "  Copied config to user directory" -ForegroundColor Green
         }
     }
     
