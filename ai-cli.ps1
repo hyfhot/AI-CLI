@@ -74,18 +74,54 @@ if (-not (Test-Path $configDir)) {
 # ==========================================
 # 配置管理
 # ==========================================
+function Migrate-ConfigToTree {
+    param($config)
+    
+    $needsMigration = $false
+    $migratedProjects = @()
+    
+    foreach ($proj in $config.projects) {
+        if (-not ($proj.PSObject.Properties.Name -contains "type")) {
+            $needsMigration = $true
+            $migratedProj = @{
+                type = "project"
+                name = $proj.name
+                path = $proj.path
+            }
+            if ($proj.PSObject.Properties.Name -contains "env") {
+                $migratedProj.env = $proj.env
+            }
+            $migratedProjects += $migratedProj
+        } else {
+            $migratedProjects += $proj
+        }
+    }
+    
+    if ($needsMigration) {
+        $config.projects = $migratedProjects
+        Save-Config -config $config
+    }
+    
+    return $config
+}
+
 function Load-Config {
+    $loadedConfig = $null
+    
     # 优先读取用户配置目录
     if (Test-Path $userConfigPath) {
-        return Get-Content $userConfigPath -Raw | ConvertFrom-Json
+        $loadedConfig = Get-Content $userConfigPath -Raw | ConvertFrom-Json
     }
-    
     # 如果用户配置不存在，读取程序目录的默认配置
-    if (Test-Path $defaultConfigPath) {
-        return Get-Content $defaultConfigPath -Raw | ConvertFrom-Json
+    elseif (Test-Path $defaultConfigPath) {
+        $loadedConfig = Get-Content $defaultConfigPath -Raw | ConvertFrom-Json
     }
     
-    return $null
+    if ($null -ne $loadedConfig) {
+        $loadedConfig = Migrate-ConfigToTree -config $loadedConfig
+    }
+    
+    return $loadedConfig
 }
 
 function Save-Config {
@@ -357,44 +393,175 @@ function Read-InputWithPlaceholder {
     return $input.Trim()
 }
 
+# ==========================================
+# 树状结构辅助函数
+# ==========================================
+function Get-FlattenedItems {
+    param($items, $parentPath = @(), $level = 0)
+    
+    $result = @()
+    foreach ($item in $items) {
+        $result += [PSCustomObject]@{
+            Item = $item
+            Level = $level
+            ParentPath = $parentPath
+            IsFolder = ($item.type -eq "folder")
+        }
+        
+        if ($item.type -eq "folder" -and $item.children) {
+            $newPath = $parentPath + @($item.name)
+            $result += Get-FlattenedItems -items $item.children -parentPath $newPath -level ($level + 1)
+        }
+    }
+    return $result
+}
+
+function Get-ItemsAtPath {
+    param($projects, $path)
+    
+    $current = $projects
+    foreach ($segment in $path) {
+        $folder = $current | Where-Object { $_.type -eq "folder" -and $_.name -eq $segment }
+        if ($folder) {
+            $current = $folder.children
+        } else {
+            return @()
+        }
+    }
+    return $current
+}
+
+function Add-ItemToPath {
+    param($projects, $path, $item)
+    
+    if ($path.Count -eq 0) {
+        return $projects + @($item)
+    }
+    
+    $result = @()
+    foreach ($proj in $projects) {
+        if ($proj.type -eq "folder" -and $proj.name -eq $path[0]) {
+            $newChildren = Add-ItemToPath -projects $proj.children -path $path[1..($path.Count-1)] -item $item
+            $proj.children = $newChildren
+        }
+        $result += $proj
+    }
+    return $result
+}
+
+function Remove-ItemFromPath {
+    param($projects, $path, $itemName)
+    
+    if ($path.Count -eq 0) {
+        return $projects | Where-Object { $_.name -ne $itemName }
+    }
+    
+    $result = @()
+    foreach ($proj in $projects) {
+        if ($proj.type -eq "folder" -and $proj.name -eq $path[0]) {
+            $proj.children = Remove-ItemFromPath -projects $proj.children -path $path[1..($path.Count-1)] -itemName $itemName
+        }
+        $result += $proj
+    }
+    return $result
+}
+
+function Get-ItemCountRecursive {
+    param($item)
+    
+    if ($item.type -ne "folder") {
+        return 1
+    }
+    
+    $count = 0
+    if ($item.children) {
+        foreach ($child in $item.children) {
+            $count += Get-ItemCountRecursive -item $child
+        }
+    }
+    return $count
+}
+
 function Add-NewProject {
-    param($config)
+    param($config, $currentPath = @())
     
     Clear-Host
-    Write-Host "`n  Add New Project" -ForegroundColor Cyan
+    Write-Host "`n  Add New Item" -ForegroundColor Cyan
     Write-Host ("  " + "=" * 60) -ForegroundColor DarkGray
     Write-Host ""
     
-    # 输入项目名称
-    $projectName = $null
-    while ($null -eq $projectName) {
-        $projectName = Read-InputWithPlaceholder -Prompt "Project Name" -Placeholder "" -Required $true
+    # 选择类型
+    $types = @(
+        [PSCustomObject]@{ Name = "📄 Project"; Type = "project" }
+        [PSCustomObject]@{ Name = "📁 Folder"; Type = "folder" }
+    )
+    
+    $typeResult = Get-UserSelection -items $types -title "Select Type" -allowBack $true
+    if ($typeResult.Back) {
+        return $false
+    }
+    
+    $itemType = $types[$typeResult.Index].Type
+    
+    Clear-Host
+    Write-Host "`n  Add New $($itemType.ToUpper())" -ForegroundColor Cyan
+    Write-Host ("  " + "=" * 60) -ForegroundColor DarkGray
+    Write-Host ""
+    
+    # 输入名称
+    $itemName = $null
+    while ($null -eq $itemName) {
+        $itemName = Read-InputWithPlaceholder -Prompt "Name" -Placeholder "" -Required $true
         
-        if ([string]::IsNullOrWhiteSpace($projectName)) {
-            Write-Host "  Project name is required!" -ForegroundColor Red
+        if ([string]::IsNullOrWhiteSpace($itemName)) {
+            Write-Host "  Name is required!" -ForegroundColor Red
             continue
         }
         
-        # 检查重复
-        $exists = $config.projects | Where-Object { $_.name -eq $projectName }
+        # 检查当前层级是否重复
+        $currentItems = Get-ItemsAtPath -projects $config.projects -path $currentPath
+        $exists = $currentItems | Where-Object { $_.name -eq $itemName }
         if ($exists) {
-            Write-Host "  Project name '$projectName' already exists!" -ForegroundColor Red
-            $projectName = $null
+            Write-Host "  Name '$itemName' already exists in current location!" -ForegroundColor Red
+            $itemName = $null
         }
     }
     
-    # 输入项目路径
-    $currentPath = (Get-Location).Path
+    if ($itemType -eq "folder") {
+        # 文件夹只需要名称
+        $newItem = @{
+            type = "folder"
+            name = $itemName
+            children = @()
+        }
+        
+        Write-Host ""
+        Write-Host "  Folder Summary:" -ForegroundColor Cyan
+        Write-Host "    Name: $itemName" -ForegroundColor White
+        Write-Host ""
+        Write-Host "  Add this folder? (Y/N): " -NoNewline -ForegroundColor Yellow
+        $confirm = Read-Host
+        
+        if ($confirm -eq "Y" -or $confirm -eq "y") {
+            $config.projects = Add-ItemToPath -projects $config.projects -path $currentPath -item $newItem
+            Save-Config -config $config
+            Write-Host "  Folder added successfully!" -ForegroundColor Green
+            Start-Sleep -Seconds 1
+            return $true
+        }
+        return $false
+    }
+    
+    # 项目需要路径
+    $currentDir = (Get-Location).Path
     $projectPath = $null
     while ($null -eq $projectPath) {
         $projectPath = Read-InputWithPlaceholder -Prompt "Project Path" -Placeholder "" -Required $false
         
-        # 如果为空，使用当前路径
         if ([string]::IsNullOrWhiteSpace($projectPath)) {
-            $projectPath = $currentPath
+            $projectPath = $currentDir
         }
         
-        # 检查路径是否存在
         if (-not (Test-Path $projectPath)) {
             Write-Host "  Path does not exist: $projectPath" -ForegroundColor Yellow
             Write-Host "  Create it? (Y/N): " -NoNewline -ForegroundColor Cyan
@@ -413,7 +580,7 @@ function Add-NewProject {
         }
     }
     
-    # 输入环境变量参数（可选）
+    # 输入环境变量
     Write-Host ""
     Write-Host "  Environment Variables (optional, press Enter to skip)" -ForegroundColor Cyan
     Write-Host "  Format: KEY=VALUE, one per line, empty line to finish" -ForegroundColor DarkGray
@@ -440,7 +607,8 @@ function Add-NewProject {
     
     # 创建项目对象
     $newProject = @{
-        name = $projectName
+        type = "project"
+        name = $itemName
         path = $projectPath
     }
     
@@ -451,7 +619,7 @@ function Add-NewProject {
     # 确认添加
     Write-Host ""
     Write-Host "  Project Summary:" -ForegroundColor Cyan
-    Write-Host "    Name: $projectName" -ForegroundColor White
+    Write-Host "    Name: $itemName" -ForegroundColor White
     Write-Host "    Path: $projectPath" -ForegroundColor White
     if ($envVars.Count -gt 0) {
         Write-Host "    Env Vars: $($envVars.Count) variable(s)" -ForegroundColor White
@@ -464,7 +632,7 @@ function Add-NewProject {
     $confirm = Read-Host
     
     if ($confirm -eq "Y" -or $confirm -eq "y") {
-        $config.projects += $newProject
+        $config.projects = Add-ItemToPath -projects $config.projects -path $currentPath -item $newProject
         Save-Config -config $config
         Write-Host "  Project added successfully!" -ForegroundColor Green
         Start-Sleep -Seconds 1
@@ -476,14 +644,62 @@ function Add-NewProject {
     }
 }
 
+function Remove-ProjectOrFolder {
+    param($config, $currentPath, $item)
+    
+    Clear-Host
+    Write-Host "`n  Delete Confirmation" -ForegroundColor Red
+    Write-Host ("  " + "=" * 60) -ForegroundColor DarkGray
+    Write-Host ""
+    
+    $icon = if ($item.type -eq "folder") { "📁" } else { "📄" }
+    Write-Host "  Item to delete: $icon $($item.name)" -ForegroundColor Yellow
+    
+    if ($item.type -eq "folder") {
+        $count = Get-ItemCountRecursive -item $item
+        Write-Host "  Contains: $count item(s)" -ForegroundColor Yellow
+    } else {
+        Write-Host "  Path: $($item.path)" -ForegroundColor DarkGray
+    }
+    
+    Write-Host ""
+    Write-Host "  ⚠️  WARNING: This action cannot be undone!" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "  Type the name to confirm deletion: " -NoNewline -ForegroundColor Cyan
+    $confirmation = Read-Host
+    
+    if ($confirmation -eq $item.name) {
+        $config.projects = Remove-ItemFromPath -projects $config.projects -path $currentPath -itemName $item.name
+        Save-Config -config $config
+        Write-Host "  Deleted successfully!" -ForegroundColor Green
+        Start-Sleep -Seconds 1
+        return $true
+    } else {
+        Write-Host "  Name mismatch. Deletion cancelled." -ForegroundColor Yellow
+        Start-Sleep -Seconds 1
+        return $false
+    }
+}
+
 function Show-Menu {
-    param($items, $title, [int]$selected = 0, [bool]$showTabHint = $false, [bool]$showAddProject = $false)
+    param($items, $title, [int]$selected = 0, [bool]$showTabHint = $false, [bool]$showAddProject = $false, [bool]$showDelete = $false, $breadcrumb = @())
     
     $maxDisplay = [Math]::Min($items.Count, 15)
     $offset = [Math]::Max(0, $selected - $maxDisplay + 1)
     
     [Console]::CursorVisible = $false
     Clear-Host
+    
+    # 显示面包屑导航
+    if ($breadcrumb.Count -gt 0) {
+        Write-Host "`n  " -NoNewline
+        Write-Host "Home" -ForegroundColor DarkGray -NoNewline
+        foreach ($crumb in $breadcrumb) {
+            Write-Host " > " -ForegroundColor DarkGray -NoNewline
+            Write-Host $crumb -ForegroundColor Cyan -NoNewline
+        }
+        Write-Host ""
+    }
     
     Write-Host "`n  $title" -ForegroundColor Cyan
     Write-Host ("  " + "=" * 60) -ForegroundColor DarkGray
@@ -494,14 +710,19 @@ function Show-Menu {
         $prefix = if ($i -eq $selected) { "  >" } else { "   " }
         $color = if ($i -eq $selected) { "Green" } else { "White" }
         
-        if ($item.PSObject.Properties.Name -contains "Description") {
-            Write-Host "$prefix $($item.Name)" -ForegroundColor $color -NoNewline
-            Write-Host " - $($item.Description)" -ForegroundColor DarkGray
-        } elseif ($item.PSObject.Properties.Name -contains "Path") {
-            Write-Host "$prefix $($item.Name)" -ForegroundColor $color -NoNewline
+        # 判断是否为文件夹或项目
+        $isFolder = ($item.PSObject.Properties.Name -contains "type" -and $item.type -eq "folder")
+        $icon = if ($isFolder) { "📁" } else { "📄" }
+        
+        Write-Host "$prefix $icon $($item.Name)" -ForegroundColor $color -NoNewline
+        
+        if ($item.PSObject.Properties.Name -contains "Path") {
             Write-Host " ($($item.Path))" -ForegroundColor DarkGray
+        } elseif ($isFolder -and $item.children) {
+            $count = $item.children.Count
+            Write-Host " ($count item(s))" -ForegroundColor DarkGray
         } else {
-            Write-Host "$prefix $item" -ForegroundColor $color
+            Write-Host ""
         }
     }
     
@@ -509,26 +730,31 @@ function Show-Menu {
     if ($showTabHint) {
         Write-Host "  [↑↓] Navigate  [Enter] New Window  [Ctrl+Enter] New Tab  [I] Install  [Esc] Back  [Q] Quit" -ForegroundColor DarkGray
     } elseif ($showAddProject) {
-        Write-Host "  [↑↓] Navigate  [Enter] Select  [N] New Project  [Q] Quit" -ForegroundColor DarkGray
+        $hint = "  [↑↓] Navigate  [Enter] Select  [N] New  [D] Delete"
+        if ($breadcrumb.Count -gt 0) {
+            $hint += "  [Esc] Back"
+        }
+        $hint += "  [Q] Quit"
+        Write-Host $hint -ForegroundColor DarkGray
     } else {
         Write-Host "  [↑↓] Navigate  [Enter] Select  [Esc] Back  [Q] Quit" -ForegroundColor DarkGray
     }
 }
 
 function Get-UserSelection {
-    param($items, $title, [bool]$showTabHint = $false, [bool]$allowBack = $false, [bool]$allowAddProject = $false)
+    param($items, $title, [bool]$showTabHint = $false, [bool]$allowBack = $false, [bool]$allowAddProject = $false, [bool]$allowDelete = $false, $breadcrumb = @())
     
     $selected = 0
     
     while ($true) {
-        Show-Menu -items $items -title $title -selected $selected -showTabHint $showTabHint -showAddProject $allowAddProject
+        Show-Menu -items $items -title $title -selected $selected -showTabHint $showTabHint -showAddProject $allowAddProject -showDelete $allowDelete -breadcrumb $breadcrumb
         
         $key = [Console]::ReadKey($true)
         
         # 检测 Ctrl+Enter
         if ($key.Modifiers -eq [ConsoleModifiers]::Control -and $key.Key -eq "Enter") {
             [Console]::CursorVisible = $true
-            return @{Index = $selected; UseTab = $true; Back = $false; Install = $false; AddProject = $false}
+            return @{Index = $selected; UseTab = $true; Back = $false; Install = $false; AddProject = $false; Delete = $false}
         }
         
         switch ($key.Key) {
@@ -536,24 +762,30 @@ function Get-UserSelection {
             "DownArrow" { $selected = [Math]::Min($items.Count - 1, $selected + 1) }
             "Enter" { 
                 [Console]::CursorVisible = $true
-                return @{Index = $selected; UseTab = $false; Back = $false; Install = $false; AddProject = $false}
+                return @{Index = $selected; UseTab = $false; Back = $false; Install = $false; AddProject = $false; Delete = $false}
             }
             "I" {
                 if (-not $allowAddProject) {
                     [Console]::CursorVisible = $true
-                    return @{Index = -1; UseTab = $false; Back = $false; Install = $true; AddProject = $false}
+                    return @{Index = -1; UseTab = $false; Back = $false; Install = $true; AddProject = $false; Delete = $false}
                 }
             }
             "N" {
                 if ($allowAddProject) {
                     [Console]::CursorVisible = $true
-                    return @{Index = -1; UseTab = $false; Back = $false; Install = $false; AddProject = $true}
+                    return @{Index = -1; UseTab = $false; Back = $false; Install = $false; AddProject = $true; Delete = $false}
+                }
+            }
+            "D" {
+                if ($allowDelete) {
+                    [Console]::CursorVisible = $true
+                    return @{Index = $selected; UseTab = $false; Back = $false; Install = $false; AddProject = $false; Delete = $true}
                 }
             }
             "Escape" {
-                if ($allowBack) {
+                if ($allowBack -or $breadcrumb.Count -gt 0) {
                     [Console]::CursorVisible = $true
-                    return @{Index = -1; UseTab = $false; Back = $true; Install = $false; AddProject = $false}
+                    return @{Index = -1; UseTab = $false; Back = $true; Install = $false; AddProject = $false; Delete = $false}
                 }
             }
             "Q" { 
@@ -584,23 +816,60 @@ function Start-InteractiveLauncher {
     $hasWindowsTerminal = $null -ne (Get-Command "wt" -ErrorAction SilentlyContinue)
     
     $currentProject = $null
+    $currentPath = @()  # 当前文件夹路径
     
     while ($true) {
         # 1. 选择项目（如果未选择或需要重新选择）
         if ($null -eq $currentProject) {
-            $result = Get-UserSelection -items $config.projects -title "Select Project" -allowAddProject $true
+            $currentItems = Get-ItemsAtPath -projects $config.projects -path $currentPath
             
-            # 处理新增项目
+            if ($currentItems.Count -eq 0) {
+                Write-Host "No items in current location. Press N to add." -ForegroundColor Yellow
+                Start-Sleep -Seconds 2
+                $currentPath = @()
+                continue
+            }
+            
+            $breadcrumbTitle = if ($currentPath.Count -eq 0) { "Select Project" } else { "Select Project" }
+            $result = Get-UserSelection -items $currentItems -title $breadcrumbTitle -allowAddProject $true -allowDelete $true -breadcrumb $currentPath
+            
+            # 处理新增
             if ($result.AddProject) {
-                $added = Add-NewProject -config $config
+                $added = Add-NewProject -config $config -currentPath $currentPath
                 if ($added) {
-                    $config = Load-Config  # 重新加载配置
+                    $config = Load-Config
                 }
                 continue
             }
             
-            $projectIdx = if ($result -is [hashtable]) { $result.Index } else { $result }
-            $currentProject = $config.projects[$projectIdx]
+            # 处理删除
+            if ($result.Delete) {
+                $itemToDelete = $currentItems[$result.Index]
+                $deleted = Remove-ProjectOrFolder -config $config -currentPath $currentPath -item $itemToDelete
+                if ($deleted) {
+                    $config = Load-Config
+                }
+                continue
+            }
+            
+            # 处理返回上级
+            if ($result.Back) {
+                if ($currentPath.Count -gt 0) {
+                    $currentPath = $currentPath[0..($currentPath.Count - 2)]
+                }
+                continue
+            }
+            
+            $selectedItem = $currentItems[$result.Index]
+            
+            # 如果是文件夹，进入文件夹
+            if ($selectedItem.type -eq "folder") {
+                $currentPath += @($selectedItem.name)
+                continue
+            }
+            
+            # 如果是项目，选中
+            $currentProject = $selectedItem
         }
         
         # 2. 获取可用工具
@@ -630,7 +899,7 @@ function Start-InteractiveLauncher {
         }
         
         # 3. 选择工具
-        $result = Get-UserSelection -items $availableTools -title "Select AI Tool for $($currentProject.name)" -showTabHint $hasWindowsTerminal -allowBack $true
+        $result = Get-UserSelection -items $availableTools -title "Select AI Tool for $($currentProject.name)" -showTabHint $hasWindowsTerminal -allowBack $true -breadcrumb @()
         
         # 处理安装请求
         if ($result.Install) {

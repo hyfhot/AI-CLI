@@ -114,14 +114,26 @@ cd AI-CLI
 
 运行 `ai-cli` 后，将进入纯终端交互界面：
 
-#### 项目选择界面
+#### 项目选择界面（树状结构）
 ```
 === 选择项目 ===
-> 项目1 (C:\Projects\Project1)
-  项目2 (C:\Projects\Project2)
-  项目3 (C:\Projects\Project3)
+> 📁 前端项目 (3 item(s))
+  📁 后端项目 (2 item(s))
+  📄 独立项目 (C:\Projects\standalone)
 
-[↑↓] 选择  [Enter] 确认  [N] 新增项目  [Q] 退出
+[↑↓] 选择  [Enter] 进入/确认  [N] 新增  [D] 删除  [Q] 退出
+```
+
+进入文件夹后：
+```
+  Home > 前端项目
+
+=== 选择项目 ===
+> 📄 Vue项目 (C:\Projects\vue-app)
+  📁 React项目 (2 item(s))
+  📄 Angular项目 (C:\Projects\angular-app)
+
+[↑↓] 选择  [Enter] 进入/确认  [N] 新增  [D] 删除  [Esc] 返回  [Q] 退出
 ```
 
 #### 工具选择界面
@@ -135,9 +147,19 @@ cd AI-CLI
 [↑↓] 选择  [Enter] 启动  [Ctrl+Enter] 新页签  [I] 安装  [Esc] 返回  [Q] 退出
 ```
 
-#### 新增项目界面
+#### 新增界面（类型选择）
 ```
-=== 新增项目 ===
+=== 选择类型 ===
+> 📄 Project
+  📁 Folder
+
+[↑↓] 选择  [Enter] 确认  [Esc] 取消
+```
+
+#### 删除确认界面
+```
+=== 删除确认 ===
+项目名称: MyProject_
 
 项目名称: MyProject
 项目路径: C:\Projects\MyProject
@@ -145,26 +167,22 @@ cd AI-CLI
   格式: KEY=VALUE，每行一个，空行结束
   Env Var: API_KEY=sk-xxx
     已添加: API_KEY=sk-xxx
-  Env Var: DEBUG=true
-    已添加: DEBUG=true
-  Env Var: 
+将要删除: 📁 前端项目 (包含 5 个子项)
 
-项目摘要:
-  名称: MyProject
-  路径: C:\Projects\MyProject
-  环境变量: 2 个
-    API_KEY=sk-xxx
-    DEBUG=true
+⚠️  警告：此操作不可恢复！
+请输入名称以确认删除: 前端项目_
 
-添加此项目? (Y/N):
+[输入名称] 确认  [Esc] 取消
 ```
 
 ### 4.2 快捷键
 
 #### 项目选择界面
 - `↑↓` - 导航选择
-- `Enter` - 选择项目
-- `N` - 新增项目
+- `Enter` - 进入文件夹或选择项目
+- `N` - 新增项目或文件夹
+- `D` - 删除项目或文件夹
+- `Esc` - 返回上级文件夹
 - `Q` - 退出程序
 
 #### 工具选择界面
@@ -175,13 +193,24 @@ cd AI-CLI
 - `Esc` - 返回项目选择
 - `Q` - 退出程序
 
-#### 新增项目界面
+#### 新增界面
+- 输入项目名称（必填，不能重复）
+- 输入项目路径（必填，自动检测路径是否存在）
+- 输入环境变量（可选，格式：KEY=VALUE）
 - 输入项目名称（必填，不能重复）
 - 输入项目路径（必填，自动检测路径是否存在）
 - 输入环境变量（可选，格式：KEY=VALUE）
 - 确认添加或取消
 
-### 4.3 运行效果
+### 4.3 树状结构管理
+
+项目支持树状结构组织：
+- **文件夹**：用于分类管理项目，可以包含项目和子文件夹
+- **项目**：实际的工作目录，包含路径和环境变量
+- **面包屑导航**：显示当前位置，方便多层级导航
+- **递归删除**：删除文件夹时会提示包含的子项数量
+
+### 4.4 运行效果
 
 * 脚本会自动拉起对应的终端（Cmd 或 WSL）。
 * 终端会自动 `cd` 进入所选项目的对应路径。
@@ -193,11 +222,36 @@ cd AI-CLI
 
 ## 5. 技术架构与实现原理
 
-### 5.1 路径解析引擎 (`ConvertTo-WslPath`)
+### 5.1 树状结构实现
+
+项目配置采用递归树状结构：
+```json
+{
+  "projects": [
+    {
+      "type": "folder",
+      "name": "前端项目",
+      "children": [
+        {
+          "type": "project",
+          "name": "Vue项目",
+          "path": "C:\\Projects\\vue-app"
+        }
+      ]
+    }
+  ]
+}
+```
+
+- 自动迁移旧版本平面配置到树状结构
+- 支持递归遍历、添加、删除操作
+- 面包屑导航跟踪当前路径
+
+### 5.2 路径解析引擎 (`ConvertTo-WslPath`)
 
 利用正则表达式 `^([a-zA-Z]):(.*)` 捕获 Windows 盘符，将其转化为 `/mnt/盘符小写` 格式，并将反斜杠 `\` 统一替换为正斜杠 `/`，确保 WSL 能够正确挂载和访问 Windows 文件系统。
 
-### 5.2 工具检测机制
+### 5.3 工具检测机制
 
 * **Windows 环境**：使用 PowerShell 内置 cmdlet `Get-Command -ErrorAction SilentlyContinue` 进行低开销静默探测。
 * **WSL 环境**：通过 `wsl.exe -e bash -ic "command -v tool"` 执行检测，使用 `-ic` 参数确保加载 `.bashrc` 环境变量。
