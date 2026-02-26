@@ -14,8 +14,8 @@ function Install-AICLI {
         New-Item -ItemType Directory -Path $installDir -Force | Out-Null
     }
     
-    # 下载文件
-    $files = @("ai-cli.ps1", "config.json", "ai-cli.ico")
+    # 下载文件（不包含 config.json，配置文件将存储在用户目录）
+    $files = @("ai-cli.ps1", "ai-cli.ico")
     foreach ($file in $files) {
         $url = "$repoUrl/$file"
         $dest = Join-Path $installDir $file

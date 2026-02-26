@@ -10,12 +10,28 @@ param(
 
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$configPath = Join-Path $scriptDir "config.json"
+$configDir = Join-Path $env:APPDATA "AI-CLI"
+$configPath = Join-Path $configDir "config.json"
+
+# 确保配置目录存在
+if (-not (Test-Path $configDir)) {
+    New-Item -ItemType Directory -Path $configDir -Force | Out-Null
+}
 
 # ==========================================
 # 配置管理
 # ==========================================
 function Load-Config {
+    # 如果新位置不存在配置，尝试从旧位置迁移
+    if (-not (Test-Path $configPath)) {
+        $oldConfigPath = Join-Path $scriptDir "config.json"
+        if (Test-Path $oldConfigPath) {
+            Write-Host "Migrating config to user directory..." -ForegroundColor Yellow
+            Copy-Item $oldConfigPath $configPath -Force
+            Write-Host "  Config migrated to: $configPath" -ForegroundColor Green
+        }
+    }
+    
     if (Test-Path $configPath) {
         return Get-Content $configPath -Raw | ConvertFrom-Json
     }
