@@ -15,7 +15,7 @@ function Install-AICLI {
     }
     
     # 下载文件
-    $files = @("ai-cli.ps1", "config.json")
+    $files = @("ai-cli.ps1", "config.json", "ai-cli.ico")
     foreach ($file in $files) {
         $url = "$repoUrl/$file"
         $dest = Join-Path $installDir $file
@@ -28,11 +28,11 @@ function Install-AICLI {
     }
     
     # 创建启动脚本
-    $launcherPath = Join-Path $installDir "ai-cli.ps1"
+    $launcherPath = Join-Path $installDir "ai-cli.bat"
     @"
-#!/usr/bin/env pwsh
-& "$installDir\ai-cli.ps1" `$args
-"@ | Set-Content $launcherPath -Encoding UTF8
+@echo off
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$installDir\ai-cli.ps1" %*
+"@ | Set-Content $launcherPath -Encoding ASCII
     
     # 添加到 PATH
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -44,13 +44,17 @@ function Install-AICLI {
     # 创建桌面快捷方式
     $desktopPath = [Environment]::GetFolderPath("Desktop")
     $shortcutPath = Join-Path $desktopPath "AI-CLI.lnk"
+    $iconPath = Join-Path $installDir "ai-cli.ico"
     
     $shell = New-Object -ComObject WScript.Shell
     $shortcut = $shell.CreateShortcut($shortcutPath)
-    $shortcut.TargetPath = "pwsh.exe"
-    $shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$launcherPath`""
+    $shortcut.TargetPath = "powershell.exe"
+    $shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$installDir\ai-cli.ps1`""
     $shortcut.WorkingDirectory = $installDir
+    $shortcut.IconLocation = $iconPath
     $shortcut.Save()
+    
+    Write-Host "  Created desktop shortcut" -ForegroundColor Green
     
     Write-Host "`nInstallation complete!" -ForegroundColor Green
     Write-Host "  Run 'ai-cli -Init' to initialize config" -ForegroundColor Yellow

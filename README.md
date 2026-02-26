@@ -38,15 +38,13 @@ irm https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.ps1 | iex
 ```
 
 安装脚本会自动：
-1. 从 GitHub 下载最新版本
+1. 从 GitHub 下载最新版本（包含图标文件）
 2. 将程序文件复制到 `%LOCALAPPDATA%\AI-CLI` 目录
-3. 创建桌面快捷方式（带图标）
-4. 创建开始菜单快捷方式
-5. 添加到系统 PATH 环境变量
+3. 创建桌面快捷方式（带自定义图标）
+4. 添加到系统 PATH 环境变量
 
 安装完成后，您可以通过以下方式启动：
 - 双击桌面上的 "AI-CLI" 快捷方式
-- 从开始菜单中选择 "AI-CLI"
 - 在命令行中运行 `ai-cli`（需重新打开终端）
 
 **卸载命令：**
