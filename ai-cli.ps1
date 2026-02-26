@@ -124,10 +124,56 @@ function Load-Config {
     return $loadedConfig
 }
 
+function Normalize-ConfigArrays {
+    param($obj)
+    
+    if ($obj -is [System.Collections.ArrayList]) {
+        $arr = @()
+        foreach ($item in $obj) {
+            $arr += Normalize-ConfigArrays -obj $item
+        }
+        return $arr
+    }
+    
+    if ($obj -is [hashtable]) {
+        $normalized = @{}
+        foreach ($key in $obj.Keys) {
+            if ($key -eq "children") {
+                $normalized[$key] = @($(Normalize-ConfigArrays -obj $obj[$key]))
+            } else {
+                $normalized[$key] = Normalize-ConfigArrays -obj $obj[$key]
+            }
+        }
+        return $normalized
+    }
+    
+    if ($obj.PSObject.Properties.Name -contains "children") {
+        $normalized = @{}
+        foreach ($prop in $obj.PSObject.Properties) {
+            if ($prop.Name -eq "children") {
+                $normalized[$prop.Name] = @($(Normalize-ConfigArrays -obj $prop.Value))
+            } else {
+                $normalized[$prop.Name] = Normalize-ConfigArrays -obj $prop.Value
+            }
+        }
+        return $normalized
+    }
+    
+    return $obj
+}
+
 function Save-Config {
     param($config)
+    
+    # 规范化数组结构
+    $normalized = @{
+        projects = @($(Normalize-ConfigArrays -obj $config.projects))
+        tools = $config.tools
+        settings = $config.settings
+    }
+    
     # 始终保存到用户配置目录
-    $config | ConvertTo-Json -Depth 10 | Set-Content $userConfigPath -Encoding UTF8
+    $normalized | ConvertTo-Json -Depth 10 | Set-Content $userConfigPath -Encoding UTF8
 }
 
 function Initialize-Config {
@@ -243,7 +289,7 @@ function Install-Tool {
         $hasInstall = $false
         if (-not $tool.WslAvailable -and $tool.WslInstall) {
             $uninstalledTools += [PSCustomObject]@{
-                Name = "$($tool.DisplayName) [WSL]"
+                Name = "[WSL] $($tool.DisplayName)"
                 Tool = $tool.Name
                 Env = "wsl"
                 Command = $tool.WslInstall
@@ -252,7 +298,7 @@ function Install-Tool {
         }
         if (-not $tool.WinAvailable -and $tool.WinInstall) {
             $uninstalledTools += [PSCustomObject]@{
-                Name = "$($tool.DisplayName) [Win]"
+                Name = "[Win] $($tool.DisplayName)"
                 Tool = $tool.Name
                 Env = "win"
                 Command = $tool.WinInstall
@@ -417,51 +463,97 @@ function Get-FlattenedItems {
 }
 
 function Get-ItemsAtPath {
-    param($projects, $path)
+    param($projects, [array]$path)
     
     $current = $projects
     foreach ($segment in $path) {
-        $folder = $current | Where-Object { $_.type -eq "folder" -and $_.name -eq $segment }
+        $folder = $current | Where-Object { $_.type -eq "folder" -and $_.name -eq ([string]$segment) }
         if ($folder) {
             $current = $folder.children
+            if ($null -eq $current) {
+                $current = @()
+            }
         } else {
-            return @()
+            return , @()
         }
     }
-    return $current
+    # 强制返回数组，使用逗号操作符防止解包
+    return , @($current)
 }
 
 function Add-ItemToPath {
-    param($projects, $path, $item)
+    param($projects, [array]$path, $item)
     
-    if ($path.Count -eq 0) {
-        return $projects + @($item)
+    if ($null -eq $projects) {
+        $projects = @()
     }
     
-    $result = @()
-    foreach ($proj in $projects) {
-        if ($proj.type -eq "folder" -and $proj.name -eq $path[0]) {
-            $newChildren = Add-ItemToPath -projects $proj.children -path $path[1..($path.Count-1)] -item $item
-            $proj.children = $newChildren
+    if ($path.Count -eq 0) {
+        $result = [System.Collections.ArrayList]::new()
+        foreach ($p in $projects) {
+            [void]$result.Add($p)
         }
-        $result += $proj
+        [void]$result.Add($item)
+        return $result
+    }
+    
+    $result = [System.Collections.ArrayList]::new()
+    $targetSegment = [string]$path[0]
+    
+    foreach ($proj in $projects) {
+        if ($proj.type -eq "folder" -and $proj.name -eq $targetSegment) {
+            $remainingPath = if ($path.Count -gt 1) { , $path[1..($path.Count-1)] } else { @() }
+            $currentChildren = if ($proj.children) { $proj.children } else { @() }
+            $newChildren = Add-ItemToPath -projects $currentChildren -path $remainingPath -item $item
+            
+            $newFolder = @{
+                type = "folder"
+                name = $proj.name
+                children = $newChildren
+            }
+            [void]$result.Add($newFolder)
+        } else {
+            [void]$result.Add($proj)
+        }
     }
     return $result
 }
 
 function Remove-ItemFromPath {
-    param($projects, $path, $itemName)
+    param($projects, [array]$path, $itemName)
     
-    if ($path.Count -eq 0) {
-        return $projects | Where-Object { $_.name -ne $itemName }
+    if ($null -eq $projects) {
+        return @()
     }
     
-    $result = @()
-    foreach ($proj in $projects) {
-        if ($proj.type -eq "folder" -and $proj.name -eq $path[0]) {
-            $proj.children = Remove-ItemFromPath -projects $proj.children -path $path[1..($path.Count-1)] -itemName $itemName
+    if ($path.Count -eq 0) {
+        $result = [System.Collections.ArrayList]::new()
+        foreach ($p in $projects) {
+            if ($p.name -ne $itemName) {
+                [void]$result.Add($p)
+            }
         }
-        $result += $proj
+        return $result
+    }
+    
+    $result = [System.Collections.ArrayList]::new()
+    $targetSegment = [string]$path[0]
+    
+    foreach ($proj in $projects) {
+        if ($proj.type -eq "folder" -and $proj.name -eq $targetSegment) {
+            $remainingPath = if ($path.Count -gt 1) { , $path[1..($path.Count-1)] } else { @() }
+            $currentChildren = if ($proj.children) { $proj.children } else { @() }
+            $newChildren = Remove-ItemFromPath -projects $currentChildren -path $remainingPath -itemName $itemName
+            
+            $newFolder = @{
+                type = "folder"
+                name = $proj.name
+                children = $newChildren
+            }
+            [void]$result.Add($newFolder)
+        } else {
+            [void]$result.Add($proj)
+        }
     }
     return $result
 }
@@ -860,7 +952,11 @@ function Start-InteractiveLauncher {
                     }
                     "Escape" {
                         if ($currentPath.Count -gt 0) {
-                            $currentPath = $currentPath[0..($currentPath.Count - 2)]
+                            if ($currentPath.Count -eq 1) {
+                                $currentPath = @()
+                            } else {
+                                $currentPath = $currentPath[0..($currentPath.Count - 2)]
+                            }
                         }
                     }
                     "Q" { exit 0 }
@@ -893,7 +989,11 @@ function Start-InteractiveLauncher {
             # 处理返回上级
             if ($result.Back) {
                 if ($currentPath.Count -gt 0) {
-                    $currentPath = $currentPath[0..($currentPath.Count - 2)]
+                    if ($currentPath.Count -eq 1) {
+                        $currentPath = @()
+                    } else {
+                        $currentPath = $currentPath[0..($currentPath.Count - 2)]
+                    }
                 }
                 continue
             }
@@ -917,14 +1017,14 @@ function Start-InteractiveLauncher {
         foreach ($tool in $tools) {
             if ($tool.WslAvailable) {
                 $availableTools += [PSCustomObject]@{
-                    Name = "$($tool.DisplayName) [WSL]"
+                    Name = "[WSL] $($tool.DisplayName)"
                     Tool = $tool.Name
                     Env = "wsl"
                 }
             }
             if ($tool.WinAvailable) {
                 $availableTools += [PSCustomObject]@{
-                    Name = "$($tool.DisplayName) [Win]"
+                    Name = "[Win] $($tool.DisplayName)"
                     Tool = $tool.Name
                     Env = "win"
                 }
