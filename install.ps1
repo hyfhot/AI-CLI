@@ -15,7 +15,7 @@ function Install-AICLI {
     }
     
     # 下载文件
-    $files = @("ai-cli-new.ps1", "config.json")
+    $files = @("ai-cli.ps1", "config.json")
     foreach ($file in $files) {
         $url = "$repoUrl/$file"
         $dest = Join-Path $installDir $file
@@ -31,7 +31,7 @@ function Install-AICLI {
     $launcherPath = Join-Path $installDir "ai-cli.ps1"
     @"
 #!/usr/bin/env pwsh
-& "$installDir\ai-cli-new.ps1" `$args
+& "$installDir\ai-cli.ps1" `$args
 "@ | Set-Content $launcherPath -Encoding UTF8
     
     # 添加到 PATH
