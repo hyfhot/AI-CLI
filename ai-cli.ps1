@@ -823,10 +823,48 @@ function Start-InteractiveLauncher {
         if ($null -eq $currentProject) {
             $currentItems = Get-ItemsAtPath -projects $config.projects -path $currentPath
             
+            # 如果当前位置为空，显示提示但允许新增
             if ($currentItems.Count -eq 0) {
-                Write-Host "No items in current location. Press N to add." -ForegroundColor Yellow
-                Start-Sleep -Seconds 2
-                $currentPath = @()
+                $breadcrumbTitle = if ($currentPath.Count -eq 0) { "Select Project" } else { "Select Project" }
+                
+                Clear-Host
+                if ($currentPath.Count -gt 0) {
+                    Write-Host "`n  " -NoNewline
+                    Write-Host "Home" -ForegroundColor DarkGray -NoNewline
+                    foreach ($crumb in $currentPath) {
+                        Write-Host " > " -ForegroundColor DarkGray -NoNewline
+                        Write-Host $crumb -ForegroundColor Cyan -NoNewline
+                    }
+                    Write-Host ""
+                }
+                Write-Host "`n  $breadcrumbTitle" -ForegroundColor Cyan
+                Write-Host ("  " + "=" * 60) -ForegroundColor DarkGray
+                Write-Host ""
+                Write-Host "  (Empty folder)" -ForegroundColor DarkGray
+                Write-Host ""
+                
+                $hint = "  [N] New"
+                if ($currentPath.Count -gt 0) {
+                    $hint += "  [Esc] Back"
+                }
+                $hint += "  [Q] Quit"
+                Write-Host $hint -ForegroundColor DarkGray
+                
+                $key = [Console]::ReadKey($true)
+                switch ($key.Key) {
+                    "N" {
+                        $added = Add-NewProject -config $config -currentPath $currentPath
+                        if ($added) {
+                            $config = Load-Config
+                        }
+                    }
+                    "Escape" {
+                        if ($currentPath.Count -gt 0) {
+                            $currentPath = $currentPath[0..($currentPath.Count - 2)]
+                        }
+                    }
+                    "Q" { exit 0 }
+                }
                 continue
             }
             
