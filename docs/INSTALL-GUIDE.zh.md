@@ -1,3 +1,5 @@
+🌐 [English](INSTALL-GUIDE.md) | [中文](INSTALL-GUIDE.zh.md) | [日本語](INSTALL-GUIDE.ja.md)
+
 # AI-CLI 安装工具功能说明
 
 ## 功能概述
@@ -121,4 +123,4 @@ wsl.exe -e bash -ic "curl -fsSL https://cli.kiro.dev/install | bash"
 
 ---
 
-*最后更新: 2026-02-26*
+*最后更新：2026-02-26*

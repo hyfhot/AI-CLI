@@ -1,240 +1,239 @@
-# AI CLI Launcher (AI 编程工作台启动器)
+# AI CLI Launcher
 
-## 1. 简介
+> 🌐 **English** | [中文](README.zh.md) | [日本語](README.ja.md)
 
-**AI CLI Launcher** 是一款基于 PowerShell 编写的轻量级终端启动工具。它专为现代 AI 辅助编程场景设计，旨在统一管理和快速启动各类 AI CLI 工具（如 `kiro-cli`, `Claude Code`, `Kimi CLI`, `Cursor Agent`, `OpenCode` 等）。
+## 1. Introduction
 
-该工具打破了 Windows 原生环境与 Windows Subsystem for Linux (WSL) 之间的环境壁垒，允许开发者在一个统一的终端界面中选择目标项目，并一键唤起对应的 AI 编程工具，自动完成路径转换与终端环境初始化。
+**AI CLI Launcher** is a lightweight terminal launcher tool based on PowerShell. Designed for modern AI-assisted programming scenarios, it aims to unify management and quickly launch various AI CLI tools (such as `kiro-cli`, `Claude Code`, `Kimi CLI`, `Cursor Agent`, `OpenCode`, etc.).
 
-> 📚 **查看支持的工具**: 详细的工具列表、安装说明和对比请参考 [TOOLS.md](TOOLS.md)
+This tool breaks down the barriers between native Windows environment and Windows Subsystem for Linux (WSL), allowing developers to select target projects in a unified terminal interface and launch corresponding AI programming tools with one click, automatically completing path conversion and terminal environment initialization.
 
-## 2. 核心特性
+> 📚 **View Supported Tools**: For detailed tool list, installation instructions, and comparison, please refer to [docs/TOOLS.md](docs/TOOLS.md)
 
-* **🤖 智能双轨探测**：启动时自动侦测 Windows 宿主机与 WSL 环境中已安装的 AI CLI 工具，并分类打上 `[Win]` 或 `[WSL]` 标签。
-* **📂 统一项目管理**：通过 `config.json` 集中管理项目路径，支持跨盘符、跨环境。
-* **🔄 跨环境路径转换**：内置路径转化引擎，自动将 Windows 绝对路径（如 `C:\Projects\...`）转化为符合 WSL 规范的挂载路径（如 `/mnt/c/Projects/...`）。
-* **⚡ 纯终端交互**：快速键盘驱动的 CLI 界面，无 GUI 加载延迟，即时响应。
-* **🔁 循环启动模式**：程序不退出，支持连续选择工具和项目，提升工作效率。
-* **📑 多页签支持**：Ctrl+Enter 在 Windows Terminal 新页签中启动工具，方便多任务管理。
-* **🛠️ 工具安装功能**：按 I 键快速安装未安装的 AI CLI 工具。
-* **🏷️ 动态页签命名**：启动时通过 ANSI 转义序列和 Windows 原生指令，动态修改终端页签标题（如 `KIRO-CLI BT2400`），极大提升多任务管理的清晰度。
+## 2. Core Features
+
+* **🤖 Intelligent Dual-Environment Detection**: Automatically detects AI CLI tools installed in Windows host and WSL environments at startup, and categorizes them with `[Win]` or `[WSL]` labels.
+* **📂 Unified Project Management**: Centrally manages project paths through `config.json`, supporting cross-drive and cross-environment projects.
+* **🔄 Cross-Environment Path Conversion**: Built-in path conversion engine automatically converts Windows absolute paths (e.g., `C:\Projects\...`) to WSL-compliant mount paths (e.g., `/mnt/c/Projects/...`).
+* **⚡ Pure Terminal Interaction**: Fast keyboard-driven CLI interface, no GUI loading delay, instant response.
+* **🔁 Loop Launch Mode**: The program does not exit, supports continuous selection of tools and projects, improving work efficiency.
+* **📑 Multi-Tab Support**: Ctrl+Enter launches tools in new Windows Terminal tabs, convenient for multi-task management.
+* **🛠️ Tool Installation Feature**: Press I key to quickly install uninstalled AI CLI tools.
+* **🏷️ Dynamic Tab Naming**: Dynamically modifies terminal tab titles at startup through ANSI escape sequences and Windows native commands (e.g., `KIRO-CLI BT2400`), greatly improving multi-task management clarity.
 
 ---
 
-## 3. 安装与配置指南
+## 3. Installation and Configuration Guide
 
-### 3.1 环境要求
+### 3.1 Environment Requirements
 
-* 操作系统：Windows 10 / Windows 11
-* 运行环境：PowerShell 5.1 或更高版本
-* 依赖组件：已安装并配置好 WSL（如需使用 Linux 下的工具）
+* Operating System: Windows 10 / Windows 11
+* Runtime Environment: PowerShell 5.1 or higher
+* Dependencies: WSL installed and configured (if you need to use Linux tools)
 
-### 3.2 快速安装（推荐）
+### 3.2 Quick Installation (Recommended)
 
-项目提供了自动安装脚本，只需运行以下命令即可完成安装：
+The project provides an automatic installation script. Just run the following command to complete the installation:
 
 ```powershell
 irm https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.ps1 | iex
 ```
 
-安装脚本会自动：
-1. 从 GitHub 下载最新版本（包含图标文件）
-2. 将程序文件复制到 `%LOCALAPPDATA%\AI-CLI` 目录
-3. 创建桌面快捷方式（带自定义图标）
-4. 添加到系统 PATH 环境变量
+The installation script will automatically:
+1. Download the latest version from GitHub (including icon files)
+2. Copy program files to `%LOCALAPPDATA%\AI-CLI` directory
+3. Create desktop shortcuts (with custom icons)
+4. Add to system PATH environment variable
 
-安装完成后，您可以通过以下方式启动：
-- 双击桌面上的 "AI-CLI" 快捷方式
-- 在命令行中运行 `ai-cli`（需重新打开终端）
+After installation, you can start by:
+- Double-clicking the "AI-CLI" shortcut on the desktop
+- Running `ai-cli` in the command line (need to reopen the terminal)
 
-**常用命令：**
+**Common Commands:**
 ```powershell
-ai-cli           # 启动交互式界面
-ai-cli --help    # 查看帮助信息
-ai-cli --init    # 初始化配置
-ai-cli --config  # 编辑配置
+ai-cli           # Launch interactive interface
+ai-cli --help    # View help information
+ai-cli --init    # Initialize configuration
+ai-cli --config  # Edit configuration
 ```
 
-**卸载命令：**
+**Uninstall Command:**
 ```powershell
 ai-cli -Uninstall
 ```
 
-如果尚未添加到 PATH，可使用以下方式卸载：
+If not yet added to PATH, you can uninstall using:
 ```powershell
 & "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall
 ```
 
-**参数说明**：支持 `-` 和 `--` 两种前缀，例如 `-Init` 和 `--init` 等效（不区分大小写）。
+**Parameter Description**: Supports both `-` and `--` parameter prefixes, e.g., `-Init` and `--init` are equivalent (case-insensitive).
 
-### 3.3 手动部署步骤
+### 3.3 Manual Deployment Steps
 
-**第一步：克隆或下载项目**
+**Step 1: Clone or Download the Project**
 ```powershell
 git clone https://github.com/hyfhot/AI-CLI.git
 cd AI-CLI
 ```
 
-**第二步：初始化配置**
+**Step 2: Initialize Configuration**
 ```powershell
 .\ai-cli.ps1 -Init
 ```
 
-这将在用户配置目录（`%APPDATA%\AI-CLI\config.json`）创建配置文件。如果程序目录存在默认配置，会自动复制；否则创建新配置。
+This will create a configuration file in the user configuration directory (`%APPDATA%\AI-CLI\config.json`). If a default configuration exists in the program directory, it will be copied automatically; otherwise, a new configuration will be created.
 
-您可以手动编辑配置文件添加项目：
+You can manually edit the configuration file to add projects:
 
 ```json
 {
   "projects": [
     {
-      "name": "项目名称",
+      "name": "Project Name",
       "path": "C:\\Projects\\MyProject",
-      "description": "项目描述（可选）"
+      "description": "Project description (optional)"
     }
   ]
 }
 ```
 
-**第三步：运行程序**
+**Step 3: Run the Program**
 ```powershell
 .\ai-cli.ps1
 ```
 
-**查看帮助**
+**View Help**
 ```powershell
 .\ai-cli.ps1 --help
 ```
 
 ---
 
-## 4. 使用说明
+## 4. Usage Instructions
 
-### 4.1 启动与界面说明
+### 4.1 Launch and Interface Description
 
-运行 `ai-cli` 后，将进入纯终端交互界面：
+After running `ai-cli`, you will enter the pure terminal interaction interface:
 
-#### 项目选择界面（树状结构）
+#### Project Selection Interface (Tree Structure)
 ```
-=== 选择项目 ===
-> 📁 前端项目 (3 item(s))
-  📁 后端项目 (2 item(s))
-  📄 独立项目 (C:\Projects\standalone)
+=== Select Project ===
+> 📁 Frontend Projects (3 item(s))
+  📁 Backend Projects (2 item(s))
+  📄 Standalone Project (C:\Projects\standalone)
 
-[↑↓] 选择  [Enter] 进入/确认  [N] 新增  [D] 删除  [Q] 退出
-```
-
-进入文件夹后：
-```
-  Home > 前端项目
-
-=== 选择项目 ===
-> 📄 Vue项目 (C:\Projects\vue-app)
-  📁 React项目 (2 item(s))
-  📄 Angular项目 (C:\Projects\angular-app)
-
-[↑↓] 选择  [Enter] 进入/确认  [N] 新增  [D] 删除  [Esc] 返回  [Q] 退出
+[↑↓] Select  [Enter] Enter/Confirm  [N] New  [D] Delete  [Q] Quit
 ```
 
-#### 工具选择界面
+After entering a folder:
 ```
-=== 选择 AI 工具 (项目: 项目1) ===
+  Home > Frontend Projects
+
+=== Select Project ===
+> 📄 Vue Project (C:\Projects\vue-app)
+  📁 React Projects (2 item(s))
+  📄 Angular Project (C:\Projects\angular-app)
+
+[↑↓] Select  [Enter] Enter/Confirm  [N] New  [D] Delete  [Esc] Back  [Q] Quit
+```
+
+#### Tool Selection Interface
+```
+=== Select AI Tool (Project: Project 1) ===
 > [WSL] kiro-cli
   [Win] claude
   [WSL] opencode
   [Win] aider
 
-[↑↓] 选择  [Enter] 启动  [Ctrl+Enter] 新页签  [I] 安装  [Esc] 返回  [Q] 退出
+[↑↓] Select  [Enter] Launch  [Ctrl+Enter] New Tab  [I] Install  [Esc] Back  [Q] Quit
 ```
 
-#### 新增界面（类型选择）
+#### New Item Interface (Type Selection)
 ```
-=== 选择类型 ===
+=== Select Type ===
 > 📄 Project
   📁 Folder
 
-[↑↓] 选择  [Enter] 确认  [Esc] 取消
+[↑↓] Select  [Enter] Confirm  [Esc] Cancel
 ```
 
-#### 删除确认界面
+#### Delete Confirmation Interface
 ```
-=== 删除确认 ===
-项目名称: MyProject_
+=== Delete Confirmation ===
+Project Name: MyProject_
 
-项目名称: MyProject
-项目路径: C:\Projects\MyProject
-环境变量 (可选，按 Enter 跳过):
-  格式: KEY=VALUE，每行一个，空行结束
+Project Name: MyProject
+Project Path: C:\Projects\MyProject
+Environment Variables (optional, press Enter to skip):
+  Format: KEY=VALUE, one per line, empty line to end
   Env Var: API_KEY=sk-xxx
-    已添加: API_KEY=sk-xxx
-将要删除: 📁 前端项目 (包含 5 个子项)
+    Added: API_KEY=sk-xxx
+To delete: 📁 Frontend Projects (contains 5 items)
 
-⚠️  警告：此操作不可恢复！
-请输入名称以确认删除: 前端项目_
+⚠️  Warning: This action cannot be undone!
+Please enter the name to confirm deletion: Frontend Projects_
 
-[输入名称] 确认  [Esc] 取消
+[Enter name] Confirm  [Esc] Cancel
 ```
 
-### 4.2 快捷键
+### 4.2 Keyboard Shortcuts
 
-#### 项目选择界面
-- `↑↓` - 导航选择
-- `Enter` - 进入文件夹或选择项目
-- `N` - 新增项目或文件夹
-- `D` - 删除项目或文件夹
-- `Esc` - 返回上级文件夹
-- `Q` - 退出程序
+#### Project Selection Interface
+- `↑↓` - Navigate selection
+- `Enter` - Enter folder or select project
+- `N` - New project or folder
+- `D` - Delete project or folder
+- `Esc` - Return to parent folder
+- `Q` - Quit program
 
-#### 工具选择界面
-- `↑↓` - 导航选择
-- `Enter` - 在新窗口启动工具
-- `Ctrl+Enter` - 在新页签启动工具（需要 Windows Terminal）
-- `I` - 安装新工具
-- `Esc` - 返回项目选择
-- `Q` - 退出程序
+#### Tool Selection Interface
+- `↑↓` - Navigate selection
+- `Enter` - Launch tool in new window
+- `Ctrl+Enter` - Launch tool in new tab (requires Windows Terminal)
+- `I` - Install new tool
+- `Esc` - Return to project selection
+- `Q` - Quit program
 
-#### 新增界面
-- 输入项目名称（必填，不能重复）
-- 输入项目路径（必填，自动检测路径是否存在）
-- 输入环境变量（可选，格式：KEY=VALUE）
-- 输入项目名称（必填，不能重复）
-- 输入项目路径（必填，自动检测路径是否存在）
-- 输入环境变量（可选，格式：KEY=VALUE）
-- 确认添加或取消
+#### New Item Interface
+- Enter project name (required, cannot be duplicate)
+- Enter project path (required, automatically detects if path exists)
+- Enter environment variables (optional, format: KEY=VALUE)
+- Confirm add or cancel
 
-### 4.3 树状结构管理
+### 4.3 Tree Structure Management
 
-项目支持树状结构组织：
-- **文件夹**：用于分类管理项目，可以包含项目和子文件夹
-- **项目**：实际的工作目录，包含路径和环境变量
-- **面包屑导航**：显示当前位置，方便多层级导航
-- **递归删除**：删除文件夹时会提示包含的子项数量
+Projects support tree structure organization:
+- **Folders**: Used to categorize and manage projects, can contain projects and subfolders
+- **Projects**: Actual working directories, containing paths and environment variables
+- **Breadcrumb Navigation**: Shows current location, convenient for multi-level navigation
+- **Recursive Delete**: Prompts the number of contained items when deleting a folder
 
-### 4.4 运行效果
+### 4.4 Runtime Effects
 
-* 脚本会自动拉起对应的终端（Cmd 或 WSL）。
-* 终端会自动 `cd` 进入所选项目的对应路径。
-* 项目配置的环境变量会自动注入到运行环境中。
-  * **智能路径转换**：WSL 环境下，Windows 路径格式的环境变量值（如 `C:\Projects\...`）会自动转换为 WSL 路径格式（`/mnt/c/Projects/...`）。
-* 终端顶部页签名称会自动变更为 `[工具名] [项目名]`，方便多开辨识。
+* The script automatically launches the corresponding terminal (Cmd or WSL).
+* The terminal automatically `cd` into the corresponding path of the selected project.
+* Environment variables configured in the project are automatically injected into the runtime environment.
+  * **Intelligent Path Conversion**: In WSL environment, Windows path format environment variable values (e.g., `C:\Projects\...`) are automatically converted to WSL path format (`/mnt/c/Projects/...`).
+* The terminal tab title at the top is automatically changed to `[Tool Name] [Project Name]`, convenient for multi-instance identification.
 
 ---
 
-## 5. 技术架构与实现原理
+## 5. Technical Architecture and Implementation Principles
 
-### 5.1 树状结构实现
+### 5.1 Tree Structure Implementation
 
-项目配置采用递归树状结构：
+Project configuration uses a recursive tree structure:
 ```json
 {
   "projects": [
     {
       "type": "folder",
-      "name": "前端项目",
+      "name": "Frontend Projects",
       "children": [
         {
           "type": "project",
-          "name": "Vue项目",
+          "name": "Vue Project",
           "path": "C:\\Projects\\vue-app"
         }
       ]
@@ -243,73 +242,73 @@ cd AI-CLI
 }
 ```
 
-- 自动迁移旧版本平面配置到树状结构
-- 支持递归遍历、添加、删除操作
-- 面包屑导航跟踪当前路径
+- Automatically migrates old version flat configurations to tree structure
+- Supports recursive traversal, add, and delete operations
+- Breadcrumb navigation tracks current path
 
-### 5.2 路径解析引擎 (`ConvertTo-WslPath`)
+### 5.2 Path Resolution Engine (`ConvertTo-WslPath`)
 
-利用正则表达式 `^([a-zA-Z]):(.*)` 捕获 Windows 盘符，将其转化为 `/mnt/盘符小写` 格式，并将反斜杠 `\` 统一替换为正斜杠 `/`，确保 WSL 能够正确挂载和访问 Windows 文件系统。
+Uses regular expression `^([a-zA-Z]):(.*)` to capture Windows drive letters, converts them to `/mnt/lowercase-drive-letter` format, and replaces backslashes `\` with forward slashes `/` to ensure WSL can correctly mount and access Windows file systems.
 
-### 5.3 工具检测机制
+### 5.3 Tool Detection Mechanism
 
-* **Windows 环境**：使用 PowerShell 内置 cmdlet `Get-Command -ErrorAction SilentlyContinue` 进行低开销静默探测。
-* **WSL 环境**：通过 `wsl.exe -e bash -ic "command -v tool"` 执行检测，使用 `-ic` 参数确保加载 `.bashrc` 环境变量。
+* **Windows Environment**: Uses PowerShell built-in cmdlet `Get-Command -ErrorAction SilentlyContinue` for low-overhead silent detection.
+* **WSL Environment**: Executes detection through `wsl.exe -e bash -ic "command -v tool"`, using `-ic` parameter to ensure `.bashrc` environment variables are loaded.
 
-### 5.3 终端拉起与进程分发
+### 5.4 Terminal Launch and Process Distribution
 
-根据工具环境标志（`[Win]` / `[WSL]`），执行不同策略：
+Based on tool environment flags (`[Win]` / `[WSL]`), different strategies are executed:
 
-* **针对 WSL**：
-组合使用 `-e bash -ic` 确保加载完整的 Linux 环境变量（解决诸如 `command not found` 的问题），并利用 `echo -ne '\033]0;TITLE\007'` 发送 ANSI 序列设置终端标题。
-* **针对 Windows**：
-利用 `cmd.exe /k` 保持控制台窗口打开，通过 `title` 指令修改标题，利用 `cd /d` 实现安全的跨盘符目录切换。
+* **For WSL**:
+Combines `-e bash -ic` to ensure complete Linux environment variables are loaded (solving issues like `command not found`), and uses `echo -ne '\033]0;TITLE\007'` to send ANSI sequences to set terminal titles.
+* **For Windows**:
+Uses `cmd.exe /k` to keep the console window open, modifies titles through `title` command, and uses `cd /d` to achieve safe cross-drive directory switching.
 
 ---
 
-## 6. 工具安装功能
+## 6. Tool Installation Feature
 
-### 6.1 使用方法
+### 6.1 Usage
 
-在工具选择界面按 `I` 键，进入工具安装界面：
+In the tool selection interface, press the `I` key to enter the tool installation interface:
 
 ```
-=== 安装 AI 工具 ===
+=== Install AI Tools ===
 > [WSL] kiro-cli
   [Win] gemini
   [WSL] cursor-agent
 
-[↑↓] 选择  [Enter] 安装  [Esc] 返回  [Q] 退出
+[↑↓] Select  [Enter] Install  [Esc] Back  [Q] Quit
 ```
 
-选择要安装的工具，按 Enter 确认，程序会自动执行安装命令。
+Select the tool you want to install, press Enter to confirm, and the program will automatically execute the installation command.
 
-### 6.2 支持的工具
+### 6.2 Supported Tools
 
-根据 `config.json` 配置，当前支持安装 8 个主流 AI CLI 工具。详细信息请参考 [TOOLS.md](TOOLS.md) 和 [INSTALL-GUIDE.md](INSTALL-GUIDE.md)。
+According to `config.json` configuration, currently supports installing 8 mainstream AI CLI tools. For detailed information, please refer to [docs/TOOLS.md](docs/TOOLS.md) and [docs/INSTALL-GUIDE.md](docs/INSTALL-GUIDE.md).
 
 ---
 
-## 7. 配置文件说明
+## 7. Configuration File Description
 
-配置文件位置：`%APPDATA%\AI-CLI\config.json`（通常为 `C:\Users\<用户名>\AppData\Roaming\AI-CLI\config.json`）
+Configuration file location: `%APPDATA%\AI-CLI\config.json` (typically `C:\Users\<Username>\AppData\Roaming\AI-CLI\config.json`)
 
-**配置优先级**：
-1. 优先读取用户配置目录的 `config.json`
-2. 如果不存在，则读取程序目录的默认 `config.json`
-3. 所有修改都保存到用户配置目录
+**Configuration Priority**:
+1. Prioritize reading `config.json` from the user configuration directory
+2. If it does not exist, read the default `config.json` from the program directory
+3. All modifications are saved to the user configuration directory
 
-**注意**：配置文件与程序分离存储，卸载程序时配置不会丢失。
+**Note**: Configuration files are stored separately from the program, and configurations are not lost when uninstalling the program.
 
-### 7.1 config.json 结构
+### 7.1 config.json Structure
 
 ```json
 {
   "projects": [
     {
-      "name": "项目名称",
-      "path": "项目路径",
-      "description": "项目描述（可选）",
+      "name": "Project Name",
+      "path": "Project Path",
+      "description": "Project description (optional)",
       "env": {
         "API_KEY": "your-api-key",
         "DEBUG": "true"
@@ -318,12 +317,12 @@ cd AI-CLI
   ],
   "tools": [
     {
-      "name": "工具命令",
-      "displayName": "显示名称",
-      "winInstall": "Windows安装命令或null",
-      "wslInstall": "WSL安装命令或null",
-      "checkCommand": "检测命令",
-      "url": "官方网站"
+      "name": "Tool Command",
+      "displayName": "Display Name",
+      "winInstall": "Windows installation command or null",
+      "wslInstall": "WSL installation command or null",
+      "checkCommand": "Detection command",
+      "url": "Official website"
     }
   ],
   "settings": {
@@ -334,21 +333,21 @@ cd AI-CLI
 }
 ```
 
-### 7.2 添加项目
+### 7.2 Adding Projects
 
-编辑 `config.json`，在 `projects` 数组中添加：
+Edit `config.json`, add to the `projects` array:
 
 ```json
 {
   "name": "MyProject",
   "path": "C:\\Projects\\MyProject",
-  "description": "我的项目"
+  "description": "My Project"
 }
 ```
 
-### 7.3 添加自定义工具
+### 7.3 Adding Custom Tools
 
-编辑 `config.json`，在 `tools` 数组中添加：
+Edit `config.json`, add to the `tools` array:
 
 ```json
 {
@@ -363,35 +362,35 @@ cd AI-CLI
 
 ---
 
-## 8. 常见问题 (FAQ)
+## 8. Frequently Asked Questions (FAQ)
 
-**Q1：如何添加新项目？**
-编辑 `config.json` 文件，在 `projects` 数组中添加项目信息，或运行 `ai-cli -Init` 重新初始化配置。
+**Q1: How to add a new project?**
+Edit the `config.json` file, add project information to the `projects` array, or run `ai-cli -Init` to reinitialize the configuration.
 
-**Q2：运行时提示找不到工具？**
-1. 确认工具已正确安装
-2. 检查 PATH 环境变量
-3. 对于 WSL 工具，确认 WSL 环境已正确配置
-4. 运行 `ai-cli` 重新检测工具
+**Q2: Tool not found when running?**
+1. Confirm the tool is correctly installed
+2. Check the PATH environment variable
+3. For WSL tools, confirm the WSL environment is correctly configured
+4. Run `ai-cli` to re-detect tools
 
-**Q3：WSL 启动后提示 `No such file or directory`？**
-检查项目路径是否正确，确保该盘符（如 C盘、D盘）已经被 WSL 正常挂载。
+**Q3: `No such file or directory` after WSL launch?**
+Check if the project path is correct, and ensure the drive (e.g., C drive, D drive) has been normally mounted by WSL.
 
-**Q4：如何使用多页签功能？**
-确保已安装 Windows Terminal，然后在工具选择界面按 `Ctrl+Enter` 启动工具。
+**Q4: How to use the multi-tab feature?**
+Make sure Windows Terminal is installed, then press `Ctrl+Enter` in the tool selection interface to launch the tool.
 
-**Q5：如何卸载？**
-运行 `ai-cli -Uninstall` 或 `& "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall`。
-
----
-
-## 9. 相关文档
-
-- **[TOOLS.md](TOOLS.md)** - 8个主流 AI CLI 工具的详细参考手册
-- **[INSTALL-GUIDE.md](INSTALL-GUIDE.md)** - 工具安装功能使用指南
-- **[BUGFIX.md](BUGFIX.md)** - Bug 修复记录和技术细节
-- **[CHANGELOG.md](CHANGELOG.md)** - 版本更新日志
+**Q5: How to uninstall?**
+Run `ai-cli -Uninstall` or `& "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall`.
 
 ---
 
-*最后更新: 2026-02-26*
+## 9. Related Documentation
+
+- **[docs/TOOLS.md](docs/TOOLS.md)** - Detailed reference manual for 8 mainstream AI CLI tools
+- **[docs/INSTALL-GUIDE.md](docs/INSTALL-GUIDE.md)** - Guide for using the tool installation feature
+- **[docs/BUGFIX.md](docs/BUGFIX.md)** - Bug fix records and technical details
+- **[docs/CHANGELOG.md](docs/CHANGELOG.md)** - Version update log
+
+---
+
+*Last updated: 2026-02-26*

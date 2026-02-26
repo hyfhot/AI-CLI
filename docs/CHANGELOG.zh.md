@@ -1,3 +1,5 @@
+🌐 [English](CHANGELOG.md) | [中文](CHANGELOG.zh.md) | [日本語](CHANGELOG.ja.md)
+
 # AI-CLI 版本更新日志
 
 ## v2.2.0 (2026-02-26)
@@ -102,7 +104,7 @@
 - ✅ **多页签支持**：Ctrl+Enter 在 Windows Terminal 新页签中启动工具
 - ✅ **工具安装功能**：按 I 键快速安装未安装的 AI CLI 工具
 - ✅ **统一配置管理**：config.json 管理所有设置（项目、工具、偏好）
-- ✅ **8个主流工具预配置**：开箱即用的工具配置
+- ✅ **8 个主流工具预配置**：开箱即用的工具配置
 
 #### 核心修复
 - 🐛 **WSL 工具检测**：使用 `bash -ic` 替代 `bash -lc`，正确加载 .bashrc 环境变量
@@ -191,8 +193,8 @@ cd AI-CLI
     {
       "name": "工具命令",
       "displayName": "显示名称",
-      "winInstall": "Windows安装命令",
-      "wslInstall": "WSL安装命令",
+      "winInstall": "Windows 安装命令",
+      "wslInstall": "WSL 安装命令",
       "checkCommand": "检测命令",
       "url": "官方网站"
     }
@@ -208,7 +210,7 @@ cd AI-CLI
 ### 文档
 
 - **README.md** - 完整使用说明和功能介绍
-- **TOOLS.md** - 8个 AI CLI 工具的详细参考手册
+- **TOOLS.md** - 8 个 AI CLI 工具的详细参考手册
 - **INSTALL-GUIDE.md** - 工具安装功能使用指南
 - **BUGFIX.md** - Bug 修复记录和技术细节
 - **CHANGELOG.md** - 本文档，版本更新日志
@@ -256,4 +258,4 @@ v1.x 用户无需手动迁移，v2.0 会自动：
 
 ---
 
-*最后更新: 2026-02-26*
+*最后更新：2026-02-26*

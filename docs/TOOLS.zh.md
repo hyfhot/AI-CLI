@@ -1,4 +1,6 @@
-# AI CLI Tools Reference
+🌐 [English](TOOLS.md) | [中文](TOOLS.zh.md) | [日本語](TOOLS.ja.md)
+
+# AI CLI 工具参考
 
 本文档列出了 AI-CLI 支持的主流 AI 编程工具及其安装配置信息。
 
@@ -9,7 +11,7 @@
 ### 1. Kiro CLI (AWS)
 - **官方网站**: https://kiro.dev/cli/
 - **开发商**: Amazon Web Services
-- **特点**: 
+- **特点**:
   - 规范驱动的开发平台
   - 支持代理工作流
   - 集成 AWS 服务
@@ -139,14 +141,14 @@
 
 | 工具 | 开发商 | 免费 | 开源 | Windows | WSL/Linux | 特色 |
 |------|--------|------|------|---------|-----------|------|
-| Kiro CLI | AWS | ✅ | ❌ | ❌ | ✅ | 规范驱动，AWS集成 |
-| Claude Code | Anthropic | ❌ | ❌ | ✅ | ✅ | 100K上下文，MCP |
+| Kiro CLI | AWS | ✅ | ❌ | ❌ | ✅ | 规范驱动，AWS 集成 |
+| Claude Code | Anthropic | ❌ | ❌ | ✅ | ✅ | 100K 上下文，MCP |
 | Codex CLI | OpenAI | ❌ | ✅ | ✅ | ✅ | 本地执行，隐私 |
 | Kimi CLI | Moonshot | ❌ | ❌ | ✅ | ✅ | 网页搜索，中文优化 |
-| Gemini CLI | Google | ✅ | ✅ | ✅ | ✅ | 1M上下文，免费 |
-| Cursor Agent | Cursor | ❌ | ❌ | ❌ | ✅ | CI/CD集成 |
+| Gemini CLI | Google | ✅ | ✅ | ✅ | ✅ | 1M 上下文，免费 |
+| Cursor Agent | Cursor | ❌ | ❌ | ❌ | ✅ | CI/CD 集成 |
 | OpenCode | 社区 | ✅ | ✅ | ✅ | ✅ | 隐私优先，多模型 |
-| Aider | 社区 | ✅ | ✅ | ✅ | ✅ | Git集成，多LLM |
+| Aider | 社区 | ✅ | ✅ | ✅ | ✅ | Git 集成，多 LLM |
 
 ---
 
@@ -157,7 +159,7 @@
 - **终端**: Windows Terminal (推荐) 或其他现代终端
 
 ### Node.js 工具 (Claude, Codex, Gemini)
-- Node.js 18+ 
+- Node.js 18+
 - npm 或 pnpm
 
 ### Python 工具 (Kimi, Aider)
@@ -175,22 +177,22 @@
 ### 选择工具的考虑因素
 
 1. **预算**:
-   - 免费: Gemini CLI, OpenCode, Aider
-   - 付费: Claude Code, Codex CLI, Kimi CLI, Cursor Agent
+   - 免费：Gemini CLI, OpenCode, Aider
+   - 付费：Claude Code, Codex CLI, Kimi CLI, Cursor Agent
 
 2. **隐私**:
-   - 本地执行: Codex CLI, OpenCode
-   - 云端: 其他工具
+   - 本地执行：Codex CLI, OpenCode
+   - 云端：其他工具
 
 3. **功能需求**:
-   - AWS 集成: Kiro CLI
-   - Git 深度集成: Aider
-   - 多模型支持: OpenCode
-   - 大上下文: Gemini CLI (1M), Claude Code (100K)
+   - AWS 集成：Kiro CLI
+   - Git 深度集成：Aider
+   - 多模型支持：OpenCode
+   - 大上下文：Gemini CLI (1M), Claude Code (100K)
 
 4. **语言偏好**:
-   - 中文优化: Kimi CLI
-   - 英文: 其他工具
+   - 中文优化：Kimi CLI
+   - 英文：其他工具
 
 ---
 
@@ -224,4 +226,4 @@
 
 ---
 
-*最后更新: 2026-02-26*
+*最后更新：2026-02-26*

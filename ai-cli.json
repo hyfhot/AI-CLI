@@ -1,0 +1,29 @@
+{
+    "version": "2.2.0",
+    "description": "AI CLI Launcher - Unified terminal launcher for AI coding tools (Kiro, Claude, Cursor, etc.)",
+    "homepage": "https://github.com/hyfhot/AI-CLI",
+    "license": "MIT",
+    "url": "https://github.com/hyfhot/AI-CLI/archive/refs/tags/v2.2.0.zip",
+    "hash": "d53e45889e547a5aa56dd054831c4c183851d670dd9b21b226742cc190d052da",
+    "extract_dir": "AI-CLI-2.2.0",
+    "bin": "ai-cli.ps1",
+    "shortcuts": [
+        [
+            "ai-cli.ps1",
+            "AI-CLI"
+        ]
+    ],
+    "post_install": [
+        "Write-Host 'Initializing AI-CLI configuration...' -ForegroundColor Cyan",
+        "& \"$dir\\ai-cli.ps1\" -Init",
+        "Write-Host 'AI-CLI installed successfully!' -ForegroundColor Green",
+        "Write-Host 'Run \"ai-cli\" to start, or \"ai-cli --help\" for usage.' -ForegroundColor Yellow"
+    ],
+    "checkver": {
+        "github": "https://github.com/hyfhot/AI-CLI"
+    },
+    "autoupdate": {
+        "url": "https://github.com/hyfhot/AI-CLI/archive/refs/tags/v$version.zip",
+        "extract_dir": "AI-CLI-$version"
+    }
+}

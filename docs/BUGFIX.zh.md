@@ -1,3 +1,5 @@
+🌐 [English](BUGFIX.md) | [中文](BUGFIX.zh.md) | [日本語](BUGFIX.ja.md)
+
 # AI-CLI v2.0 Bug 修复说明
 
 ## 🐛 问题描述
@@ -9,7 +11,7 @@ The filename, directory name, or volume label syntax is incorrect.
 operable program or batch file.
 ```
 
-**根本原因**: 
+**根本原因**:
 1. `Show-Menu` 函数有 `return $selected`，导致每次循环都返回值，使变量变成数组
 2. WSL 启动命令使用数组参数传递方式，与旧版本不兼容
 
@@ -93,6 +95,6 @@ else {
 
 ---
 
-**修复日期**: 2026-02-26  
-**版本**: 2.0.1  
+**修复日期**: 2026-02-26
+**版本**: 2.0.1
 **状态**: ✅ 已修复并测试通过
