@@ -4,12 +4,18 @@
 
 ### 🐛 Bug 修复
 - 修复环境变量类型转换错误：将 PSCustomObject 正确转换为 Hashtable
+- 完善卸载功能：添加删除桌面快捷方式和 PATH 环境变量清理
+- 修正文档中的卸载命令语法（`--uninstall` → `-Uninstall`）
 
 ### 🔄 UI 改进
 - 优化新增项目界面：
   - 项目名称不再显示 placeholder，必须手动输入
   - 项目路径不显示 placeholder，为空时自动使用当前目录
   - 移除空 placeholder 时的空括号显示
+
+### 📚 文档更新
+- 修正卸载命令语法说明
+- 补充说明：PowerShell 参数不区分大小写（支持 `-uninstall`、`-Uninstall`、`-UNINSTALL` 等）
 
 ---
 

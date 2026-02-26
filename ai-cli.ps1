@@ -619,11 +619,33 @@ if ($Config) {
 }
 
 if ($Uninstall) {
+    Write-Host "Uninstalling AI-CLI..." -ForegroundColor Yellow
+    
     $installDir = "$env:LOCALAPPDATA\AI-CLI"
+    
+    # 删除安装目录
     if (Test-Path $installDir) {
         Remove-Item -Recurse -Force $installDir
-        Write-Host "Uninstalled successfully." -ForegroundColor Green
+        Write-Host "  Removed installation directory" -ForegroundColor Green
     }
+    
+    # 删除桌面快捷方式
+    $desktopPath = [Environment]::GetFolderPath("Desktop")
+    $shortcutPath = Join-Path $desktopPath "AI-CLI.lnk"
+    if (Test-Path $shortcutPath) {
+        Remove-Item -Force $shortcutPath
+        Write-Host "  Removed desktop shortcut" -ForegroundColor Green
+    }
+    
+    # 从 PATH 环境变量中移除
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    if ($userPath -like "*$installDir*") {
+        $newPath = ($userPath -split ';' | Where-Object { $_ -ne $installDir }) -join ';'
+        [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+        Write-Host "  Removed from PATH" -ForegroundColor Green
+    }
+    
+    Write-Host "`nUninstallation complete!" -ForegroundColor Green
     exit 0
 }
 

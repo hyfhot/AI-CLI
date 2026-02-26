@@ -49,7 +49,7 @@ irm https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.ps1 | iex
 
 **卸载命令：**
 ```powershell
-ai-cli --uninstall
+ai-cli -Uninstall
 ```
 
 如果尚未添加到 PATH，可使用以下方式卸载：
@@ -301,7 +301,7 @@ cd AI-CLI
 确保已安装 Windows Terminal，然后在工具选择界面按 `Ctrl+Enter` 启动工具。
 
 **Q5：如何卸载？**
-运行 `ai-cli --uninstall` 或 `& "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall`。
+运行 `ai-cli -Uninstall` 或 `& "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall`。
 
 ---
 
