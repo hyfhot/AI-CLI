@@ -433,9 +433,20 @@ foreach ($t in $toolsToCheck) {
     }
 }
 
-# 1.2 探测 WSL 环境 (合并为单次调用以加快启动速度)
-$wslCheckScript = "for cmd in $($toolsToCheck -join ' '); do if command -v `$cmd >/dev/null 2>&1; then echo `$cmd; fi; done"
-$wslOutput = wsl.exe -e bash -lc $wslCheckScript 2>$null
+# ==========================================
+# 1.2 探测 WSL 环境 (修正路径探测失效问题)
+# ==========================================
+# 增加常见路径并使用 -ic 确保加载用户配置
+$wslCheckScript = "export PATH=`$PATH:~/.local/bin:~/bin; for cmd in $($toolsToCheck -join ' '); do if command -v `$cmd >/dev/null 2>&1; then echo `$cmd; fi; done"
+
+# 尝试使用交互式模式以获取最真实的 PATH
+$wslOutput = wsl.exe -e bash -ic $wslCheckScript 2>$null
+
+# 如果 -ic 失败（某些发行版报错），回退到 -lc
+if ($null -eq $wslOutput) {
+    $wslOutput = wsl.exe -e bash -lc $wslCheckScript 2>$null
+}
+
 if ($wslOutput) {
     foreach ($t in $wslOutput) {
         if (-not [string]::IsNullOrWhiteSpace($t)) {
