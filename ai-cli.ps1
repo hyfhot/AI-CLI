@@ -194,19 +194,39 @@ function Start-DevSession {
         [string]$env,
         [string]$projectName,
         [string]$projectPath,
+        [hashtable]$envVars = @{},
         [string]$terminalEmulator = "default",
         [bool]$useTab = $false
     )
     
     $title = "$($tool.ToUpper()) - $projectName"
     
+    # 构建环境变量设置命令
+    $envSetup = ""
+    if ($envVars.Count -gt 0) {
+        if ($env -eq "wsl") {
+            # WSL 环境：检测并转换 Windows 路径
+            $envSetup = ($envVars.GetEnumerator() | ForEach-Object { 
+                $value = $_.Value
+                # 检测是否为 Windows 绝对路径 (C:\... 或 D:\...)
+                if ($value -match '^[a-zA-Z]:\\') {
+                    $value = ConvertTo-WslPath -WinPath $value
+                }
+                "export $($_.Key)='$value'"
+            }) -join '; '
+            $envSetup += "; "
+        } else {
+            $envSetup = ($envVars.GetEnumerator() | ForEach-Object { "set $($_.Key)=$($_.Value) & " }) -join ''
+        }
+    }
+    
     if ($terminalEmulator -eq "wezterm" -and (Get-Command "wezterm" -ErrorAction SilentlyContinue)) {
         # WezTerm 启动
         if ($env -eq "wsl") {
             $wslPath = ConvertTo-WslPath $projectPath
-            $cmd = "wezterm start --cwd `"$wslPath`" -- wsl.exe -e bash -ic `"cd '$wslPath' && $tool`""
+            $cmd = "wezterm start --cwd `"$wslPath`" -- wsl.exe -e bash -ic `"cd '$wslPath' && $envSetup$tool`""
         } else {
-            $cmd = "wezterm start --cwd `"$projectPath`" -- cmd.exe /k `"title $title & cd /d `"$projectPath`" & $tool`""
+            $cmd = "wezterm start --cwd `"$projectPath`" -- cmd.exe /k `"title $title & cd /d `"$projectPath`" & $envSetup$tool`""
         }
         Invoke-Expression $cmd
     } else {
@@ -214,18 +234,18 @@ function Start-DevSession {
         if ($env -eq "wsl") {
             $wslPath = ConvertTo-WslPath $projectPath
             $wslExe = "C:\Windows\System32\wsl.exe"
-            $wslArgs = "-e bash -ic `"cd '$wslPath'; $tool; exec bash`""
+            $wslArgs = "-e bash -ic `"cd '$wslPath'; $envSetup$tool; exec bash`""
             
             if ($useTab -and (Get-Command "wt" -ErrorAction SilentlyContinue)) {
-                Start-Process "wt" -ArgumentList "-w", "0", "new-tab", "--title", $title, "wsl", "-e", "bash", "-ic", "cd '$wslPath'; $tool; exec bash"
+                Start-Process "wt" -ArgumentList "-w", "0", "new-tab", "--title", $title, "wsl", "-e", "bash", "-ic", "cd '$wslPath'; $envSetup$tool; exec bash"
             } else {
                 Start-Process -FilePath $wslExe -ArgumentList $wslArgs
             }
         } else {
-            $cmdArgs = "/k `"title $title & cd /d `"$projectPath`" & $tool`""
+            $cmdArgs = "/k `"title $title & cd /d `"$projectPath`" & $envSetup$tool`""
             
             if ($useTab -and (Get-Command "wt" -ErrorAction SilentlyContinue)) {
-                Start-Process "wt" -ArgumentList "-w", "0", "new-tab", "--title", $title, "cmd", "/k", "cd /d `"$projectPath`" & $tool"
+                Start-Process "wt" -ArgumentList "-w", "0", "new-tab", "--title", $title, "cmd", "/k", "cd /d `"$projectPath`" & $envSetup$tool"
             } else {
                 Start-Process -FilePath "cmd.exe" -ArgumentList $cmdArgs
             }
@@ -236,8 +256,153 @@ function Start-DevSession {
 # ==========================================
 # 交互式 UI
 # ==========================================
+function Read-InputWithPlaceholder {
+    param(
+        [string]$Prompt,
+        [string]$Placeholder,
+        [bool]$Required = $false
+    )
+    
+    [Console]::CursorVisible = $true
+    Write-Host "  $Prompt" -ForegroundColor Cyan -NoNewline
+    if (-not [string]::IsNullOrWhiteSpace($Placeholder)) {
+        Write-Host " [$Placeholder]" -ForegroundColor DarkGray -NoNewline
+    }
+    Write-Host ": " -NoNewline
+    
+    $input = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($input)) {
+        if ($Required -and [string]::IsNullOrWhiteSpace($Placeholder)) {
+            return $null
+        }
+        return $Placeholder
+    }
+    
+    return $input.Trim()
+}
+
+function Add-NewProject {
+    param($config)
+    
+    Clear-Host
+    Write-Host "`n  Add New Project" -ForegroundColor Cyan
+    Write-Host ("  " + "=" * 60) -ForegroundColor DarkGray
+    Write-Host ""
+    
+    # 输入项目名称
+    $projectName = $null
+    while ($null -eq $projectName) {
+        $projectName = Read-InputWithPlaceholder -Prompt "Project Name" -Placeholder "" -Required $true
+        
+        if ([string]::IsNullOrWhiteSpace($projectName)) {
+            Write-Host "  Project name is required!" -ForegroundColor Red
+            continue
+        }
+        
+        # 检查重复
+        $exists = $config.projects | Where-Object { $_.name -eq $projectName }
+        if ($exists) {
+            Write-Host "  Project name '$projectName' already exists!" -ForegroundColor Red
+            $projectName = $null
+        }
+    }
+    
+    # 输入项目路径
+    $currentPath = (Get-Location).Path
+    $projectPath = $null
+    while ($null -eq $projectPath) {
+        $projectPath = Read-InputWithPlaceholder -Prompt "Project Path" -Placeholder "" -Required $false
+        
+        # 如果为空，使用当前路径
+        if ([string]::IsNullOrWhiteSpace($projectPath)) {
+            $projectPath = $currentPath
+        }
+        
+        # 检查路径是否存在
+        if (-not (Test-Path $projectPath)) {
+            Write-Host "  Path does not exist: $projectPath" -ForegroundColor Yellow
+            Write-Host "  Create it? (Y/N): " -NoNewline -ForegroundColor Cyan
+            $confirm = Read-Host
+            if ($confirm -eq "Y" -or $confirm -eq "y") {
+                try {
+                    New-Item -ItemType Directory -Path $projectPath -Force | Out-Null
+                    Write-Host "  Directory created successfully." -ForegroundColor Green
+                } catch {
+                    Write-Host "  Failed to create directory: $_" -ForegroundColor Red
+                    $projectPath = $null
+                }
+            } else {
+                $projectPath = $null
+            }
+        }
+    }
+    
+    # 输入环境变量参数（可选）
+    Write-Host ""
+    Write-Host "  Environment Variables (optional, press Enter to skip)" -ForegroundColor Cyan
+    Write-Host "  Format: KEY=VALUE, one per line, empty line to finish" -ForegroundColor DarkGray
+    Write-Host ""
+    
+    $envVars = @{}
+    while ($true) {
+        Write-Host "  Env Var: " -NoNewline -ForegroundColor Cyan
+        $envInput = Read-Host
+        
+        if ([string]::IsNullOrWhiteSpace($envInput)) {
+            break
+        }
+        
+        if ($envInput -match '^([^=]+)=(.*)$') {
+            $key = $Matches[1].Trim()
+            $value = $Matches[2].Trim()
+            $envVars[$key] = $value
+            Write-Host "    Added: $key=$value" -ForegroundColor Green
+        } else {
+            Write-Host "    Invalid format. Use KEY=VALUE" -ForegroundColor Red
+        }
+    }
+    
+    # 创建项目对象
+    $newProject = @{
+        name = $projectName
+        path = $projectPath
+    }
+    
+    if ($envVars.Count -gt 0) {
+        $newProject.env = $envVars
+    }
+    
+    # 确认添加
+    Write-Host ""
+    Write-Host "  Project Summary:" -ForegroundColor Cyan
+    Write-Host "    Name: $projectName" -ForegroundColor White
+    Write-Host "    Path: $projectPath" -ForegroundColor White
+    if ($envVars.Count -gt 0) {
+        Write-Host "    Env Vars: $($envVars.Count) variable(s)" -ForegroundColor White
+        foreach ($key in $envVars.Keys) {
+            Write-Host "      $key=$($envVars[$key])" -ForegroundColor DarkGray
+        }
+    }
+    Write-Host ""
+    Write-Host "  Add this project? (Y/N): " -NoNewline -ForegroundColor Cyan
+    $confirm = Read-Host
+    
+    if ($confirm -eq "Y" -or $confirm -eq "y") {
+        $config.projects += $newProject
+        Save-Config -config $config
+        Write-Host "  Project added successfully!" -ForegroundColor Green
+        Start-Sleep -Seconds 1
+        return $true
+    } else {
+        Write-Host "  Cancelled." -ForegroundColor Yellow
+        Start-Sleep -Seconds 1
+        return $false
+    }
+}
+
 function Show-Menu {
-    param($items, $title, [int]$selected = 0, [bool]$showTabHint = $false)
+    param($items, $title, [int]$selected = 0, [bool]$showTabHint = $false, [bool]$showAddProject = $false)
     
     $maxDisplay = [Math]::Min($items.Count, 15)
     $offset = [Math]::Max(0, $selected - $maxDisplay + 1)
@@ -268,25 +433,27 @@ function Show-Menu {
     Write-Host ""
     if ($showTabHint) {
         Write-Host "  [↑↓] Navigate  [Enter] New Window  [Ctrl+Enter] New Tab  [I] Install  [Esc] Back  [Q] Quit" -ForegroundColor DarkGray
+    } elseif ($showAddProject) {
+        Write-Host "  [↑↓] Navigate  [Enter] Select  [N] New Project  [Q] Quit" -ForegroundColor DarkGray
     } else {
-        Write-Host "  [↑↓] Navigate  [Enter] Select  [I] Install  [Esc] Back  [Q] Quit" -ForegroundColor DarkGray
+        Write-Host "  [↑↓] Navigate  [Enter] Select  [Esc] Back  [Q] Quit" -ForegroundColor DarkGray
     }
 }
 
 function Get-UserSelection {
-    param($items, $title, [bool]$showTabHint = $false, [bool]$allowBack = $false)
+    param($items, $title, [bool]$showTabHint = $false, [bool]$allowBack = $false, [bool]$allowAddProject = $false)
     
     $selected = 0
     
     while ($true) {
-        Show-Menu -items $items -title $title -selected $selected -showTabHint $showTabHint
+        Show-Menu -items $items -title $title -selected $selected -showTabHint $showTabHint -showAddProject $allowAddProject
         
         $key = [Console]::ReadKey($true)
         
         # 检测 Ctrl+Enter
         if ($key.Modifiers -eq [ConsoleModifiers]::Control -and $key.Key -eq "Enter") {
             [Console]::CursorVisible = $true
-            return @{Index = $selected; UseTab = $true; Back = $false; Install = $false}
+            return @{Index = $selected; UseTab = $true; Back = $false; Install = $false; AddProject = $false}
         }
         
         switch ($key.Key) {
@@ -294,16 +461,24 @@ function Get-UserSelection {
             "DownArrow" { $selected = [Math]::Min($items.Count - 1, $selected + 1) }
             "Enter" { 
                 [Console]::CursorVisible = $true
-                return @{Index = $selected; UseTab = $false; Back = $false; Install = $false}
+                return @{Index = $selected; UseTab = $false; Back = $false; Install = $false; AddProject = $false}
             }
             "I" {
-                [Console]::CursorVisible = $true
-                return @{Index = -1; UseTab = $false; Back = $false; Install = $true}
+                if (-not $allowAddProject) {
+                    [Console]::CursorVisible = $true
+                    return @{Index = -1; UseTab = $false; Back = $false; Install = $true; AddProject = $false}
+                }
+            }
+            "N" {
+                if ($allowAddProject) {
+                    [Console]::CursorVisible = $true
+                    return @{Index = -1; UseTab = $false; Back = $false; Install = $false; AddProject = $true}
+                }
             }
             "Escape" {
                 if ($allowBack) {
                     [Console]::CursorVisible = $true
-                    return @{Index = -1; UseTab = $false; Back = $true; Install = $false}
+                    return @{Index = -1; UseTab = $false; Back = $true; Install = $false; AddProject = $false}
                 }
             }
             "Q" { 
@@ -338,7 +513,17 @@ function Start-InteractiveLauncher {
     while ($true) {
         # 1. 选择项目（如果未选择或需要重新选择）
         if ($null -eq $currentProject) {
-            $result = Get-UserSelection -items $config.projects -title "Select Project"
+            $result = Get-UserSelection -items $config.projects -title "Select Project" -allowAddProject $true
+            
+            # 处理新增项目
+            if ($result.AddProject) {
+                $added = Add-NewProject -config $config
+                if ($added) {
+                    $config = Load-Config  # 重新加载配置
+                }
+                continue
+            }
+            
             $projectIdx = if ($result -is [hashtable]) { $result.Index } else { $result }
             $currentProject = $config.projects[$projectIdx]
         }
@@ -395,11 +580,16 @@ function Start-InteractiveLauncher {
         [string]$toolEnv = $selectedTool.Env
         [string]$projName = $currentProject.name
         [string]$projPath = $currentProject.path
+        [hashtable]$projEnv = if ($currentProject.PSObject.Properties.Name -contains "env") { 
+            $ht = @{}
+            $currentProject.env.PSObject.Properties | ForEach-Object { $ht[$_.Name] = $_.Value }
+            $ht
+        } else { @{} }
         
         $launchMode = if ($useTab) { "new tab" } else { "new window" }
         Write-Host "`nLaunching $toolName [$($toolEnv.ToUpper())] for $projName ($launchMode)..." -ForegroundColor Green
         
-        Start-DevSession -tool $toolName -env $toolEnv -projectName $projName -projectPath $projPath -terminalEmulator $config.settings.terminalEmulator -useTab $useTab
+        Start-DevSession -tool $toolName -env $toolEnv -projectName $projName -projectPath $projPath -envVars $projEnv -terminalEmulator $config.settings.terminalEmulator -useTab $useTab
         
         # 5. 显示提示并自动消失
         Write-Host "Session launched. Returning to tool selection..." -ForegroundColor DarkGray

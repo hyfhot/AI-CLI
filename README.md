@@ -104,7 +104,7 @@ cd AI-CLI
   项目2 (C:\Projects\Project2)
   项目3 (C:\Projects\Project3)
 
-[↑↓] 选择  [Enter] 确认  [Q] 退出
+[↑↓] 选择  [Enter] 确认  [N] 新增项目  [Q] 退出
 ```
 
 #### 工具选择界面
@@ -118,11 +118,36 @@ cd AI-CLI
 [↑↓] 选择  [Enter] 启动  [Ctrl+Enter] 新页签  [I] 安装  [Esc] 返回  [Q] 退出
 ```
 
+#### 新增项目界面
+```
+=== 新增项目 ===
+
+项目名称: MyProject
+项目路径: C:\Projects\MyProject
+环境变量 (可选，按 Enter 跳过):
+  格式: KEY=VALUE，每行一个，空行结束
+  Env Var: API_KEY=sk-xxx
+    已添加: API_KEY=sk-xxx
+  Env Var: DEBUG=true
+    已添加: DEBUG=true
+  Env Var: 
+
+项目摘要:
+  名称: MyProject
+  路径: C:\Projects\MyProject
+  环境变量: 2 个
+    API_KEY=sk-xxx
+    DEBUG=true
+
+添加此项目? (Y/N):
+```
+
 ### 4.2 快捷键
 
 #### 项目选择界面
 - `↑↓` - 导航选择
 - `Enter` - 选择项目
+- `N` - 新增项目
 - `Q` - 退出程序
 
 #### 工具选择界面
@@ -133,10 +158,18 @@ cd AI-CLI
 - `Esc` - 返回项目选择
 - `Q` - 退出程序
 
+#### 新增项目界面
+- 输入项目名称（必填，不能重复）
+- 输入项目路径（必填，自动检测路径是否存在）
+- 输入环境变量（可选，格式：KEY=VALUE）
+- 确认添加或取消
+
 ### 4.3 运行效果
 
 * 脚本会自动拉起对应的终端（Cmd 或 WSL）。
 * 终端会自动 `cd` 进入所选项目的对应路径。
+* 项目配置的环境变量会自动注入到运行环境中。
+  * **智能路径转换**：WSL 环境下，Windows 路径格式的环境变量值（如 `C:\Projects\...`）会自动转换为 WSL 路径格式（`/mnt/c/Projects/...`）。
 * 终端顶部页签名称会自动变更为 `[工具名] [项目名]`，方便多开辨识。
 
 ---
@@ -196,7 +229,11 @@ cd AI-CLI
     {
       "name": "项目名称",
       "path": "项目路径",
-      "description": "项目描述（可选）"
+      "description": "项目描述（可选）",
+      "env": {
+        "API_KEY": "your-api-key",
+        "DEBUG": "true"
+      }
     }
   ],
   "tools": [

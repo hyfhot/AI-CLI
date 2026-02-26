@@ -1,85 +1,104 @@
-{
-  "projects": [
-    {
-      "name": "BT2400",
-      "path": "c:\\Work\\RS\\source\\Qualcomm\\BT2400\\",
-      "description": "Bluetooth 2400 Project"
-    },
-    {
-      "name": "Headset-984",
-      "path": "c:\\Projects\\Qualcomm\\Headset\\Headset-984\\",
-      "description": "Headset Project"
-    }
-  ],
-  "tools": [
-    {
-      "name": "kiro-cli",
-      "displayName": "Kiro CLI",
-      "winInstall": null,
-      "wslInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
-      "checkCommand": "kiro-cli --version",
-      "url": "https://kiro.dev/cli/"
-    },
-    {
-      "name": "claude",
-      "displayName": "Claude Code",
-      "winInstall": "npm install -g @anthropic-ai/claude-code",
-      "wslInstall": "npm install -g @anthropic-ai/claude-code",
-      "checkCommand": "claude --version",
-      "url": "https://www.npmjs.com/package/@anthropic-ai/claude-code"
-    },
-    {
-      "name": "codex",
-      "displayName": "OpenAI Codex",
-      "winInstall": "npm install -g @openai/codex",
-      "wslInstall": "npm install -g @openai/codex",
-      "checkCommand": "codex --version",
-      "url": "https://www.npmjs.com/package/@openai/codex"
-    },
-    {
-      "name": "kimi",
-      "displayName": "Kimi CLI",
-      "winInstall": "pip install kimi-cli",
-      "wslInstall": "uv tool install --python 3.13 kimi-cli",
-      "checkCommand": "kimi --version",
-      "url": "https://pypi.org/project/kimi-cli/"
-    },
-    {
-      "name": "gemini",
-      "displayName": "Gemini CLI",
-      "winInstall": "npm install -g @google/gemini-cli",
-      "wslInstall": "npm install -g @google/gemini-cli",
-      "checkCommand": "gemini --version",
-      "url": "https://www.npmjs.com/package/@google/gemini-cli"
-    },
-    {
-      "name": "cursor-agent",
-      "displayName": "Cursor Agent",
-      "winInstall": null,
-      "wslInstall": "curl https://cursor.com/install -fsS | bash",
-      "checkCommand": "cursor-agent --version",
-      "url": "https://docs.cursor.com/en/cli/installation"
-    },
-    {
-      "name": "opencode",
-      "displayName": "OpenCode",
-      "winInstall": "curl -fsSL https://opencode.ai/install.ps1 | powershell",
-      "wslInstall": "curl -fsSL https://opencode.ai/install.sh | bash",
-      "checkCommand": "opencode --version",
-      "url": "https://opencode.ai/docs"
-    },
-    {
-      "name": "aider",
-      "displayName": "Aider",
-      "winInstall": "pip install aider-install && aider-install",
-      "wslInstall": "pip install aider-install && aider-install",
-      "checkCommand": "aider --version",
-      "url": "https://aider.chat/docs/install"
-    }
-  ],
-  "settings": {
-    "language": "auto",
-    "defaultEnv": "wsl",
-    "terminalEmulator": "default"
-  }
+﻿{
+    "projects":  [
+                     {
+                         "name":  "BT2400",
+                         "path":  "c:\\Work\\RS\\source\\Qualcomm\\BT2400\\",
+                         "description":  "Bluetooth 2400 Project"
+                     },
+                     {
+                         "name":  "Headset-984",
+                         "path":  "c:\\Projects\\Qualcomm\\Headset\\Headset-984\\",
+                         "description":  "Headset Project"
+                     },
+                     {
+                         "name":  "Ai cli",
+                         "path":  "c:\\Projects\\AIStudio\\AI-CLI\\",
+                         "description":  "AI CLI Project"
+                     },
+                     {
+                         "path":  "C:\\Projects\\AIStudio\\AI-CLI",
+                         "name":  "unnamed",
+                         "env":  {
+                                     "Name":  "Value"
+                                 }
+                     },
+                     {
+                         "path":  "C:\\Projects\\AIStudio\\AI-CLI",
+                         "name":  "test1",
+                         "env":  {
+                                     "KEY":  "VALUE"
+                                 }
+                     }
+                 ],
+    "tools":  [
+                  {
+                      "name":  "kiro-cli",
+                      "displayName":  "Kiro CLI",
+                      "winInstall":  null,
+                      "wslInstall":  "curl -fsSL https://cli.kiro.dev/install | bash",
+                      "checkCommand":  "kiro-cli --version",
+                      "url":  "https://kiro.dev/cli/"
+                  },
+                  {
+                      "name":  "claude",
+                      "displayName":  "Claude Code",
+                      "winInstall":  "npm install -g @anthropic-ai/claude-code",
+                      "wslInstall":  "npm install -g @anthropic-ai/claude-code",
+                      "checkCommand":  "claude --version",
+                      "url":  "https://www.npmjs.com/package/@anthropic-ai/claude-code"
+                  },
+                  {
+                      "name":  "codex",
+                      "displayName":  "OpenAI Codex",
+                      "winInstall":  "npm install -g @openai/codex",
+                      "wslInstall":  "npm install -g @openai/codex",
+                      "checkCommand":  "codex --version",
+                      "url":  "https://www.npmjs.com/package/@openai/codex"
+                  },
+                  {
+                      "name":  "kimi",
+                      "displayName":  "Kimi CLI",
+                      "winInstall":  "pip install kimi-cli",
+                      "wslInstall":  "uv tool install --python 3.13 kimi-cli",
+                      "checkCommand":  "kimi --version",
+                      "url":  "https://pypi.org/project/kimi-cli/"
+                  },
+                  {
+                      "name":  "gemini",
+                      "displayName":  "Gemini CLI",
+                      "winInstall":  "npm install -g @google/gemini-cli",
+                      "wslInstall":  "npm install -g @google/gemini-cli",
+                      "checkCommand":  "gemini --version",
+                      "url":  "https://www.npmjs.com/package/@google/gemini-cli"
+                  },
+                  {
+                      "name":  "cursor-agent",
+                      "displayName":  "Cursor Agent",
+                      "winInstall":  null,
+                      "wslInstall":  "curl https://cursor.com/install -fsS | bash",
+                      "checkCommand":  "cursor-agent --version",
+                      "url":  "https://docs.cursor.com/en/cli/installation"
+                  },
+                  {
+                      "name":  "opencode",
+                      "displayName":  "OpenCode",
+                      "winInstall":  "curl -fsSL https://opencode.ai/install.ps1 | powershell",
+                      "wslInstall":  "curl -fsSL https://opencode.ai/install.sh | bash",
+                      "checkCommand":  "opencode --version",
+                      "url":  "https://opencode.ai/docs"
+                  },
+                  {
+                      "name":  "aider",
+                      "displayName":  "Aider",
+                      "winInstall":  "pip install aider-install \u0026\u0026 aider-install",
+                      "wslInstall":  "pip install aider-install \u0026\u0026 aider-install",
+                      "checkCommand":  "aider --version",
+                      "url":  "https://aider.chat/docs/install"
+                  }
+              ],
+    "settings":  {
+                     "language":  "auto",
+                     "defaultEnv":  "wsl",
+                     "terminalEmulator":  "default"
+                 }
 }
