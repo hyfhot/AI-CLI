@@ -1,12 +1,64 @@
 #!/usr/bin/env pwsh
 # AI-CLI - Terminal Interactive Launcher
-# Version: 2.0
+# Version: 2.2
 
 param(
     [switch]$Init,
     [switch]$Config,
-    [switch]$Uninstall
+    [switch]$Uninstall,
+    [switch]$Help
 )
+
+# 参数兼容处理：支持 -- 前缀（转换为 PowerShell 的 - 前缀）
+$rawArgs = $args
+foreach ($arg in $rawArgs) {
+    if ($arg -match '^--(.+)$') {
+        $paramName = $matches[1]
+        switch ($paramName.ToLower()) {
+            'init' { $Init = $true }
+            'config' { $Config = $true }
+            'uninstall' { $Uninstall = $true }
+            'help' { $Help = $true }
+        }
+    }
+}
+
+# 显示帮助信息
+if ($Help) {
+    Write-Host "`nAI-CLI - Terminal Interactive Launcher v2.2" -ForegroundColor Cyan
+    Write-Host ("=" * 60) -ForegroundColor DarkGray
+    Write-Host "`nUsage:" -ForegroundColor Yellow
+    Write-Host "  ai-cli [options]`n"
+    
+    Write-Host "Options:" -ForegroundColor Yellow
+    Write-Host "  -Init, --init         Initialize configuration file" -ForegroundColor Green
+    Write-Host "                        Creates config in %APPDATA%\AI-CLI\config.json"
+    Write-Host ""
+    Write-Host "  -Config, --config     Edit configuration file" -ForegroundColor Green
+    Write-Host "                        Opens config in VS Code or Notepad"
+    Write-Host ""
+    Write-Host "  -Uninstall, --uninstall" -ForegroundColor Green
+    Write-Host "                        Uninstall AI-CLI"
+    Write-Host "                        Removes program files, shortcuts, and PATH entry"
+    Write-Host ""
+    Write-Host "  -Help, --help         Show this help message" -ForegroundColor Green
+    Write-Host ""
+    
+    Write-Host "Examples:" -ForegroundColor Yellow
+    Write-Host "  ai-cli                Start interactive launcher"
+    Write-Host "  ai-cli -Init          Initialize configuration"
+    Write-Host "  ai-cli --config       Edit configuration"
+    Write-Host "  ai-cli --uninstall    Uninstall program"
+    Write-Host ""
+    
+    Write-Host "Configuration:" -ForegroundColor Yellow
+    Write-Host "  User Config:    %APPDATA%\AI-CLI\config.json"
+    Write-Host "  Default Config: %LOCALAPPDATA%\AI-CLI\config.json"
+    Write-Host ""
+    
+    exit 0
+}
+
 
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path

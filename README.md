@@ -47,6 +47,14 @@ irm https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.ps1 | iex
 - 双击桌面上的 "AI-CLI" 快捷方式
 - 在命令行中运行 `ai-cli`（需重新打开终端）
 
+**常用命令：**
+```powershell
+ai-cli           # 启动交互式界面
+ai-cli --help    # 查看帮助信息
+ai-cli --init    # 初始化配置
+ai-cli --config  # 编辑配置
+```
+
 **卸载命令：**
 ```powershell
 ai-cli -Uninstall
@@ -56,6 +64,8 @@ ai-cli -Uninstall
 ```powershell
 & "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall
 ```
+
+**参数说明**：支持 `-` 和 `--` 两种前缀，例如 `-Init` 和 `--init` 等效（不区分大小写）。
 
 ### 3.3 手动部署步骤
 
@@ -89,6 +99,11 @@ cd AI-CLI
 **第三步：运行程序**
 ```powershell
 .\ai-cli.ps1
+```
+
+**查看帮助**
+```powershell
+.\ai-cli.ps1 --help
 ```
 
 ---
