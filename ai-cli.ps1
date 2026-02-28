@@ -1357,15 +1357,22 @@ function Show-Menu {
         $prefix = if ($i -eq $selected) { "  >" } else { "   " }
         $color = if ($i -eq $selected) { "Green" } else { "White" }
         
-        # 判断是否为文件夹或项目
-        $isFolder = ($item.PSObject.Properties.Name -contains "type" -and $item.type -eq "folder")
-        $icon = if ($isFolder) { "📁" } else { "📄" }
+        # 判断是否为项目/文件夹（有 type 或 Path 属性）或工具（有 Tool 属性）
+        $isProjectOrFolder = ($item.PSObject.Properties.Name -contains "type") -or ($item.PSObject.Properties.Name -contains "Path")
         
-        Write-Host "$prefix $icon $($item.Name)" -ForegroundColor $color -NoNewline
+        if ($isProjectOrFolder) {
+            # 项目和文件夹显示图标
+            $isFolder = ($item.PSObject.Properties.Name -contains "type" -and $item.type -eq "folder")
+            $icon = if ($isFolder) { "📁" } else { "📄" }
+            Write-Host "$prefix $icon $($item.Name)" -ForegroundColor $color -NoNewline
+        } else {
+            # 工具不显示图标
+            Write-Host "$prefix $($item.Name)" -ForegroundColor $color -NoNewline
+        }
         
         if ($item.PSObject.Properties.Name -contains "Path") {
             Write-Host " ($($item.Path))" -ForegroundColor DarkGray
-        } elseif ($isFolder -and $item.children) {
+        } elseif ($item.PSObject.Properties.Name -contains "type" -and $item.type -eq "folder" -and $item.children) {
             $count = $item.children.Count
             Write-Host " ($count item(s))" -ForegroundColor DarkGray
         } else {
