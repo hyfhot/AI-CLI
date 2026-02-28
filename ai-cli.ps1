@@ -164,16 +164,59 @@ function Normalize-ConfigArrays {
 
 function Save-Config {
     param($config)
-    
+
+    # 防御性检查
+    if (-not $config) {
+        Write-Host "Warning: Cannot save null config" -ForegroundColor Yellow
+        return
+    }
+
     # 规范化数组结构
     $normalized = @{
-        projects = @($(Normalize-ConfigArrays -obj $config.projects))
-        tools = $config.tools
-        settings = $config.settings
+        projects = if ($config.projects) { @($(Normalize-ConfigArrays -obj $config.projects)) } else { @() }
+        tools = if ($config.tools) { $config.tools } else { @() }
+        settings = if ($config.settings) { $config.settings } else { @{} }
     }
-    
-    # 始终保存到用户配置目录
-    $normalized | ConvertTo-Json -Depth 10 | Set-Content $userConfigPath -Encoding UTF8
+
+    # 确保配置目录存在
+    if (-not (Test-Path $configDir)) {
+        New-Item -ItemType Directory -Path $configDir -Force | Out-Null
+    }
+
+    # 使用原子写入避免数据丢失：先写入临时文件，再移动替换
+    $tempPath = "$userConfigPath.tmp"
+    $backupPath = "$userConfigPath.bak"
+
+    try {
+        # 写入临时文件
+        $normalized | ConvertTo-Json -Depth 10 | Set-Content $tempPath -Encoding UTF8
+
+        # 备份现有配置（如果存在）
+        if (Test-Path $userConfigPath) {
+            Copy-Item $userConfigPath $backupPath -Force -ErrorAction SilentlyContinue
+        }
+
+        # 原子替换：移动临时文件到目标位置
+        Move-Item -Path $tempPath -Destination $userConfigPath -Force
+
+        # 成功后删除备份
+        if (Test-Path $backupPath) {
+            Remove-Item $backupPath -Force -ErrorAction SilentlyContinue
+        }
+    } catch {
+        # 写入失败，尝试从备份恢复
+        Write-Host "Warning: Failed to save config: $_" -ForegroundColor Yellow
+        if (Test-Path $backupPath) {
+            try {
+                Move-Item -Path $backupPath -Destination $userConfigPath -Force -ErrorAction SilentlyContinue
+                Write-Host "Config restored from backup" -ForegroundColor Yellow
+            } catch {}
+        }
+        # 清理临时文件
+        if (Test-Path $tempPath) {
+            Remove-Item $tempPath -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 function Initialize-Config {
@@ -193,8 +236,8 @@ function Initialize-Config {
     $defaultConfig = @{
         projects = @()
         tools = @(
-            @{name="kiro-cli"; displayName="Kiro CLI"; wslInstall="npm install -g kiro-cli"; checkCommand="kiro-cli --version"}
-            @{name="claude"; displayName="Claude Code"; winInstall="npm install -g @anthropic-ai/claude-code"; wslInstall="npm install -g @anthropic-ai/claude-code"; checkCommand="claude --version"}
+            @{name="kiro-cli"; displayName="Kiro CLI"; wslInstall="npm install -g kiro-cli"; checkCommand="kiro-cli --version"; winAvailable=$false; wslAvailable=$false}
+            @{name="claude"; displayName="Claude Code"; winInstall="npm install -g @anthropic-ai/claude-code"; wslInstall="npm install -g @anthropic-ai/claude-code"; checkCommand="claude --version"; winAvailable=$false; wslAvailable=$false}
         )
         settings = @{language="auto"; defaultEnv="wsl"; terminalEmulator="default"}
     }
@@ -217,74 +260,144 @@ function ConvertTo-WslPath {
 }
 
 # ==========================================
-# 工具检测（优化：批量检测 + 缓存）
+# 工具检测（智能检测 + 配置持久化）
 # ==========================================
-$script:toolCache = $null
-$script:cacheTime = $null
-$script:cacheTimeout = 300  # 5分钟缓存
-
 function Get-AvailableTools {
     param($config, [switch]$Force)
-    
-    # 检查缓存
-    if (-not $Force -and $script:toolCache -and $script:cacheTime) {
-        $elapsed = (Get-Date) - $script:cacheTime
-        if ($elapsed.TotalSeconds -lt $script:cacheTimeout) {
-            return $script:toolCache
+
+    if (-not $config -or -not $config.tools) {
+        return @()
+    }
+
+    # 检查是否需要重新检测
+    $needsDetection = $Force
+    if (-not $needsDetection) {
+        $hasAnyAvailable = $false
+        foreach ($tool in $config.tools) {
+            if (($tool.PSObject.Properties.Name -contains "winAvailable" -and $tool.winAvailable) -or
+                ($tool.PSObject.Properties.Name -contains "wslAvailable" -and $tool.wslAvailable)) {
+                $hasAnyAvailable = $true
+                break
+            }
+        }
+        $needsDetection = -not $hasAnyAvailable
+    }
+
+    # 如果需要检测，执行检测并更新配置
+    if ($needsDetection) {
+        $detectedTools = Invoke-ToolDetection -config $config
+        Update-ToolCacheInConfig -config $config -tools $detectedTools
+    }
+
+    # 从配置构建工具列表
+    $tools = @()
+    foreach ($tool in $config.tools) {
+        $tools += [PSCustomObject]@{
+            Name = $tool.name
+            DisplayName = if ($tool.PSObject.Properties.Name -contains "displayName") { $tool.displayName } else { $tool.name }
+            WinAvailable = if ($tool.PSObject.Properties.Name -contains "winAvailable") { $tool.winAvailable -eq $true } else { $false }
+            WslAvailable = if ($tool.PSObject.Properties.Name -contains "wslAvailable") { $tool.wslAvailable -eq $true } else { $false }
+            WinInstall = if ($tool.PSObject.Properties.Name -contains "winInstall") { $tool.winInstall } else { $null }
+            WslInstall = if ($tool.PSObject.Properties.Name -contains "wslInstall") { $tool.wslInstall } else { $null }
         }
     }
-    
-    # 批量检测 WSL 工具
+
+    return $tools
+}
+
+function Invoke-ToolDetection {
+    param($config)
+
+    # 防御性检查
+    if (-not $config -or -not $config.tools) {
+        return @()
+    }
+
+    # 批量检测 WSL 工具 (单次 WSL 启动 + 交互式 shell)
     $wslTools = @($config.tools | Where-Object { $_.wslInstall } | ForEach-Object { $_.name })
     $wslAvailable = @{}
     if ($wslTools.Count -gt 0) {
-        $toolList = $wslTools -join ' '
-        $result = wsl.exe -e bash -ic "for tool in $toolList; do command -v `$tool 2>/dev/null && echo `$tool; done" 2>$null
-        if ($result) {
-            $result -split "`n" | Where-Object { $_ } | ForEach-Object {
-                $wslAvailable[$_] = $true
+        $toolListInline = $wslTools -join ' '
+        $checkScript = "for t in $toolListInline; do if command -v `$t >/dev/null 2>&1; then echo `$t; fi; done"
+        try {
+            $result = wsl.exe -e bash -ic $checkScript 2>$null
+            if ($result) {
+                $result -split "`n" | Where-Object { $_ -and $_.Trim() } | ForEach-Object {
+                    $wslAvailable[$_.Trim()] = $true
+                }
             }
+        } catch {
+            # WSL 不可用，忽略错误
         }
     }
-    
-    # 批量检测 Windows 工具
+
+    # 批量检测 Windows 工具（Get-Command 在 PowerShell 中更快）
     $winAvailable = @{}
-    foreach ($tool in $config.tools) {
-        if ($tool.winInstall) {
+    $winTools = @($config.tools | Where-Object { $_.winInstall })
+
+    foreach ($tool in $winTools) {
+        try {
+            # Get-Command 是 PowerShell 内置命令，比 where.exe 快约 4 倍
             $winAvailable[$tool.name] = $null -ne (Get-Command $tool.name -ErrorAction SilentlyContinue)
+        } catch {
+            $winAvailable[$tool.name] = $false
         }
     }
-    
+
     # 构建结果
     $tools = @()
     foreach ($tool in $config.tools) {
         $tools += [PSCustomObject]@{
             Name = $tool.name
-            DisplayName = $tool.displayName
+            DisplayName = if ($tool.PSObject.Properties.Name -contains "displayName") { $tool.displayName } else { $tool.name }
             WinAvailable = $winAvailable[$tool.name] -eq $true
             WslAvailable = $wslAvailable[$tool.name] -eq $true
-            WinInstall = $tool.winInstall
-            WslInstall = $tool.wslInstall
+            WinInstall = if ($tool.PSObject.Properties.Name -contains "winInstall") { $tool.winInstall } else { $null }
+            WslInstall = if ($tool.PSObject.Properties.Name -contains "wslInstall") { $tool.wslInstall } else { $null }
         }
     }
-    
-    # 更新缓存
-    $script:toolCache = $tools
-    $script:cacheTime = Get-Date
-    
+
     return $tools
 }
+
+function Update-ToolCacheInConfig {
+    param($config, $tools)
+
+    if (-not $config -or -not $config.tools) {
+        return
+    }
+
+    # 直接更新内存中的config对象属性
+    for ($i = 0; $i -lt $config.tools.Count; $i++) {
+        $tool = $config.tools[$i]
+        $detected = $tools | Where-Object { $_.Name -eq $tool.name } | Select-Object -First 1
+        
+        if ($detected) {
+            # 使用Add-Member强制更新属性值
+            $config.tools[$i] | Add-Member -NotePropertyName "winAvailable" -NotePropertyValue $detected.WinAvailable -Force
+            $config.tools[$i] | Add-Member -NotePropertyName "wslAvailable" -NotePropertyValue $detected.WslAvailable -Force
+        } else {
+            $config.tools[$i] | Add-Member -NotePropertyName "winAvailable" -NotePropertyValue $false -Force
+            $config.tools[$i] | Add-Member -NotePropertyName "wslAvailable" -NotePropertyValue $false -Force
+        }
+    }
+
+    # 持久化到磁盘
+    Save-Config -config $config
+}
+
+
 
 # ==========================================
 # 安装工具
 # ==========================================
 function Install-Tool {
     param($config)
-    
-    # 获取未安装的工具（强制刷新缓存）
-    $allTools = Get-AvailableTools -config $config -Force
+
+    # 获取未安装的工具（强制刷新检测）
+    $allTools = Invoke-ToolDetection -config $config
     $uninstalledTools = @()
-    
+
     foreach ($tool in $allTools) {
         $hasInstall = $false
         if (-not $tool.WslAvailable -and $tool.WslInstall) {
@@ -306,26 +419,26 @@ function Install-Tool {
             $hasInstall = $true
         }
     }
-    
+
     if ($uninstalledTools.Count -eq 0) {
         Clear-Host
         Write-Host "`nAll tools are already installed!" -ForegroundColor Green
         Start-Sleep -Seconds 2
         return
     }
-    
+
     # 选择要安装的工具
     $result = Get-UserSelection -items $uninstalledTools -title "Select Tool to Install" -allowBack $true
-    
+
     if ($result.Back) { return }
-    
+
     $selectedTool = $uninstalledTools[$result.Index]
-    
+
     Clear-Host
     Write-Host "`nInstalling $($selectedTool.Name)..." -ForegroundColor Cyan
     Write-Host "Command: $($selectedTool.Command)" -ForegroundColor DarkGray
     Write-Host ""
-    
+
     # 执行安装
     if ($selectedTool.Env -eq "wsl") {
         $installCmd = "wsl.exe -e bash -ic `"$($selectedTool.Command)`""
@@ -333,11 +446,12 @@ function Install-Tool {
     } else {
         Invoke-Expression $selectedTool.Command
     }
-    
-    # 清除缓存，下次重新检测
-    $script:toolCache = $null
-    $script:cacheTime = $null
-    
+
+    # 强制刷新配置文件中的工具状态
+    $config = Load-Config
+    $newTools = Invoke-ToolDetection -config $config
+    Update-ToolCacheInConfig -config $config -tools $newTools
+
     Write-Host "`nInstallation completed. Press any key to continue..." -ForegroundColor Green
     [Console]::ReadKey($true) | Out-Null
 }
@@ -893,20 +1007,20 @@ function Get-UserSelection {
 # ==========================================
 function Start-InteractiveLauncher {
     $config = Load-Config
-    
+
     if ($null -eq $config) {
         Write-Host "Config not found. Run with -Init to create default config." -ForegroundColor Red
         exit 1
     }
-    
+
     if ($config.projects.Count -eq 0) {
         Write-Host "No projects configured. Edit config.json to add projects." -ForegroundColor Yellow
         exit 1
     }
-    
+
     # 检测是否安装 Windows Terminal
     $hasWindowsTerminal = $null -ne (Get-Command "wt" -ErrorAction SilentlyContinue)
-    
+
     $currentProject = $null
     $currentPath = @()  # 当前文件夹路径
     
@@ -1009,11 +1123,11 @@ function Start-InteractiveLauncher {
             # 如果是项目，选中
             $currentProject = $selectedItem
         }
-        
+
         # 2. 获取可用工具
         $tools = Get-AvailableTools -config $config
         $availableTools = @()
-        
+
         foreach ($tool in $tools) {
             if ($tool.WslAvailable) {
                 $availableTools += [PSCustomObject]@{
@@ -1030,15 +1144,46 @@ function Start-InteractiveLauncher {
                 }
             }
         }
-        
+
+        # 如果没有可用工具，进行前台检测
         if ($availableTools.Count -eq 0) {
-            Write-Host "No tools available. Install tools first." -ForegroundColor Red
-            exit 1
+            Write-Host "`nDetecting available tools..." -ForegroundColor Yellow
+
+            # 执行强制检测
+            $tools = Get-AvailableTools -config $config -Force
+            $availableTools = @()
+
+            foreach ($tool in $tools) {
+                if ($tool.WslAvailable) {
+                    $availableTools += [PSCustomObject]@{
+                        Name = "[WSL] $($tool.DisplayName)"
+                        Tool = $tool.Name
+                        Env = "wsl"
+                    }
+                }
+                if ($tool.WinAvailable) {
+                    $availableTools += [PSCustomObject]@{
+                        Name = "[Win] $($tool.DisplayName)"
+                        Tool = $tool.Name
+                        Env = "win"
+                    }
+                }
+            }
+
+            # 清除提示行
+            Write-Host -NoNewline "`r" + (" " * 50) + "`r"
+
+            # 检测后仍无可用工具
+            if ($availableTools.Count -eq 0) {
+                Write-Host "No tools available. Install tools first." -ForegroundColor Red
+                Install-Tool -config $config
+                continue
+            }
         }
-        
+
         # 3. 选择工具
         $result = Get-UserSelection -items $availableTools -title "Select AI Tool for $($currentProject.name)" -showTabHint $hasWindowsTerminal -allowBack $true -breadcrumb @()
-        
+
         # 处理安装请求
         if ($result.Install) {
             Install-Tool -config $config
