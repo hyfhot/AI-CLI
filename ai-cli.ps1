@@ -960,7 +960,7 @@ function Remove-ProjectOrFolder {
 }
 
 function Show-Menu {
-    param($items, $title, [int]$selected = 0, [bool]$showTabHint = $false, [bool]$showAddProject = $false, [bool]$showDelete = $false, [bool]$showInstall = $false, $breadcrumb = @())
+    param($items, $title, [int]$selected = 0, [bool]$showTabHint = $false, [bool]$showAddProject = $false, [bool]$showDelete = $false, [bool]$showInstall = $false, [bool]$showRefresh = $false, $breadcrumb = @())
     
     $maxDisplay = [Math]::Min($items.Count, 15)
     $offset = [Math]::Max(0, $selected - $maxDisplay + 1)
@@ -1006,7 +1006,9 @@ function Show-Menu {
     
     Write-Host ""
     if ($showTabHint) {
-        Write-Host "  [↑↓] Navigate  [Enter] New Window  [Ctrl+Enter] New Tab  [I] Install  [Esc] Back  [Q] Quit" -ForegroundColor DarkGray
+        Write-Host "  [↑↓] Navigate  [Enter] New Window  [Ctrl+Enter] New Tab  [I] Install  [R] Refresh  [Esc] Back  [Q] Quit" -ForegroundColor DarkGray
+    } elseif ($showRefresh) {
+        Write-Host "  [↑↓] Navigate  [Enter] Launch  [I] Install  [R] Refresh  [Esc] Back  [Q] Quit" -ForegroundColor DarkGray
     } elseif ($showInstall) {
         Write-Host "  [↑↓] Navigate  [Enter] Launch  [I] Install  [Esc] Back  [Q] Quit" -ForegroundColor DarkGray
     } elseif ($showAddProject) {
@@ -1022,19 +1024,19 @@ function Show-Menu {
 }
 
 function Get-UserSelection {
-    param($items, $title, [bool]$showTabHint = $false, [bool]$allowBack = $false, [bool]$allowAddProject = $false, [bool]$allowDelete = $false, [bool]$showInstall = $false, $breadcrumb = @())
+    param($items, $title, [bool]$showTabHint = $false, [bool]$allowBack = $false, [bool]$allowAddProject = $false, [bool]$allowDelete = $false, [bool]$showInstall = $false, [bool]$showRefresh = $false, $breadcrumb = @())
     
     $selected = 0
     
     while ($true) {
-        Show-Menu -items $items -title $title -selected $selected -showTabHint $showTabHint -showAddProject $allowAddProject -showDelete $allowDelete -showInstall $showInstall -breadcrumb $breadcrumb
+        Show-Menu -items $items -title $title -selected $selected -showTabHint $showTabHint -showAddProject $allowAddProject -showDelete $allowDelete -showInstall $showInstall -showRefresh $showRefresh -breadcrumb $breadcrumb
         
         $key = [Console]::ReadKey($true)
         
         # 检测 Ctrl+Enter
         if ($key.Modifiers -eq [ConsoleModifiers]::Control -and $key.Key -eq "Enter") {
             [Console]::CursorVisible = $true
-            return @{Index = $selected; UseTab = $true; Back = $false; Install = $false; AddProject = $false; Delete = $false}
+            return @{Index = $selected; UseTab = $true; Back = $false; Install = $false; AddProject = $false; Delete = $false; Refresh = $false}
         }
         
         switch ($key.Key) {
@@ -1042,30 +1044,36 @@ function Get-UserSelection {
             "DownArrow" { $selected = [Math]::Min($items.Count - 1, $selected + 1) }
             "Enter" { 
                 [Console]::CursorVisible = $true
-                return @{Index = $selected; UseTab = $false; Back = $false; Install = $false; AddProject = $false; Delete = $false}
+                return @{Index = $selected; UseTab = $false; Back = $false; Install = $false; AddProject = $false; Delete = $false; Refresh = $false}
+            }
+            "R" {
+                if ($showRefresh) {
+                    [Console]::CursorVisible = $true
+                    return @{Index = -1; UseTab = $false; Back = $false; Install = $false; AddProject = $false; Delete = $false; Refresh = $true}
+                }
             }
             "I" {
                 if (-not $allowAddProject) {
                     [Console]::CursorVisible = $true
-                    return @{Index = -1; UseTab = $false; Back = $false; Install = $true; AddProject = $false; Delete = $false}
+                    return @{Index = -1; UseTab = $false; Back = $false; Install = $true; AddProject = $false; Delete = $false; Refresh = $false}
                 }
             }
             "N" {
                 if ($allowAddProject) {
                     [Console]::CursorVisible = $true
-                    return @{Index = -1; UseTab = $false; Back = $false; Install = $false; AddProject = $true; Delete = $false}
+                    return @{Index = -1; UseTab = $false; Back = $false; Install = $false; AddProject = $true; Delete = $false; Refresh = $false}
                 }
             }
             "D" {
                 if ($allowDelete) {
                     [Console]::CursorVisible = $true
-                    return @{Index = $selected; UseTab = $false; Back = $false; Install = $false; AddProject = $false; Delete = $true}
+                    return @{Index = $selected; UseTab = $false; Back = $false; Install = $false; AddProject = $false; Delete = $true; Refresh = $false}
                 }
             }
             "Escape" {
                 if ($allowBack -or $breadcrumb.Count -gt 0) {
                     [Console]::CursorVisible = $true
-                    return @{Index = -1; UseTab = $false; Back = $true; Install = $false; AddProject = $false; Delete = $false}
+                    return @{Index = -1; UseTab = $false; Back = $true; Install = $false; AddProject = $false; Delete = $false; Refresh = $false}
                 }
             }
             "Q" { 
@@ -1266,11 +1274,22 @@ function Start-InteractiveLauncher {
         }
 
         # 3. 选择工具
-        $result = Get-UserSelection -items $availableTools -title "Select AI Tool for $($currentProject.name)" -showTabHint $hasWindowsTerminal -showInstall $true -allowBack $true -breadcrumb @()
+        $result = Get-UserSelection -items $availableTools -title "Select AI Tool for $($currentProject.name)" -showTabHint $hasWindowsTerminal -showRefresh $true -allowBack $true -breadcrumb @()
+
+        # 处理刷新请求
+        if ($result.Refresh) {
+            Write-Host "`nRefreshing tool list..." -ForegroundColor Yellow
+            $tools = Get-AvailableTools -config $config -Force
+            $config = Load-Config
+            Write-Host "Tool list updated." -ForegroundColor Green
+            Start-Sleep -Milliseconds 500
+            continue
+        }
 
         # 处理安装请求
         if ($result.Install) {
             Install-Tool -config $config
+            $config = Load-Config
             continue
         }
         
