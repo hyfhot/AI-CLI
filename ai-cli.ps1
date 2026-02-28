@@ -188,7 +188,7 @@ function Save-Config {
     $backupPath = "$userConfigPath.bak"
 
     try {
-        # 写入临时文件
+        # 写入临时文件（标准格式已正确保留空数组为 []）
         $normalized | ConvertTo-Json -Depth 10 | Set-Content $tempPath -Encoding UTF8
 
         # 备份现有配置（如果存在）
@@ -1251,7 +1251,30 @@ function Start-InteractiveLauncher {
         if ($null -eq $currentProject) {
             $currentItems = Get-ItemsAtPath -projects $config.projects -path $currentPath
             
-            # 如果当前位置为空，显示提示但允许新增
+            # 如果根目录为空，直接进入新增项目流程
+            if ($currentItems.Count -eq 0 -and $currentPath.Count -eq 0) {
+                Clear-Host
+                Write-Host "`n  Select Project" -ForegroundColor Cyan
+                Write-Host ("  " + "=" * 60) -ForegroundColor DarkGray
+                Write-Host ""
+                Write-Host "  No projects configured yet." -ForegroundColor Yellow
+                Write-Host "  Press [N] to add your first project, or [Q] to quit." -ForegroundColor DarkGray
+                Write-Host ""
+                
+                $key = [Console]::ReadKey($true)
+                switch ($key.Key) {
+                    "N" {
+                        $added = Add-NewProject -config $config -currentPath $currentPath
+                        if ($added) {
+                            $config = Load-Config
+                        }
+                    }
+                    "Q" { exit 0 }
+                }
+                continue
+            }
+            
+            # 如果当前位置为空（子文件夹），显示提示但允许新增
             if ($currentItems.Count -eq 0) {
                 $breadcrumbTitle = if ($currentPath.Count -eq 0) { "Select Project" } else { "Select Project" }
                 
