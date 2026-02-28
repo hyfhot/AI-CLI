@@ -2,6 +2,81 @@
 
 # AI-CLI Changelog
 
+## v2.2.9 (2026-02-28)
+
+### ✨ New Features
+- **Automatic PATH Management**: Automatically adds tools to environment variables after installation
+  - Automatically searches for tool executable locations (supports 9 common installation directories)
+  - Intelligently detects if directory is already in PATH to avoid duplicates
+  - Automatically updates user environment variables and refreshes current session
+  - No need for manual configuration or terminal restart to use new tools
+  - PATH length check (2047 character limit) prevents system issues
+
+### 🔧 Technical Improvements
+- Added `Find-ToolExecutable` function: searches for tool executables
+- Added `Add-ToUserPath` function: safely adds directories to PATH
+- Added `Update-PathAfterInstall` function: automatically updates PATH after installation
+- Supports .exe, .cmd, .bat executable file formats
+- WSL environment automatically skipped (handled by package manager)
+
+---
+
+## v2.2.8 (2026-02-28)
+
+### ✨ New Features
+- **Manual Tool List Refresh**: Added `[R] Refresh` shortcut in tool selection interface
+  - Manually trigger foreground tool detection
+  - Immediately update tool list and configuration file
+  - Convenient for verifying tool installation status
+
+### 🔧 Technical Improvements
+- **Auto-refresh After Installation**: Automatically reloads configuration after tool installation
+  - Newly installed tools immediately available in list
+  - No need to manually return or restart program
+
+---
+
+## v2.2.7 (2026-02-28)
+
+### ✨ New Features
+- **Background Async Tool Detection**: Background tool detection at startup, non-blocking UI
+  - Startup delay reduced to 0ms, UI displays immediately
+  - Configuration automatically updates after background detection completes
+  - Automatically stops background task during foreground detection to avoid conflicts
+
+### 🐛 Bug Fixes
+- **Fixed Install Hint Display Issue**: `[I] Install` hint no longer depends on Windows Terminal
+  - All users can see installation hint
+  - Added `showInstall` parameter to decouple hint logic
+- **Fixed Aider Installation Command**:
+  - Windows: Fixed command separator (`&&` → `;`)
+  - WSL: Changed to official installation script (`curl | sh`)
+
+### 🔧 Technical Improvements
+- Added `Start-BackgroundDetection` function: background async detection
+- Main loop automatically checks background task status
+- Automatically cleans up background tasks on exit
+- Atomic file write mechanism (temp file + backup + move)
+
+---
+
+## v2.2.6 (2026-02-26)
+
+### 🐛 Bug Fixes
+- **Fixed WSL Tool Detection Failure**: Use `-ic` parameter to load complete environment
+  - Resolved `command not found` issue
+  - Ensures `.bashrc` environment variables load correctly
+- **Fixed Configuration Sync Issue**: Tool detection results persisted to configuration file
+  - Avoids re-detection on every startup
+  - Improves startup speed
+
+### 🔧 Technical Improvements
+- Optimized WSL detection command: `wsl.exe -e bash -ic "command -v tool"`
+- Tool status cached to `config.json`
+- Removed redundant detection logic
+
+---
+
 ## v2.2.0 (2026-02-26)
 
 ### ✨ New Features

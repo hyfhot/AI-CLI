@@ -12,13 +12,14 @@ This tool breaks down the barriers between native Windows environment and Window
 
 ## 2. Core Features
 
-* **🤖 Intelligent Dual-Environment Detection**: Automatically detects AI CLI tools installed in Windows host and WSL environments at startup, and categorizes them with `[Win]` or `[WSL]` labels.
+* **🤖 Intelligent Dual-Environment Detection**: Automatically detects AI CLI tools installed in Windows host and WSL environments at startup with background async detection, UI responds immediately and updates automatically when detection completes.
 * **📂 Unified Project Management**: Centrally manages project paths through `config.json`, supporting cross-drive and cross-environment projects.
 * **🔄 Cross-Environment Path Conversion**: Built-in path conversion engine automatically converts Windows absolute paths (e.g., `C:\Projects\...`) to WSL-compliant mount paths (e.g., `/mnt/c/Projects/...`).
 * **⚡ Pure Terminal Interaction**: Fast keyboard-driven CLI interface, no GUI loading delay, instant response.
 * **🔁 Loop Launch Mode**: The program does not exit, supports continuous selection of tools and projects, improving work efficiency.
 * **📑 Multi-Tab Support**: Ctrl+Enter launches tools in new Windows Terminal tabs, convenient for multi-task management.
-* **🛠️ Tool Installation Feature**: Press I key to quickly install uninstalled AI CLI tools.
+* **🛠️ Tool Installation Feature**: Press I key to quickly install uninstalled AI CLI tools, automatically adds to PATH environment variable after installation.
+* **🔄 Manual Refresh Feature**: Press R key to manually refresh tool list, convenient for verifying tool installation status.
 * **🏷️ Dynamic Tab Naming**: Dynamically modifies terminal tab titles at startup through ANSI escape sequences and Windows native commands (e.g., `KIRO-CLI BT2400`), greatly improving multi-task management clarity.
 
 ---
@@ -146,7 +147,7 @@ After entering a folder:
   [WSL] opencode
   [Win] aider
 
-[↑↓] Select  [Enter] Launch  [Ctrl+Enter] New Tab  [I] Install  [Esc] Back  [Q] Quit
+[↑↓] Select  [Enter] Launch  [Ctrl+Enter] New Tab  [I] Install  [R] Refresh  [Esc] Back  [Q] Quit
 ```
 
 #### New Item Interface (Type Selection)
