@@ -461,6 +461,133 @@ function Update-ToolCacheInConfig {
 
 
 # ==========================================
+# PATH 管理
+# ==========================================
+function Find-ToolExecutable {
+    param([string]$toolName, [string]$env)
+    
+    if ($env -eq "wsl") {
+        # WSL 环境：使用 which 查找
+        try {
+            $result = wsl.exe -e bash -ic "which $toolName 2>/dev/null"
+            if ($result -and $result.Trim()) {
+                return $result.Trim()
+            }
+        } catch {}
+        return $null
+    }
+    
+    # Windows 环境：搜索常见安装位置
+    $searchPaths = @(
+        "$env:LOCALAPPDATA\Programs\Python\Python*\Scripts",
+        "$env:APPDATA\Python\Python*\Scripts",
+        "$env:USERPROFILE\.local\bin",
+        "$env:USERPROFILE\AppData\Roaming\npm",
+        "$env:ProgramFiles\nodejs",
+        "$env:LOCALAPPDATA\Microsoft\WindowsApps",
+        "$env:ProgramFiles\Git\cmd",
+        "$env:USERPROFILE\.cargo\bin",
+        "$env:USERPROFILE\go\bin"
+    )
+    
+    foreach ($pathPattern in $searchPaths) {
+        $paths = Get-Item $pathPattern -ErrorAction SilentlyContinue
+        foreach ($path in $paths) {
+            $exeFile = Join-Path $path "$toolName.exe"
+            if (Test-Path $exeFile) {
+                return $exeFile
+            }
+            $cmdFile = Join-Path $path "$toolName.cmd"
+            if (Test-Path $cmdFile) {
+                return $cmdFile
+            }
+            $batFile = Join-Path $path "$toolName.bat"
+            if (Test-Path $batFile) {
+                return $batFile
+            }
+        }
+    }
+    
+    return $null
+}
+
+function Add-ToUserPath {
+    param([string]$directory)
+    
+    if (-not (Test-Path $directory)) {
+        return $false
+    }
+    
+    # 获取当前用户 PATH
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    
+    # 检查是否已存在（不区分大小写）
+    $pathArray = $userPath -split ';' | Where-Object { $_ }
+    $normalizedDir = $directory.TrimEnd('\')
+    
+    foreach ($p in $pathArray) {
+        if ($p.TrimEnd('\') -eq $normalizedDir) {
+            return $false  # 已存在
+        }
+    }
+    
+    # 检查 PATH 长度限制
+    $newPath = "$normalizedDir;$userPath"
+    if ($newPath.Length -gt 2047) {
+        Write-Host "Warning: PATH is too long ($($newPath.Length) chars). Consider cleaning up unused entries." -ForegroundColor Yellow
+        Write-Host "Skipping PATH update to avoid system issues." -ForegroundColor Yellow
+        return $false
+    }
+    
+    # 添加到用户 PATH
+    try {
+        [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+        
+        # 刷新当前会话的 PATH
+        $env:PATH = "$normalizedDir;$env:PATH"
+        
+        return $true
+    } catch {
+        Write-Host "Failed to update PATH: $_" -ForegroundColor Red
+        return $false
+    }
+}
+
+function Update-PathAfterInstall {
+    param([string]$toolName, [string]$env)
+    
+    if ($env -eq "wsl") {
+        # WSL 环境通常通过 .bashrc 管理 PATH，无需处理
+        return
+    }
+    
+    Write-Host "`nSearching for $toolName..." -ForegroundColor Yellow
+    
+    # 查找工具可执行文件
+    $toolPath = Find-ToolExecutable -toolName $toolName -env $env
+    
+    if (-not $toolPath) {
+        Write-Host "Could not locate $toolName executable." -ForegroundColor Yellow
+        Write-Host "You may need to manually add it to PATH." -ForegroundColor Yellow
+        return
+    }
+    
+    # 提取目录
+    $toolDir = Split-Path $toolPath -Parent
+    Write-Host "Found: $toolPath" -ForegroundColor Green
+    
+    # 添加到 PATH
+    $added = Add-ToUserPath -directory $toolDir
+    
+    if ($added) {
+        Write-Host "Added to PATH: $toolDir" -ForegroundColor Green
+        Write-Host "PATH updated successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "Directory already in PATH: $toolDir" -ForegroundColor Cyan
+    }
+}
+
+# ==========================================
 # 安装工具
 # ==========================================
 function Install-Tool {
@@ -518,6 +645,9 @@ function Install-Tool {
     } else {
         Invoke-Expression $selectedTool.Command
     }
+
+    # 更新 PATH（仅 Windows 环境）
+    Update-PathAfterInstall -toolName $selectedTool.Tool -env $selectedTool.Env
 
     # 强制刷新配置文件中的工具状态
     $config = Load-Config
