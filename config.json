@@ -1,34 +1,6 @@
 ﻿{
     "projects":  [
-                     {
-                         "name":  "BT2400",
-                         "path":  "c:\\Work\\RS\\source\\Qualcomm\\BT2400\\",
-                         "description":  "Bluetooth 2400 Project"
-                     },
-                     {
-                         "name":  "Headset-984",
-                         "path":  "c:\\Projects\\Qualcomm\\Headset\\Headset-984\\",
-                         "description":  "Headset Project"
-                     },
-                     {
-                         "name":  "Ai cli",
-                         "path":  "c:\\Projects\\AIStudio\\AI-CLI\\",
-                         "description":  "AI CLI Project"
-                     },
-                     {
-                         "path":  "C:\\Projects\\AIStudio\\AI-CLI",
-                         "name":  "unnamed",
-                         "env":  {
-                                     "Name":  "Value"
-                                 }
-                     },
-                     {
-                         "path":  "C:\\Projects\\AIStudio\\AI-CLI",
-                         "name":  "test1",
-                         "env":  {
-                                     "KEY":  "VALUE"
-                                 }
-                     }
+
                  ],
     "tools":  [
                   {
