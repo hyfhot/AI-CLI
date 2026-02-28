@@ -733,7 +733,8 @@ function Read-InputWithPlaceholder {
     param(
         [string]$Prompt,
         [string]$Placeholder,
-        [bool]$Required = $false
+        [bool]$Required = $false,
+        [bool]$AllowCancel = $false
     )
     
     [Console]::CursorVisible = $true
@@ -743,7 +744,40 @@ function Read-InputWithPlaceholder {
     }
     Write-Host ": " -NoNewline
     
-    $input = Read-Host
+    if ($AllowCancel) {
+        # 支持 ESC 取消的输入模式
+        $inputChars = @()
+        while ($true) {
+            $key = [Console]::ReadKey($true)
+            
+            if ($key.Key -eq "Escape") {
+                Write-Host ""
+                return "__CANCEL__"
+            }
+            
+            if ($key.Key -eq "Enter") {
+                Write-Host ""
+                break
+            }
+            
+            if ($key.Key -eq "Backspace") {
+                if ($inputChars.Count -gt 0) {
+                    $inputChars = $inputChars[0..($inputChars.Count - 2)]
+                    Write-Host "`b `b" -NoNewline
+                }
+                continue
+            }
+            
+            if (-not [char]::IsControl($key.KeyChar)) {
+                $inputChars += $key.KeyChar
+                Write-Host $key.KeyChar -NoNewline
+            }
+        }
+        
+        $input = -join $inputChars
+    } else {
+        $input = Read-Host
+    }
     
     if ([string]::IsNullOrWhiteSpace($input)) {
         if ($Required -and [string]::IsNullOrWhiteSpace($Placeholder)) {
@@ -890,6 +924,197 @@ function Get-ItemCountRecursive {
     return $count
 }
 
+# ==========================================
+# Git Worktree 管理函数
+# ==========================================
+function Get-GitWorktrees {
+    param([string]$projectPath)
+    
+    # 检查是否为 Git 仓库
+    if (-not (Test-Path "$projectPath\.git" -PathType Any)) {
+        return $null
+    }
+    
+    # 检查 git 命令是否可用
+    if ($null -eq (Get-Command "git" -ErrorAction SilentlyContinue)) {
+        return $null
+    }
+    
+    try {
+        # 获取 worktree 列表（使用简单格式）
+        $output = git -C $projectPath worktree list 2>$null
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($output)) {
+            return $null
+        }
+        
+        $worktrees = @()
+        
+        foreach ($line in $output -split "`r?`n") {
+            $line = $line.Trim()
+            if ([string]::IsNullOrWhiteSpace($line)) {
+                continue
+            }
+            
+            # 格式: /path/to/worktree  commit-hash [branch-name]
+            if ($line -match '^(.+?)\s+([a-f0-9]+)\s+\[(.+?)\]') {
+                $wtPath = $Matches[1].Trim()
+                $wtBranch = $Matches[3].Trim()
+                
+                # 获取分支状态 (ahead/behind)
+                $status = ""
+                try {
+                    $revList = git -C $wtPath rev-list --left-right --count "origin/$wtBranch...$wtBranch" 2>$null
+                    if ($LASTEXITCODE -eq 0 -and $revList -match '(\d+)\s+(\d+)') {
+                        $behind = [int]$Matches[1]
+                        $ahead = [int]$Matches[2]
+                        if ($ahead -gt 0 -and $behind -gt 0) {
+                            $status = "↑$ahead ↓$behind"
+                        } elseif ($ahead -gt 0) {
+                            $status = "↑$ahead"
+                        } elseif ($behind -gt 0) {
+                            $status = "↓$behind"
+                        }
+                    }
+                } catch { }
+                
+                $worktrees += [PSCustomObject]@{
+                    Path = $wtPath
+                    HEAD = $Matches[2].Trim()
+                    Branch = $wtBranch
+                    Status = $status
+                    Detached = $false
+                }
+            }
+            elseif ($line -match '^(.+?)\s+([a-f0-9]+)\s+\(detached HEAD\)') {
+                $worktrees += [PSCustomObject]@{
+                    Path = $Matches[1].Trim()
+                    HEAD = $Matches[2].Trim()
+                    Branch = $null
+                    Status = ""
+                    Detached = $true
+                }
+            }
+        }
+        
+        return $worktrees
+    }
+    catch {
+        return $null
+    }
+}
+
+function Select-GitWorktree {
+    param(
+        [array]$worktrees,
+        [string]$currentPath,
+        [string]$projectName
+    )
+    
+    if ($null -eq $worktrees -or $worktrees.Count -le 1) {
+        return $currentPath
+    }
+    
+    # 规范化路径用于比较
+    $normalizedCurrent = $currentPath.Replace('\', '/').TrimEnd('/').ToLower()
+    
+    # 构建选择项
+    $items = @()
+    $currentIndex = 0
+    $index = 0
+    
+    foreach ($wt in $worktrees) {
+        $normalizedWt = $wt.Path.Replace('\', '/').TrimEnd('/').ToLower()
+        $isCurrent = $normalizedWt -eq $normalizedCurrent
+        
+        if ($isCurrent) {
+            $currentIndex = $index
+        }
+        
+        $items += [PSCustomObject]@{
+            Path = $wt.Path
+            Branch = $wt.Branch
+            Status = $wt.Status
+            IsCurrent = $isCurrent
+            Detached = $wt.Detached
+        }
+        
+        $index++
+    }
+    
+    $selectedIndex = $currentIndex
+    $running = $true
+    
+    while ($running) {
+        # 显示界面
+        Clear-Host
+        Write-Host "`n  Select Git Worktree (Project: $projectName)" -ForegroundColor Cyan
+        Write-Host ("  " + "=" * 60) -ForegroundColor DarkGray
+        Write-Host ""
+        Write-Host "  Multiple worktrees detected. Select one to work with:" -ForegroundColor Yellow
+        Write-Host ""
+        
+        # 显示列表
+        for ($i = 0; $i -lt $items.Count; $i++) {
+            $item = $items[$i]
+            $prefix = if ($i -eq $selectedIndex) { "> " } else { "  " }
+            
+            Write-Host $prefix -NoNewline
+            
+            # 分支名（突出显示）
+            if ($item.Detached) {
+                Write-Host "detached HEAD" -NoNewline -ForegroundColor Yellow
+            } else {
+                $branchColor = if ($i -eq $selectedIndex) { "Green" } else { "Cyan" }
+                Write-Host $item.Branch -NoNewline -ForegroundColor $branchColor
+            }
+            
+            # 状态标识（弱化显示）
+            $statusParts = @()
+            if ($item.Status) {
+                $statusParts += $item.Status
+            }
+            if ($item.IsCurrent) {
+                $statusParts += "current"
+            }
+            
+            if ($statusParts.Count -gt 0) {
+                Write-Host " (" -NoNewline -ForegroundColor DarkGray
+                Write-Host ($statusParts -join ", ") -NoNewline -ForegroundColor DarkGray
+                Write-Host ")" -NoNewline -ForegroundColor DarkGray
+            }
+            
+            # 路径（弱化显示）
+            Write-Host " - " -NoNewline -ForegroundColor DarkGray
+            Write-Host $item.Path -ForegroundColor DarkGray
+        }
+        
+        Write-Host ""
+        Write-Host "  [↑↓] Select  [Enter] Confirm  [Esc] Back" -ForegroundColor DarkGray
+        
+        $key = [Console]::ReadKey($true)
+        
+        switch ($key.Key) {
+            "UpArrow" {
+                $selectedIndex = if ($selectedIndex -gt 0) { $selectedIndex - 1 } else { $items.Count - 1 }
+            }
+            "DownArrow" {
+                $selectedIndex = if ($selectedIndex -lt $items.Count - 1) { $selectedIndex + 1 } else { 0 }
+            }
+            "Enter" {
+                $running = $false
+            }
+            "Escape" {
+                return $null
+            }
+            "Q" {
+                exit 0
+            }
+        }
+    }
+    
+    return $items[$selectedIndex].Path
+}
+
 function Add-NewProject {
     param($config, $currentPath = @())
     
@@ -900,8 +1125,8 @@ function Add-NewProject {
     
     # 选择类型
     $types = @(
-        [PSCustomObject]@{ Name = "📄 Project"; Type = "project" }
-        [PSCustomObject]@{ Name = "📁 Folder"; Type = "folder" }
+        [PSCustomObject]@{ Name = "Project"; Type = "project" }
+        [PSCustomObject]@{ Name = "Folder"; Type = "folder" }
     )
     
     $typeResult = Get-UserSelection -items $types -title "Select Type" -allowBack $true
@@ -915,11 +1140,17 @@ function Add-NewProject {
     Write-Host "`n  Add New $($itemType.ToUpper())" -ForegroundColor Cyan
     Write-Host ("  " + "=" * 60) -ForegroundColor DarkGray
     Write-Host ""
+    Write-Host "  (Press ESC to cancel)" -ForegroundColor DarkGray
+    Write-Host ""
     
     # 输入名称
     $itemName = $null
     while ($null -eq $itemName) {
-        $itemName = Read-InputWithPlaceholder -Prompt "Name" -Placeholder "" -Required $true
+        $itemName = Read-InputWithPlaceholder -Prompt "Name" -Placeholder "" -Required $true -AllowCancel $true
+        
+        if ($itemName -eq "__CANCEL__") {
+            return $false
+        }
         
         if ([string]::IsNullOrWhiteSpace($itemName)) {
             Write-Host "  Name is required!" -ForegroundColor Red
@@ -962,9 +1193,17 @@ function Add-NewProject {
     
     # 项目需要路径
     $currentDir = (Get-Location).Path
+    Write-Host "  (Press Enter to use current directory: " -NoNewline -ForegroundColor DarkGray
+    Write-Host $currentDir -NoNewline -ForegroundColor Cyan
+    Write-Host ")" -ForegroundColor DarkGray
+    
     $projectPath = $null
     while ($null -eq $projectPath) {
-        $projectPath = Read-InputWithPlaceholder -Prompt "Project Path" -Placeholder "" -Required $false
+        $projectPath = Read-InputWithPlaceholder -Prompt "Project Path" -Placeholder "" -Required $false -AllowCancel $true
+        
+        if ($projectPath -eq "__CANCEL__") {
+            return $false
+        }
         
         if ([string]::IsNullOrWhiteSpace($projectPath)) {
             $projectPath = $currentDir
@@ -1225,11 +1464,6 @@ function Start-InteractiveLauncher {
         exit 1
     }
 
-    if ($config.projects.Count -eq 0) {
-        Write-Host "No projects configured. Edit config.json to add projects." -ForegroundColor Yellow
-        exit 1
-    }
-
     # 启动后台工具检测
     Start-BackgroundDetection -configPath $userConfigPath
 
@@ -1251,25 +1485,21 @@ function Start-InteractiveLauncher {
         if ($null -eq $currentProject) {
             $currentItems = Get-ItemsAtPath -projects $config.projects -path $currentPath
             
-            # 如果根目录为空，直接进入新增项目流程
+            # 如果根目录为空，提示并自动进入新增项目流程
             if ($currentItems.Count -eq 0 -and $currentPath.Count -eq 0) {
                 Clear-Host
                 Write-Host "`n  Select Project" -ForegroundColor Cyan
                 Write-Host ("  " + "=" * 60) -ForegroundColor DarkGray
                 Write-Host ""
-                Write-Host "  No projects configured yet." -ForegroundColor Yellow
-                Write-Host "  Press [N] to add your first project, or [Q] to quit." -ForegroundColor DarkGray
+                Write-Host "  No projects configured yet!" -ForegroundColor Yellow
+                Write-Host "  Entering project creation in 2 seconds..." -ForegroundColor DarkGray
                 Write-Host ""
                 
-                $key = [Console]::ReadKey($true)
-                switch ($key.Key) {
-                    "N" {
-                        $added = Add-NewProject -config $config -currentPath $currentPath
-                        if ($added) {
-                            $config = Load-Config
-                        }
-                    }
-                    "Q" { exit 0 }
+                Start-Sleep -Seconds 2
+                
+                $added = Add-NewProject -config $config -currentPath $currentPath
+                if ($added) {
+                    $config = Load-Config
                 }
                 continue
             }
@@ -1365,8 +1595,28 @@ function Start-InteractiveLauncher {
                 continue
             }
             
-            # 如果是项目，选中
+            # 如果是项目，选中并检测 Git Worktree
             $currentProject = $selectedItem
+            
+            # 检测并选择 Git Worktree
+            $worktrees = Get-GitWorktrees -projectPath $currentProject.path
+            if ($null -ne $worktrees -and $worktrees.Count -gt 1) {
+                $selectedWorktree = Select-GitWorktree -worktrees $worktrees -currentPath $currentProject.path -projectName $currentProject.name
+                
+                # 如果用户按 ESC 返回，取消项目选择
+                if ($null -eq $selectedWorktree) {
+                    $currentProject = $null
+                    continue
+                }
+                
+                # 更新项目路径为选中的 worktree
+                $currentProject = @{
+                    name = $currentProject.name
+                    path = $selectedWorktree
+                    type = $currentProject.type
+                    env = $currentProject.env
+                }
+            }
         }
 
         # 2. 获取可用工具

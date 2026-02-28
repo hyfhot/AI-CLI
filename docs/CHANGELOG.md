@@ -2,6 +2,90 @@
 
 # AI-CLI Changelog
 
+## v2.3.0 (2026-02-28)
+
+### ✨ New Features
+
+#### 1. Git Worktree Support ⭐
+- **Automatic Detection**: Detects Git repositories and worktrees after project selection
+- **Smart Selection Interface**: Shows all worktrees when multiple detected
+  - Branch name highlighting (cyan/green, most prominent)
+  - Status indicators: ahead/behind commits (↑↓) and current worktree
+  - Path display in gray (least prominent)
+  - Keyboard navigation: ↑↓ to select, Enter to confirm, Esc to go back
+- **Parallel Development**: Work on multiple branches simultaneously without switching
+- **Branch Status**: Shows ahead/behind commit counts relative to remote
+  - `↑3` - 3 commits ahead
+  - `↓1` - 1 commit behind
+  - `↑2 ↓1` - Diverged (2 ahead, 1 behind)
+
+#### 2. Empty Project List Smart Guidance
+- Automatically prompts when no projects configured
+- Auto-enters project creation after 2 seconds
+- Removed old direct exit logic, improved first-time experience
+
+#### 3. Project Path Input Optimization
+- Shows current directory as default value hint
+- Format: `(Press Enter to use current directory: C:\...)`
+- Users clearly understand default behavior
+
+#### 4. Input Flow Cancel Support
+- Enhanced `Read-InputWithPlaceholder` function with ESC key support
+- Name and path inputs can be cancelled with ESC
+- Backspace key support for character deletion
+- Users can return at any input stage without forced completion
+
+#### 5. Interface Display Fixes
+- Fixed duplicate icons in type selection interface
+- Removed redundant icons from type definitions
+
+### 🔧 Technical Implementation
+
+#### New Functions
+1. **Get-GitWorktrees**: Git repository and worktree detection
+   - Checks .git directory existence
+   - Verifies git command availability
+   - Executes `git worktree list` and parses output
+   - Extracts path, branch, HEAD information
+   - Detects branch status (ahead/behind) using `git rev-list`
+   - Supports detached HEAD state
+
+2. **Select-GitWorktree**: Interactive worktree selection
+   - Builds selection item list
+   - Identifies and highlights current worktree
+   - Implements keyboard navigation logic
+   - Returns user-selected path or null (ESC)
+
+#### Function Enhancements
+- **Read-InputWithPlaceholder**: Added `AllowCancel` parameter
+  - Custom key handling logic
+  - Returns special value `__CANCEL__` for cancel operation
+  - Supports character input, backspace, enter, ESC
+
+#### Flow Optimizations
+- **Start-InteractiveLauncher**: 
+  - Distinguishes between root empty and subfolder empty
+  - Integrates worktree detection after project selection
+  - Updates project path to selected worktree
+  - Handles ESC return to cancel project selection
+- **Add-NewProject**: Detects cancel signal at each input point
+
+### 📊 Change Statistics
+- Modified file: ai-cli.ps1
+- Lines changed: +247/-24
+- New functions: 2 (Git Worktree related)
+- Enhanced functions: 1 (input cancel support)
+- New features: 5
+- Fixed issues: 2
+- New documentation: docs/GIT-WORKTREE.md
+
+### 📚 Documentation
+- Added docs/GIT-WORKTREE.md - Git Worktree feature guide
+- Updated README.md - Added Git Worktree to core features
+- Updated CHANGELOG.md - Version change log
+
+---
+
 ## v2.2.9 (2026-02-28)
 
 ### ✨ New Features

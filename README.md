@@ -21,6 +21,7 @@ This tool breaks down the barriers between native Windows environment and Window
 * **🛠️ Tool Installation Feature**: Press I key to quickly install uninstalled AI CLI tools, automatically adds to PATH environment variable after installation.
 * **🔄 Manual Refresh Feature**: Press R key to manually refresh tool list, convenient for verifying tool installation status.
 * **🏷️ Dynamic Tab Naming**: Dynamically modifies terminal tab titles at startup through ANSI escape sequences and Windows native commands (e.g., `KIRO-CLI BT2400`), greatly improving multi-task management clarity.
+* **🌳 Git Worktree Support**: Automatically detects multiple worktrees in Git repositories, allows quick switching between branches for parallel development, displays branch status (ahead/behind commits).
 
 ---
 
@@ -389,9 +390,10 @@ Run `ai-cli -Uninstall` or `& "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall`.
 
 - **[docs/TOOLS.md](docs/TOOLS.md)** - Detailed reference manual for 8 mainstream AI CLI tools
 - **[docs/INSTALL-GUIDE.md](docs/INSTALL-GUIDE.md)** - Guide for using the tool installation feature
+- **[docs/GIT-WORKTREE.md](docs/GIT-WORKTREE.md)** - Git Worktree support and usage guide
 - **[docs/BUGFIX.md](docs/BUGFIX.md)** - Bug fix records and technical details
 - **[docs/CHANGELOG.md](docs/CHANGELOG.md)** - Version update log
 
 ---
 
-*Last updated: 2026-02-26*
+*Last updated: 2026-02-28*
