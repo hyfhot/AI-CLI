@@ -90,8 +90,8 @@
                   {
                       "name":  "aider",
                       "displayName":  "Aider",
-                      "winInstall":  "pip install aider-install \u0026\u0026 aider-install",
-                      "wslInstall":  "pip install aider-install \u0026\u0026 aider-install",
+                      "winInstall":  "pip install aider-install; aider-install",
+                      "wslInstall":  "curl -LsSf https://aider.chat/install.sh | sh",
                       "checkCommand":  "aider --version",
                       "url":  "https://aider.chat/docs/install"
                   }

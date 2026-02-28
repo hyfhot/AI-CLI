@@ -236,8 +236,8 @@ function Initialize-Config {
     $defaultConfig = @{
         projects = @()
         tools = @(
-            @{name="kiro-cli"; displayName="Kiro CLI"; wslInstall="npm install -g kiro-cli"; checkCommand="kiro-cli --version"; winAvailable=$false; wslAvailable=$false}
-            @{name="claude"; displayName="Claude Code"; winInstall="npm install -g @anthropic-ai/claude-code"; wslInstall="npm install -g @anthropic-ai/claude-code"; checkCommand="claude --version"; winAvailable=$false; wslAvailable=$false}
+            @{name="kiro-cli"; displayName="Kiro CLI"; wslInstall="npm install -g kiro-cli"; checkCommand="kiro-cli --version"}
+            @{name="claude"; displayName="Claude Code"; winInstall="npm install -g @anthropic-ai/claude-code"; wslInstall="npm install -g @anthropic-ai/claude-code"; checkCommand="claude --version"}
         )
         settings = @{language="auto"; defaultEnv="wsl"; terminalEmulator="default"}
     }
@@ -260,8 +260,10 @@ function ConvertTo-WslPath {
 }
 
 # ==========================================
-# 工具检测（智能检测 + 配置持久化）
+# 工具检测（后台异步 + 前台按需）
 # ==========================================
+$script:bgDetectionJob = $null
+
 function Get-AvailableTools {
     param($config, [switch]$Force)
 
@@ -269,22 +271,14 @@ function Get-AvailableTools {
         return @()
     }
 
-    # 检查是否需要重新检测
-    $needsDetection = $Force
-    if (-not $needsDetection) {
-        $hasAnyAvailable = $false
-        foreach ($tool in $config.tools) {
-            if (($tool.PSObject.Properties.Name -contains "winAvailable" -and $tool.winAvailable) -or
-                ($tool.PSObject.Properties.Name -contains "wslAvailable" -and $tool.wslAvailable)) {
-                $hasAnyAvailable = $true
-                break
-            }
+    # 如果强制检测，停止后台Job并执行前台检测
+    if ($Force) {
+        if ($script:bgDetectionJob -and $script:bgDetectionJob.State -eq 'Running') {
+            Stop-Job $script:bgDetectionJob -ErrorAction SilentlyContinue
+            Remove-Job $script:bgDetectionJob -ErrorAction SilentlyContinue
+            $script:bgDetectionJob = $null
         }
-        $needsDetection = -not $hasAnyAvailable
-    }
-
-    # 如果需要检测，执行检测并更新配置
-    if ($needsDetection) {
+        
         $detectedTools = Invoke-ToolDetection -config $config
         Update-ToolCacheInConfig -config $config -tools $detectedTools
     }
@@ -303,6 +297,84 @@ function Get-AvailableTools {
     }
 
     return $tools
+}
+
+function Start-BackgroundDetection {
+    param($configPath)
+    
+    # 如果已有后台Job在运行，不重复启动
+    if ($script:bgDetectionJob -and $script:bgDetectionJob.State -eq 'Running') {
+        return
+    }
+    
+    # 清理已完成的Job
+    if ($script:bgDetectionJob) {
+        Remove-Job $script:bgDetectionJob -ErrorAction SilentlyContinue
+    }
+    
+    # 启动后台检测Job
+    $script:bgDetectionJob = Start-Job -ScriptBlock {
+        param($configPath)
+        
+        # 加载配置
+        $config = Get-Content $configPath -Encoding UTF8 | ConvertFrom-Json
+        
+        # 批量检测 WSL 工具
+        $wslTools = @($config.tools | Where-Object { $_.wslInstall } | ForEach-Object { $_.name })
+        $wslAvailable = @{}
+        if ($wslTools.Count -gt 0) {
+            $toolListInline = $wslTools -join ' '
+            $checkScript = "for t in $toolListInline; do if command -v `$t >/dev/null 2>&1; then echo `$t; fi; done"
+            try {
+                $result = wsl.exe -e bash -ic $checkScript 2>$null
+                if ($result) {
+                    $result -split "`n" | Where-Object { $_ -and $_.Trim() } | ForEach-Object {
+                        $wslAvailable[$_.Trim()] = $true
+                    }
+                }
+            } catch {}
+        }
+        
+        # 批量检测 Windows 工具
+        $winAvailable = @{}
+        $winTools = @($config.tools | Where-Object { $_.winInstall })
+        foreach ($tool in $winTools) {
+            try {
+                $winAvailable[$tool.name] = $null -ne (Get-Command $tool.name -ErrorAction SilentlyContinue)
+            } catch {
+                $winAvailable[$tool.name] = $false
+            }
+        }
+        
+        # 更新配置
+        for ($i = 0; $i -lt $config.tools.Count; $i++) {
+            $tool = $config.tools[$i]
+            $config.tools[$i] | Add-Member -NotePropertyName "winAvailable" -NotePropertyValue ($winAvailable[$tool.name] -eq $true) -Force
+            $config.tools[$i] | Add-Member -NotePropertyName "wslAvailable" -NotePropertyValue ($wslAvailable[$tool.name] -eq $true) -Force
+        }
+        
+        # 原子写入配置文件
+        $tempPath = "$configPath.tmp"
+        $backupPath = "$configPath.bak"
+        
+        try {
+            $config | ConvertTo-Json -Depth 10 | Set-Content $tempPath -Encoding UTF8
+            if (Test-Path $configPath) {
+                Copy-Item $configPath $backupPath -Force -ErrorAction SilentlyContinue
+            }
+            Move-Item -Path $tempPath -Destination $configPath -Force
+            if (Test-Path $backupPath) {
+                Remove-Item $backupPath -Force -ErrorAction SilentlyContinue
+            }
+        } catch {
+            if (Test-Path $backupPath) {
+                Move-Item -Path $backupPath -Destination $configPath -Force -ErrorAction SilentlyContinue
+            }
+            if (Test-Path $tempPath) {
+                Remove-Item $tempPath -Force -ErrorAction SilentlyContinue
+            }
+        }
+    } -ArgumentList $configPath
 }
 
 function Invoke-ToolDetection {
@@ -888,7 +960,7 @@ function Remove-ProjectOrFolder {
 }
 
 function Show-Menu {
-    param($items, $title, [int]$selected = 0, [bool]$showTabHint = $false, [bool]$showAddProject = $false, [bool]$showDelete = $false, $breadcrumb = @())
+    param($items, $title, [int]$selected = 0, [bool]$showTabHint = $false, [bool]$showAddProject = $false, [bool]$showDelete = $false, [bool]$showInstall = $false, $breadcrumb = @())
     
     $maxDisplay = [Math]::Min($items.Count, 15)
     $offset = [Math]::Max(0, $selected - $maxDisplay + 1)
@@ -935,6 +1007,8 @@ function Show-Menu {
     Write-Host ""
     if ($showTabHint) {
         Write-Host "  [↑↓] Navigate  [Enter] New Window  [Ctrl+Enter] New Tab  [I] Install  [Esc] Back  [Q] Quit" -ForegroundColor DarkGray
+    } elseif ($showInstall) {
+        Write-Host "  [↑↓] Navigate  [Enter] Launch  [I] Install  [Esc] Back  [Q] Quit" -ForegroundColor DarkGray
     } elseif ($showAddProject) {
         $hint = "  [↑↓] Navigate  [Enter] Select  [N] New  [D] Delete"
         if ($breadcrumb.Count -gt 0) {
@@ -948,12 +1022,12 @@ function Show-Menu {
 }
 
 function Get-UserSelection {
-    param($items, $title, [bool]$showTabHint = $false, [bool]$allowBack = $false, [bool]$allowAddProject = $false, [bool]$allowDelete = $false, $breadcrumb = @())
+    param($items, $title, [bool]$showTabHint = $false, [bool]$allowBack = $false, [bool]$allowAddProject = $false, [bool]$allowDelete = $false, [bool]$showInstall = $false, $breadcrumb = @())
     
     $selected = 0
     
     while ($true) {
-        Show-Menu -items $items -title $title -selected $selected -showTabHint $showTabHint -showAddProject $allowAddProject -showDelete $allowDelete -breadcrumb $breadcrumb
+        Show-Menu -items $items -title $title -selected $selected -showTabHint $showTabHint -showAddProject $allowAddProject -showDelete $allowDelete -showInstall $showInstall -breadcrumb $breadcrumb
         
         $key = [Console]::ReadKey($true)
         
@@ -1018,6 +1092,9 @@ function Start-InteractiveLauncher {
         exit 1
     }
 
+    # 启动后台工具检测
+    Start-BackgroundDetection -configPath $userConfigPath
+
     # 检测是否安装 Windows Terminal
     $hasWindowsTerminal = $null -ne (Get-Command "wt" -ErrorAction SilentlyContinue)
 
@@ -1025,6 +1102,13 @@ function Start-InteractiveLauncher {
     $currentPath = @()  # 当前文件夹路径
     
     while ($true) {
+        # 检查后台检测是否完成
+        if ($script:bgDetectionJob -and $script:bgDetectionJob.State -eq 'Completed') {
+            $config = Load-Config  # 重新加载配置
+            Remove-Job $script:bgDetectionJob -ErrorAction SilentlyContinue
+            $script:bgDetectionJob = $null
+        }
+        
         # 1. 选择项目（如果未选择或需要重新选择）
         if ($null -eq $currentProject) {
             $currentItems = Get-ItemsAtPath -projects $config.projects -path $currentPath
@@ -1182,7 +1266,7 @@ function Start-InteractiveLauncher {
         }
 
         # 3. 选择工具
-        $result = Get-UserSelection -items $availableTools -title "Select AI Tool for $($currentProject.name)" -showTabHint $hasWindowsTerminal -allowBack $true -breadcrumb @()
+        $result = Get-UserSelection -items $availableTools -title "Select AI Tool for $($currentProject.name)" -showTabHint $hasWindowsTerminal -showInstall $true -allowBack $true -breadcrumb @()
 
         # 处理安装请求
         if ($result.Install) {
@@ -1275,6 +1359,14 @@ if ($Uninstall) {
     
     Write-Host "`nUninstallation complete!" -ForegroundColor Green
     exit 0
+}
+
+# 注册退出时清理后台Job
+$null = Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action {
+    if ($script:bgDetectionJob) {
+        Stop-Job $script:bgDetectionJob -ErrorAction SilentlyContinue
+        Remove-Job $script:bgDetectionJob -ErrorAction SilentlyContinue
+    }
 }
 
 Start-InteractiveLauncher
