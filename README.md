@@ -10,6 +10,18 @@ This tool breaks down the barriers between native Windows environment and Window
 
 > 📚 **View Supported Tools**: For detailed tool list, installation instructions, and comparison, please refer to [docs/TOOLS.md](docs/TOOLS.md)
 
+### 🎯 Why Choose AI-CLI?
+
+**For developers using multiple AI coding assistants**, AI-CLI solves these pain points:
+
+✅ **No more memorizing commands** - One `ai-cli` command replaces 8+ tool-specific commands  
+✅ **Seamless Windows ↔ WSL switching** - Automatic path conversion, no manual translation needed  
+✅ **Git Worktree intelligence** - Auto-detect branches, switch worktrees instantly for parallel development  
+✅ **Environment auto-injection** - Project-specific env vars loaded automatically, no more manual `export`  
+✅ **Multi-tab workflow** - Launch multiple AI tools in parallel with `Ctrl+Enter`, organized by dynamic tab names  
+
+**Real-world impact**: From opening terminal → navigating paths → setting env vars → launching tool (2-3 minutes) down to **3 keystrokes** (↓ Enter Enter).
+
 ## 2. Core Features
 
 * **🤖 Intelligent Dual-Environment Detection**: Automatically detects AI CLI tools installed in Windows host and WSL environments at startup with background async detection, UI responds immediately and updates automatically when detection completes.
