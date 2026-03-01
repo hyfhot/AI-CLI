@@ -1766,8 +1766,14 @@ if ($Uninstall) {
     
     # 删除安装目录
     if (Test-Path $installDir) {
-        Remove-Item -Recurse -Force $installDir
-        Write-Host "  Removed installation directory" -ForegroundColor Green
+        try {
+            Remove-Item -Recurse -Force $installDir -ErrorAction Stop
+            Write-Host "  Removed installation directory" -ForegroundColor Green
+        } catch {
+            Write-Host "  Warning: Cannot remove installation directory" -ForegroundColor Yellow
+            Write-Host "  The directory is currently in use. Please close all AI-CLI windows and try again." -ForegroundColor Yellow
+            Write-Host "  Or manually delete: $installDir" -ForegroundColor Cyan
+        }
     }
     
     # 删除桌面快捷方式
