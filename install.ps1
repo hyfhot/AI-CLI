@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # AI-CLI Installer v2.0
 
 param([switch]$Uninstall)
@@ -51,7 +51,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$installDir\ai-cli.ps1"
     # 添加到 PATH
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
     if ($userPath -notlike "*$installDir*") {
-        [Environment]::SetEnvironmentVariable("Path", "$userPath;$installDir", "User")
+        $newPath = if ($userPath) { "$userPath;$installDir" } else { $installDir }
+        [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
         Write-Host "  Added to PATH" -ForegroundColor Green
     }
     
@@ -93,7 +94,7 @@ function Uninstall-AICLI {
     
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
     if ($userPath -like "*$installDir*") {
-        $newPath = ($userPath -split ';' | Where-Object { $_ -ne $installDir }) -join ';'
+        $newPath = ($userPath -split ';' | Where-Object { $_ -and $_ -ne $installDir }) -join ';'
         [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
         Write-Host "  Removed from PATH" -ForegroundColor Green
     }
