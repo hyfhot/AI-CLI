@@ -88,6 +88,66 @@ class ConfigManager:
                     check_command="claude --version",
                     url="https://www.npmjs.com/package/@anthropic-ai/claude-code"
                 ),
+                ToolConfig(
+                    name="codex",
+                    display_name="OpenAI Codex",
+                    win_install="npm install -g @openai/codex",
+                    wsl_install="npm install -g @openai/codex",
+                    linux_install="npm install -g @openai/codex",
+                    macos_install="npm install -g @openai/codex",
+                    check_command="codex --version",
+                    url="https://www.npmjs.com/package/@openai/codex"
+                ),
+                ToolConfig(
+                    name="kimi",
+                    display_name="Kimi CLI",
+                    win_install="pip install kimi-cli",
+                    wsl_install="uv tool install --python 3.13 kimi-cli",
+                    linux_install="pip install kimi-cli",
+                    macos_install="pip install kimi-cli",
+                    check_command="kimi --version",
+                    url="https://pypi.org/project/kimi-cli/"
+                ),
+                ToolConfig(
+                    name="gemini",
+                    display_name="Gemini CLI",
+                    win_install="npm install -g @google/gemini-cli",
+                    wsl_install="npm install -g @google/gemini-cli",
+                    linux_install="npm install -g @google/gemini-cli",
+                    macos_install="npm install -g @google/gemini-cli",
+                    check_command="gemini --version",
+                    url="https://www.npmjs.com/package/@google/gemini-cli"
+                ),
+                ToolConfig(
+                    name="cursor-agent",
+                    display_name="Cursor Agent",
+                    win_install=None,
+                    wsl_install="curl https://cursor.com/install -fsS | bash",
+                    linux_install="curl https://cursor.com/install -fsS | bash",
+                    macos_install="curl https://cursor.com/install -fsS | bash",
+                    check_command="cursor-agent --version",
+                    url="https://docs.cursor.com/en/cli/installation"
+                ),
+                ToolConfig(
+                    name="opencode",
+                    display_name="OpenCode",
+                    win_install="curl -fsSL https://opencode.ai/install.ps1 | powershell",
+                    wsl_install="curl -fsSL https://opencode.ai/install.sh | bash",
+                    linux_install="curl -fsSL https://opencode.ai/install.sh | bash",
+                    macos_install="curl -fsSL https://opencode.ai/install.sh | bash",
+                    check_command="opencode --version",
+                    url="https://opencode.ai/docs"
+                ),
+                ToolConfig(
+                    name="aider",
+                    display_name="Aider",
+                    win_install="pip install aider-install; aider-install",
+                    wsl_install="curl -LsSf https://aider.chat/install.sh | sh",
+                    linux_install="curl -LsSf https://aider.chat/install.sh | sh",
+                    macos_install="brew install aider",
+                    check_command="aider --version",
+                    url="https://aider.chat/docs/install"
+                ),
             ],
             settings=Settings()
         )

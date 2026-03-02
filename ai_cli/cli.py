@@ -92,17 +92,16 @@ def uninstall_app():
     """Uninstall AI-CLI."""
     try:
         from .config import ConfigManager
-        import shutil
         
         click.echo("Uninstalling AI-CLI...")
         
         manager = ConfigManager()
         config_dir = manager.get_config_dir()
         
-        # Remove config directory
+        # Show config location but don't delete
         if config_dir.exists():
-            shutil.rmtree(config_dir)
-            click.echo(f"  Removed configuration: {config_dir}")
+            click.echo(f"  Configuration preserved at: {config_dir}")
+            click.echo("  (Run manually to remove: rm -rf {})".format(config_dir))
         
         # On Windows, remove desktop shortcut if exists
         if platform.system() == "Windows":
@@ -114,6 +113,7 @@ def uninstall_app():
         
         click.echo("\nUninstallation complete!")
         click.echo("To remove the program, run: pip uninstall ai-cli")
+        click.echo("Your configuration has been preserved for future use.")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
