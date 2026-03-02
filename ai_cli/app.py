@@ -50,6 +50,9 @@ class Application:
     
     def run(self) -> None:
         """Main application loop."""
+        # Start background tool detection (non-blocking)
+        asyncio.run(self._start_background_detection())
+        
         while True:
             try:
                 project = self._select_project()
@@ -66,6 +69,10 @@ class Application:
                 break
             except Exception as e:
                 print(f"Error: {e}")
+    
+    async def _start_background_detection(self):
+        """Start background tool detection."""
+        self.tool_detector.start_background_detection(self.config.tools)
     
     def _select_project(self) -> Optional[ProjectNode]:
         """Project selection menu. Returns None only on Q (quit)."""
@@ -132,6 +139,20 @@ class Application:
     
     async def _select_tool(self, project: ProjectNode) -> Optional[Tuple]:
         """Tool selection menu. Returns (tool, new_tab) or None."""
+        # Check for git worktrees and let user select if multiple exist
+        if project.path:
+            try:
+                from ai_cli.core.git import GitManager
+                git_manager = GitManager()
+                worktrees = git_manager.detect_worktrees(project.path)
+                
+                if len(worktrees) > 1:
+                    selected_path = git_manager.select_worktree(worktrees, project.path)
+                    if selected_path:
+                        project.path = selected_path
+            except:
+                pass
+        
         # Detect tools with progress indicator (uses cache if available)
         self.menu.console.print(f"[yellow]{get_text('detecting_tools')}[/yellow]")
         tools = await self.tool_detector.detect_all_tools(self.config.tools)

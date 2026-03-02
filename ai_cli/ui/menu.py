@@ -11,20 +11,45 @@ class MenuRenderer:
     def __init__(self):
         self.console = Console()
         
-    def render_tree(self, items: List[Dict[str, Any]], selected: int = 0) -> None:
-        """Render project tree structure."""
+    def render_tree(self, items: List[Dict[str, Any]], selected: int = 0, max_display: int = 15) -> None:
+        """Render project tree structure with scrolling."""
         self.console.print("\n[bold cyan]=== Select Project ===[/bold cyan]\n")
         
-        for i, item in enumerate(items):
-            style = Theme.HIGHLIGHT if i == selected else Theme.SECONDARY
+        if not items:
+            self.console.print("[dim]No projects yet. Press [N] to add your first project.[/dim]\n")
+            self.console.print("[dim][N] New Project  [Q] Quit[/dim]")
+            return
+        
+        # Calculate scroll window
+        total = len(items)
+        if total <= max_display:
+            visible_items = items
+            offset = 0
+        else:
+            offset = max(0, min(selected - max_display // 2, total - max_display))
+            visible_items = items[offset:offset + max_display]
+        
+        # Show scroll indicator (top)
+        if offset > 0:
+            self.console.print(f"[dim]  ↑ {offset} more above[/dim]")
+        
+        # Show visible items
+        for i, item in enumerate(visible_items):
+            actual_index = offset + i
+            style = Theme.HIGHLIGHT if actual_index == selected else Theme.SECONDARY
             icon = Theme.FOLDER if item.get("type") == "folder" else Theme.FILE
-            prefix = "> " if i == selected else "  "
+            prefix = "> " if actual_index == selected else "  "
             self.console.print(f"{prefix}{icon} {item['name']}", style=style)
+        
+        # Show scroll indicator (bottom)
+        if offset + max_display < total:
+            remaining = total - offset - max_display
+            self.console.print(f"[dim]  ↓ {remaining} more below[/dim]")
         
         self.console.print("\n[dim][↑↓] Select  [Enter] Enter/Confirm  [N] New  [D] Delete  [Esc] Back  [Q] Quit[/dim]")
         
-    def render_tools(self, tools: List[Dict[str, Any]], selected: int = 0, show_new_tab: bool = True, project_info: Dict[str, Any] = None) -> None:
-        """Render tools list with project information."""
+    def render_tools(self, tools: List[Dict[str, Any]], selected: int = 0, show_new_tab: bool = True, project_info: Dict[str, Any] = None, max_display: int = 15) -> None:
+        """Render tools list with project information and scrolling."""
         
         # Show project information
         if project_info:
@@ -39,13 +64,31 @@ class MenuRenderer:
         
         self.console.print("\n[bold cyan]=== Select AI Tool ===[/bold cyan]\n")
         
-        for i, tool in enumerate(tools):
-            style = Theme.HIGHLIGHT if i == selected else Theme.SECONDARY
+        # Calculate scroll window
+        total = len(tools)
+        if total <= max_display:
+            visible_tools = tools
+            offset = 0
+        else:
+            offset = max(0, min(selected - max_display // 2, total - max_display))
+            visible_tools = tools[offset:offset + max_display]
+        
+        # Show scroll indicator (top)
+        if offset > 0:
+            self.console.print(f"[dim]  ↑ {offset} more above[/dim]")
+        
+        # Show visible tools
+        for i, tool in enumerate(visible_tools):
+            actual_index = offset + i
+            style = Theme.HIGHLIGHT if actual_index == selected else Theme.SECONDARY
             env_label = f"[{tool.get('env', 'Win')}]"
-            prefix = "> " if i == selected else "  "
-            
-            # Show tool name only
+            prefix = "> " if actual_index == selected else "  "
             self.console.print(f"{prefix}{env_label} {tool['name']}", style=style)
+        
+        # Show scroll indicator (bottom)
+        if offset + max_display < total:
+            remaining = total - offset - max_display
+            self.console.print(f"[dim]  ↓ {remaining} more below[/dim]")
         
         # Show [T] New Tab only if Windows Terminal is available
         if show_new_tab:

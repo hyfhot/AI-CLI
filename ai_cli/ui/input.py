@@ -17,6 +17,7 @@ class InputEvent(Enum):
     RUN = "run"
     QUIT = "quit"
     NEW_TAB = "new_tab"  # T key for new tab
+    CANCEL = "cancel"  # ESC in input mode
 
 class InputHandler:
     """Handles keyboard input using raw terminal mode."""
@@ -27,6 +28,32 @@ class InputHandler:
             return self._get_input_windows()
         else:
             return self._get_input_unix()
+    
+    def get_text_input(self, prompt: str, placeholder: str = "", allow_cancel: bool = True) -> Optional[str]:
+        """Get text input with ESC cancellation support."""
+        from prompt_toolkit import prompt as pt_prompt
+        from prompt_toolkit.key_binding import KeyBindings
+        
+        bindings = KeyBindings()
+        
+        @bindings.add('escape')
+        def _(event):
+            if allow_cancel:
+                event.app.exit(result='__CANCEL__')
+        
+        try:
+            result = pt_prompt(
+                prompt,
+                default=placeholder,
+                key_bindings=bindings if allow_cancel else None
+            )
+            
+            if result == '__CANCEL__':
+                return None
+            
+            return result.strip() if result else None
+        except (KeyboardInterrupt, EOFError):
+            return None
     
     def _get_input_unix(self) -> Optional[InputEvent]:
         """Get input on Unix/Linux/macOS."""

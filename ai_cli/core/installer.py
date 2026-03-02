@@ -99,6 +99,32 @@ class ToolInstaller:
         except:
             pass
         
+        # Extended search paths for Windows
+        if sys.platform == 'win32':
+            import glob
+            search_paths = [
+                os.path.expandvars(r"%LOCALAPPDATA%\Programs\Python\Python*\Scripts"),
+                os.path.expandvars(r"%APPDATA%\Python\Python*\Scripts"),
+                os.path.expandvars(r"%USERPROFILE%\.local\bin"),
+                os.path.expandvars(r"%USERPROFILE%\AppData\Roaming\npm"),
+                os.path.expandvars(r"%ProgramFiles%\nodejs"),
+                os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WindowsApps"),
+                os.path.expandvars(r"%ProgramFiles%\Git\cmd"),
+                os.path.expandvars(r"%USERPROFILE%\.cargo\bin"),
+                os.path.expandvars(r"%USERPROFILE%\go\bin"),
+            ]
+            
+            for pattern in search_paths:
+                if '*' in pattern:
+                    for path in glob.glob(pattern):
+                        exe_path = os.path.join(path, f"{tool_name}.exe")
+                        if os.path.isfile(exe_path):
+                            return exe_path
+                else:
+                    exe_path = os.path.join(pattern, f"{tool_name}.exe")
+                    if os.path.isfile(exe_path):
+                        return exe_path
+        
         return None
     
     def _add_to_user_path(self, directory: str):
@@ -127,6 +153,11 @@ class ToolInstaller:
             
             # Add to PATH
             new_path = f"{current_path};{directory}" if current_path else directory
+            
+            # Check PATH length limit (Windows limit: 2047 characters)
+            if len(new_path) > 2047:
+                print(f"Warning: PATH too long ({len(new_path)} chars). Skipping PATH update.")
+                return
             
             subprocess.run(
                 ["powershell", "-Command",

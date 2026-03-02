@@ -2,9 +2,13 @@
 import subprocess
 from pathlib import Path
 from typing import List, Dict, Optional
+from rich.console import Console
 
 class GitManager:
     """Git worktree management using subprocess."""
+    
+    def __init__(self):
+        self.console = Console()
     
     def detect_worktrees(self, path: str) -> List[Dict[str, str]]:
         """Detect Git worktrees in repository."""
@@ -62,3 +66,53 @@ class GitManager:
             return {'ahead': 0, 'behind': 0}
         except (subprocess.CalledProcessError, ValueError, IndexError):
             return None
+    
+    def select_worktree(self, worktrees: List[Dict[str, str]], current_path: str) -> Optional[str]:
+        """Show worktree selection menu and return selected path."""
+        if len(worktrees) <= 1:
+            return None
+        
+        from ai_cli.ui.input import InputHandler, InputEvent
+        
+        selected = 0
+        input_handler = InputHandler()
+        
+        while True:
+            self.console.clear()
+            self.console.print("\n[bold cyan]=== Select Git Worktree ===[/bold cyan]\n")
+            
+            for i, wt in enumerate(worktrees):
+                is_current = wt['path'] == current_path
+                branch = wt.get('branch', 'detached HEAD')
+                if branch.startswith('refs/heads/'):
+                    branch = branch[11:]
+                
+                # Get status
+                status_str = ""
+                if not wt.get('detached') and not wt.get('bare'):
+                    status = self.get_branch_status(wt['path'])
+                    if status:
+                        if status['ahead'] > 0:
+                            status_str += f" ↑{status['ahead']}"
+                        if status['behind'] > 0:
+                            status_str += f" ↓{status['behind']}"
+                
+                prefix = "> " if i == selected else "  "
+                current_mark = " [current]" if is_current else ""
+                style = "bold green" if i == selected else "dim"
+                
+                self.console.print(f"{prefix}{branch}{status_str}{current_mark}", style=style)
+                self.console.print(f"   [dim]{wt['path']}[/dim]")
+            
+            self.console.print("\n[dim][↑↓] Select  [Enter] Confirm  [Esc] Cancel[/dim]")
+            
+            event = input_handler.get_input()
+            
+            if event == InputEvent.UP:
+                selected = max(0, selected - 1)
+            elif event == InputEvent.DOWN:
+                selected = min(len(worktrees) - 1, selected + 1)
+            elif event == InputEvent.ENTER:
+                return worktrees[selected]['path']
+            elif event == InputEvent.ESCAPE or event == InputEvent.QUIT:
+                return None

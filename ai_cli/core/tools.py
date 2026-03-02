@@ -198,6 +198,7 @@ class ToolDetector:
             self.detector = MacOSToolDetector()
         else:
             self.detector = LinuxToolDetector()
+        self._background_task: Optional[asyncio.Task] = None
     
     async def detect_all_tools(self, tools_config: List[ToolConfig]) -> List[Tool]:
         """Detect all tools on current platform."""
@@ -207,3 +208,15 @@ class ToolDetector:
         """Clear detection cache."""
         self.detector._cache = None
         self.detector._cache_time = None
+    
+    def start_background_detection(self, tools_config: List[ToolConfig]) -> None:
+        """Start background tool detection (non-blocking)."""
+        if self._background_task is None or self._background_task.done():
+            self._background_task = asyncio.create_task(self._background_detect(tools_config))
+    
+    async def _background_detect(self, tools_config: List[ToolConfig]) -> None:
+        """Background detection task."""
+        try:
+            await self.detect_all_tools(tools_config)
+        except Exception:
+            pass  # Silent fail for background task
