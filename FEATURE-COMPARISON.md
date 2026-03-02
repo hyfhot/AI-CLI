@@ -1,368 +1,404 @@
-# 功能实现进度对比报告
+# AI-CLI 功能对比清单
 
-> **评审时间**: 2026-03-01 11:44  
-> **对比版本**: PowerShell 原版 vs Python 迁移版  
-> **完成度**: 60% (核心功能完成，部分功能待实现)
+对比 PowerShell 版本 (v2.2) 和 Python 版本 (v3.1.0) 的功能实现情况。
 
----
+## ✅ 已完全移植的功能
 
-## 📊 功能对比总览
+### 核心功能
+- ✅ **配置管理**
+  - 用户配置目录 (`%APPDATA%\AI-CLI\config.json`)
+  - 配置加载/保存
+  - 配置初始化 (`--init`)
+  - 配置编辑 (`--config`)
+  - 配置迁移（旧格式自动升级）
+  - 增量工具更新（保留用户项目和自定义工具）
 
-| 功能模块 | 原版 (PowerShell) | 当前版 (Python) | 状态 |
-|---------|-------------------|-----------------|------|
-| **核心功能** | | | |
-| 项目选择界面 | ✅ 树形结构 | ✅ 树形结构 | ✅ 完成 |
-| 工具检测 (Windows) | ✅ | ✅ | ✅ 完成 |
-| 工具检测 (WSL) | ✅ | ✅ | ✅ 完成 |
-| 路径转换 (Win↔WSL) | ✅ | ✅ | ✅ 完成 |
-| 环境变量注入 | ✅ | ✅ | ✅ 完成 |
-| 循环启动模式 | ✅ | ✅ | ✅ 完成 |
-| **交互功能** | | | |
-| 键盘导航 (↑↓) | ✅ | ✅ | ✅ 完成 |
-| Enter 进入/选择 | ✅ | ✅ | ✅ 完成 |
-| Esc 返回上级 | ✅ | ✅ | ✅ 完成 |
-| Q 退出程序 | ✅ | ✅ | ✅ 完成 |
-| N 新增项目 | ✅ | ❌ | ⏳ 待实现 |
-| D 删除项目 | ✅ | ❌ | ⏳ 待实现 |
-| I 安装工具 | ✅ | ❌ | ⏳ 待实现 |
-| R 刷新工具列表 | ✅ | ✅ | ✅ 完成 |
-| **高级功能** | | | |
-| Git Worktree 检测 | ✅ | ❌ | ⏳ 待实现 |
-| 多标签启动 (Ctrl+Enter) | ✅ | ❌ | ⏳ 待实现 |
-| 动态标签命名 | ✅ | ❌ | ⏳ 待实现 |
-| 面包屑导航 | ✅ | ✅ | ✅ 完成 |
-| **配置管理** | | | |
-| 配置文件加载 | ✅ | ✅ | ✅ 完成 |
-| 配置文件保存 | ✅ | ✅ | ✅ 完成 |
-| --init 初始化 | ✅ | ✅ | ✅ 完成 |
-| --config 编辑配置 | ✅ | ❌ | ⏳ 待实现 |
-| --version 版本信息 | ✅ | ✅ | ✅ 完成 |
-| **平台支持** | | | |
-| Windows 原生 | ✅ | ✅ | ✅ 完成 |
-| WSL 环境 | ✅ | ✅ | ✅ 完成 |
-| Linux 原生 | ❌ | ✅ | ✅ 新增 |
-| macOS | ❌ | ✅ | ✅ 新增 |
+- ✅ **项目管理**
+  - 树状结构（文件夹 + 项目）
+  - 添加项目/文件夹 (N 键)
+  - 删除项目/文件夹 (D 键)
+  - 面包屑导航
+  - 环境变量注入
+  - 路径验证和创建
 
----
+- ✅ **工具检测**
+  - Windows 工具检测
+  - WSL 工具检测
+  - Linux 工具检测
+  - macOS 工具检测
+  - 批量检测优化
+  - 缓存机制（30秒 TTL）
+  - 手动刷新 (R 键)
 
-## ✅ 已完成功能 (60%)
+- ✅ **工具安装**
+  - 安装菜单 (I 键)
+  - Windows 工具安装
+  - WSL 工具安装
+  - Linux 工具安装
+  - macOS 工具安装
+  - PATH 自动更新（Windows）
+  - 安装后状态刷新
 
-### 1. 核心功能 (100%)
+- ✅ **终端启动**
+  - Windows 环境启动
+  - WSL 环境启动
+  - Linux 环境启动
+  - macOS 环境启动
+  - 新窗口启动 (Enter)
+  - 新标签页启动 (Ctrl+Enter / T)
+  - Windows Terminal 支持
+  - 环境变量传递
+  - 路径自动转换（Windows ↔ WSL）
 
-#### 项目管理
-- ✅ 树形结构项目组织
-- ✅ 文件夹和项目分类
-- ✅ 面包屑导航
-- ✅ 上下键选择
-- ✅ Enter 进入文件夹/选择项目
-- ✅ Esc 返回上级/退出
+- ✅ **Git 集成**
+  - Git worktree 检测
+  - 分支信息显示
+  - 当前分支检测
 
-#### 工具检测
-- ✅ Windows 工具检测
-- ✅ WSL 工具检测
-- ✅ 异步并行检测
-- ✅ 版本信息获取
-- ✅ 加载提示
+- ✅ **国际化 (i18n)**
+  - 多语言支持（英文、中文、日文、德文）
+  - 自动语言检测
+  - 语言切换
 
-#### 路径转换
-- ✅ Windows → WSL 路径转换 (`C:\` → `/mnt/c/`)
-- ✅ 环境变量路径自动转换
-- ✅ 跨平台路径处理
+- ✅ **用户界面**
+  - 交互式菜单
+  - 键盘导航（↑↓）
+  - 快捷键支持
+  - 面包屑导航
+  - 项目信息显示（名称、路径、分支、环境变量）
+  - 工具列表显示
+  - 图标显示（📁 文件夹、📄 项目）
 
-#### 工具启动
-- ✅ Windows 工具启动
-- ✅ WSL 工具启动
-- ✅ 环境变量注入
-- ✅ 工作目录切换
+- ✅ **命令行接口**
+  - `ai-cli` - 启动交互界面
+  - `ai-cli --init` - 初始化配置
+  - `ai-cli --config` - 编辑配置
+  - `ai-cli --version` - 显示版本
+  - `ai-cli --help` - 显示帮助
+  - `ai-cli --uninstall` - 卸载程序
 
-### 2. 配置管理 (80%)
+- ✅ **安装/卸载**
+  - Windows 安装脚本 (`install.ps1`)
+  - Linux/macOS 安装脚本 (`install.sh`)
+  - 桌面快捷方式创建
+  - 卸载功能（保留用户配置）
+  - PATH 环境变量管理
 
-- ✅ JSON 配置文件
-- ✅ 跨平台配置目录
-- ✅ 配置加载/保存
-- ✅ --init 初始化
-- ✅ --version 版本信息
-- ✅ UTF-8 BOM 处理
-- ❌ --config 编辑配置 (待实现)
+## ⚠️ 部分移植的功能
 
-### 3. 用户界面 (70%)
+### Git Worktree 管理
+- ✅ 检测 worktree
+- ✅ 显示分支信息
+- ❌ **Worktree 选择菜单**（PowerShell 版本有 `Select-GitWorktree` 函数）
+  - 多个 worktree 时弹出选择界面
+  - 显示分支状态（ahead/behind）
+  - 显示当前 worktree 标记
+  - 支持 detached HEAD 显示
 
-- ✅ Rich 彩色输出
-- ✅ 菜单渲染
-- ✅ 操作提示
-- ✅ 错误提示
-- ✅ 加载提示
-- ❌ 进度条 (待实现)
+### 后台工具检测
+- ✅ 前台检测（带缓存）
+- ✅ 手动刷新 (R 键)
+- ❌ **后台异步检测**（PowerShell 版本有 `Start-BackgroundDetection` 函数）
+  - 启动时后台 Job 检测工具
+  - 检测完成后自动更新配置
+  - 不阻塞主界面
 
-### 4. 平台支持 (100%)
+## ❌ 未移植的功能
 
-- ✅ Windows 原生支持
-- ✅ WSL 双环境支持
-- ✅ Linux 原生支持 (新增)
-- ✅ macOS 支持 (新增)
-
----
-
-## ⏳ 待实现功能 (40%)
-
-### 1. 交互功能 (高优先级)
-
-#### N 键 - 新增项目/文件夹
-**原版功能**:
+### 1. Git Worktree 选择界面
+**PowerShell 版本实现：**
 ```powershell
-# 1. 显示类型选择 (项目/文件夹)
-# 2. 输入名称
-# 3. 输入路径 (项目)
-# 4. 输入环境变量 (项目，可选)
-# 5. 保存到配置文件
+function Select-GitWorktree {
+    param([array]$worktrees, [string]$currentPath, [string]$projectName)
+    # 显示多个 worktree 选择菜单
+    # 显示分支名、状态（↑ahead ↓behind）、路径
+    # 支持键盘导航选择
+}
 ```
 
-**实现状态**: ❌ 未实现
-- 当前显示 "not yet implemented" 提示
-- 需要实现完整的输入流程
+**影响：**
+- 当项目有多个 worktree 时，Python 版本无法让用户选择
+- 只能使用配置中的默认路径
 
-**实现优先级**: 🔴 高
+**建议实现位置：**
+- `ai_cli/core/git.py` - 添加 `select_worktree()` 方法
+- `ai_cli/app.py` - 在 `_select_project()` 中调用
 
-#### D 键 - 删除项目/文件夹
-**原版功能**:
+### 2. 后台异步工具检测
+**PowerShell 版本实现：**
 ```powershell
-# 1. 显示删除确认界面
-# 2. 显示项目/文件夹信息
-# 3. 要求输入名称确认
-# 4. 从配置文件删除
+function Start-BackgroundDetection {
+    param($configPath)
+    # 启动后台 Job 检测所有工具
+    # 检测完成后更新配置文件
+    # 主界面不阻塞
+}
 ```
 
-**实现状态**: ❌ 未实现
-- 当前显示 "not yet implemented" 提示
-- 需要实现确认流程
+**影响：**
+- Python 版本首次启动时需要等待工具检测完成
+- 用户体验略有延迟（虽然有缓存机制）
 
-**实现优先级**: 🔴 高
+**建议实现方式：**
+- 使用 `asyncio.create_task()` 在后台运行检测
+- 或使用 `threading.Thread` 启动后台线程
+- 检测完成后更新缓存和配置
 
-#### I 键 - 安装工具
-**原版功能**:
+### 3. 配置文件原子写入的备份恢复
+**PowerShell 版本实现：**
 ```powershell
-# 1. 显示未安装工具列表
-# 2. 选择要安装的工具
-# 3. 执行安装命令
-# 4. 显示安装进度
-# 5. 刷新工具列表
+function Save-Config {
+    # 1. 写入临时文件 (.tmp)
+    # 2. 备份现有配置 (.bak)
+    # 3. 移动临时文件到目标位置
+    # 4. 删除备份
+    # 失败时从备份恢复
+}
 ```
 
-**实现状态**: ❌ 未实现
-- 事件已定义但未处理
-- 需要实现安装流程
+**Python 版本实现：**
+- ✅ 使用 UTF-8-sig 编码（处理 BOM）
+- ❌ 没有临时文件和备份机制
+- ❌ 写入失败时无法恢复
 
-**实现优先级**: 🟡 中
+**建议改进：**
+- 在 `ConfigManager.save()` 中添加原子写入逻辑
+- 使用 `tempfile` 模块创建临时文件
+- 添加备份和恢复机制
 
-### 2. 高级功能 (中优先级)
-
-#### Git Worktree 支持
-**原版功能**:
+### 4. PATH 长度检查
+**PowerShell 版本实现：**
 ```powershell
-# 1. 检测项目是否为 Git 仓库
-# 2. 检测是否有多个 worktree
-# 3. 显示 worktree 选择界面
-# 4. 显示分支状态 (ahead/behind)
-# 5. 选择 worktree 后更新路径
+function Add-ToUserPath {
+    # 检查 PATH 长度是否超过 2047 字符
+    # 超过时警告并跳过添加
+}
 ```
 
-**实现状态**: ❌ 未实现
-- 代码已存在 (`ai_cli/core/git.py`)
-- 未集成到主流程
+**Python 版本实现：**
+- ❌ 没有 PATH 长度检查
+- 可能导致 Windows 系统问题
 
-**实现优先级**: 🟡 中
+**建议改进：**
+- 在 `ToolInstaller._add_to_user_path()` 中添加长度检查
+- Windows PATH 限制：2047 字符
 
-#### 多标签启动 (Ctrl+Enter)
-**原版功能**:
+### 5. 工具可执行文件搜索路径
+**PowerShell 版本搜索路径：**
 ```powershell
-# 在 Windows Terminal 新标签页启动工具
-wt.exe -w 0 new-tab --title "KIRO-CLI MyProject" cmd /k "..."
+$searchPaths = @(
+    "$env:LOCALAPPDATA\Programs\Python\Python*\Scripts",
+    "$env:APPDATA\Python\Python*\Scripts",
+    "$env:USERPROFILE\.local\bin",
+    "$env:USERPROFILE\AppData\Roaming\npm",
+    "$env:ProgramFiles\nodejs",
+    "$env:LOCALAPPDATA\Microsoft\WindowsApps",
+    "$env:ProgramFiles\Git\cmd",
+    "$env:USERPROFILE\.cargo\bin",
+    "$env:USERPROFILE\go\bin"
+)
 ```
 
-**实现状态**: ❌ 未实现
-- 原生终端 API 不支持 Ctrl+Enter
-- 需要重新设计快捷键 (如 T 键)
-
-**实现优先级**: 🟢 低
-
-#### 动态标签命名
-**原版功能**:
-```powershell
-# 启动时设置终端标签标题
-title "KIRO-CLI MyProject"
-# 或
-echo -ne '\033]0;KIRO-CLI MyProject\007'
+**Python 版本搜索路径：**
+```python
+search_paths = [
+    os.path.expandvars(r"%LOCALAPPDATA%\Programs\Python\Python*\Scripts"),
+    os.path.expandvars(r"%APPDATA%\Python\Python*\Scripts"),
+    os.path.expandvars(r"%USERPROFILE%\.local\bin"),
+    os.path.expandvars(r"%USERPROFILE%\AppData\Roaming\npm"),
+]
 ```
 
-**实现状态**: ❌ 未实现
-- 需要在启动命令中添加
+**差异：**
+- ❌ Python 版本缺少：
+  - `%ProgramFiles%\nodejs`
+  - `%LOCALAPPDATA%\Microsoft\WindowsApps`
+  - `%ProgramFiles%\Git\cmd`
+  - `%USERPROFILE%\.cargo\bin`
+  - `%USERPROFILE%\go\bin`
 
-**实现优先级**: 🟢 低
+**建议改进：**
+- 在 `ToolInstaller._find_tool_executable()` 中补充搜索路径
 
-### 3. 配置管理 (低优先级)
-
-#### --config 编辑配置
-**原版功能**:
+### 6. 空项目列表提示
+**PowerShell 版本实现：**
 ```powershell
-ai-cli --config
-# 使用默认编辑器打开配置文件
+if ($currentItems.Count -eq 0 -and $currentPath.Count -eq 0) {
+    # 显示提示信息
+    # 自动进入新增项目流程
+}
 ```
 
-**实现状态**: ❌ 未实现
-- CLI 参数已定义
-- 需要实现编辑器调用
+**Python 版本实现：**
+- ❌ 空列表时只显示空菜单
+- 没有友好提示
 
-**实现优先级**: 🟢 低
+**建议改进：**
+- 在 `Application._select_project()` 中添加空列表检测
+- 显示提示信息并引导用户添加项目
 
----
+### 7. 输入取消支持
+**PowerShell 版本实现：**
+```powershell
+function Read-InputWithPlaceholder {
+    param([bool]$AllowCancel = $false)
+    # 支持 ESC 键取消输入
+    # 返回 "__CANCEL__" 标记
+}
+```
 
-## 🆕 新增功能 (Python 版独有)
+**Python 版本实现：**
+- ❌ 输入框不支持 ESC 取消
+- 用户必须输入或 Ctrl+C 退出
 
-### 1. 跨平台支持
-- ✅ Linux 原生支持
-- ✅ macOS 支持
-- ✅ 统一的平台适配器接口
+**建议改进：**
+- 使用 `prompt_toolkit` 库实现高级输入
+- 支持 ESC 取消、历史记录、自动补全
 
-### 2. 改进的错误处理
-- ✅ 异常捕获和提示
-- ✅ UTF-8 BOM 处理
-- ✅ 依赖冲突处理
+### 8. 滚动显示支持
+**PowerShell 版本实现：**
+```powershell
+function Show-Menu {
+    $maxDisplay = [Math]::Min($items.Count, 15)
+    $offset = [Math]::Max(0, $selected - $maxDisplay + 1)
+    # 只显示 15 项，支持滚动
+}
+```
 
-### 3. 更好的代码结构
-- ✅ 模块化设计
-- ✅ 类型提示
-- ✅ 单元测试
+**Python 版本实现：**
+- ❌ 显示所有项目，不支持滚动
+- 项目过多时界面混乱
 
----
+**建议改进：**
+- 在 `Menu.render_tree()` 和 `Menu.render_tools()` 中添加滚动逻辑
+- 限制显示数量（如 15 项）
+- 根据选中项动态调整显示范围
 
-## 📋 实现优先级建议
+### 9. 终端模拟器配置
+**PowerShell 版本支持：**
+- `default` - 默认终端
+- `wezterm` - WezTerm 终端
 
-### 第一阶段 (核心交互) - 1-2 天
+**Python 版本支持：**
+- ✅ `default` - 默认终端
+- ❌ 没有 WezTerm 支持
 
-1. **N 键 - 新增项目** 🔴
-   - 实现类型选择界面
-   - 实现输入流程
-   - 保存到配置文件
+**建议改进：**
+- 在 `PlatformAdapter` 中添加 WezTerm 支持
+- 检测 `wezterm` 命令是否可用
+- 使用 `wezterm start --cwd` 启动
 
-2. **D 键 - 删除项目** 🔴
-   - 实现确认界面
-   - 实现删除逻辑
-   - 更新配置文件
+### 10. 工具显示优化
+**PowerShell 版本：**
+- 项目和文件夹显示图标（📁 📄）
+- 工具不显示图标
 
-3. **I 键 - 安装工具** 🟡
-   - 显示未安装工具
-   - 执行安装命令
-   - 刷新工具列表
+**Python 版本：**
+- ✅ 项目和文件夹显示图标
+- ✅ 工具不显示图标
+- ✅ 项目信息显示在顶部
 
-### 第二阶段 (高级功能) - 2-3 天
+**状态：** 已完全实现
 
-4. **Git Worktree 集成** 🟡
-   - 集成到项目选择流程
-   - 实现 worktree 选择界面
-   - 显示分支状态
+## 📊 功能完成度统计
 
-5. **多标签启动** 🟢
-   - 重新设计快捷键 (T 键)
-   - 实现 Windows Terminal 集成
-   - 实现动态标签命名
+| 类别 | 已完成 | 部分完成 | 未完成 | 完成度 |
+|------|--------|----------|--------|--------|
+| 核心功能 | 9 | 0 | 0 | 100% |
+| 项目管理 | 6 | 0 | 1 | 86% |
+| 工具管理 | 6 | 1 | 1 | 75% |
+| Git 集成 | 2 | 1 | 0 | 67% |
+| 用户界面 | 7 | 0 | 2 | 78% |
+| 安装/卸载 | 5 | 0 | 0 | 100% |
+| 配置管理 | 5 | 0 | 1 | 83% |
+| **总计** | **40** | **2** | **5** | **85%** |
 
-### 第三阶段 (完善功能) - 1 天
+## 🎯 优先级建议
 
-6. **--config 命令** 🟢
-   - 实现编辑器调用
-   - 跨平台编辑器检测
+### 高优先级（影响用户体验）
+1. **滚动显示支持** - 项目过多时界面混乱
+2. **空项目列表提示** - 首次使用体验差
+3. **Git Worktree 选择界面** - 多 worktree 项目无法使用
 
-7. **进度条和动画** 🟢
-   - 工具检测进度条
-   - 安装进度显示
+### 中优先级（功能完善）
+4. **后台异步工具检测** - 减少启动延迟
+5. **输入取消支持** - 提升交互体验
+6. **工具搜索路径补充** - 提高工具检测成功率
 
----
+### 低优先级（稳定性增强）
+7. **配置文件原子写入** - 防止数据丢失
+8. **PATH 长度检查** - 避免系统问题
+9. **WezTerm 支持** - 小众需求
 
-## 🎯 功能完成度统计
+## 📝 实现建议
 
-### 按模块
+### 1. 滚动显示（最优先）
+```python
+# ai_cli/ui/menu.py
+def render_tree(self, items: List[Dict[str, Any]], selected: int = 0, max_display: int = 15) -> None:
+    offset = max(0, selected - max_display + 1)
+    visible_items = items[offset:offset + max_display]
+    # 显示 visible_items
+    # 显示滚动指示器（如 "↑ 3 more above" / "↓ 5 more below"）
+```
 
-| 模块 | 完成度 | 说明 |
-|------|--------|------|
-| 核心功能 | 100% | 项目管理、工具检测、启动 |
-| 基础交互 | 70% | 导航完成，增删改待实现 |
-| 高级功能 | 20% | Worktree 代码存在但未集成 |
-| 配置管理 | 80% | 基本功能完成，编辑待实现 |
-| 平台支持 | 100% | 全平台支持 |
-| 用户界面 | 70% | 基本显示完成，进度条待实现 |
+### 2. Git Worktree 选择
+```python
+# ai_cli/core/git.py
+class GitDetector:
+    def select_worktree(self, worktrees: List[Dict], current_path: str) -> Optional[str]:
+        # 显示 worktree 选择菜单
+        # 返回选中的 worktree 路径
+        pass
 
-### 按优先级
+# ai_cli/app.py
+def _select_project(self) -> Optional[ProjectNode]:
+    # 检测 worktrees
+    worktrees = git_detector.detect_worktrees(project.path)
+    if len(worktrees) > 1:
+        selected_path = git_detector.select_worktree(worktrees, project.path)
+        if selected_path:
+            project.path = selected_path
+```
 
-| 优先级 | 功能数 | 完成数 | 待实现 | 完成度 |
-|--------|--------|--------|--------|--------|
-| 🔴 高 | 5 | 3 | 2 | 60% |
-| 🟡 中 | 8 | 5 | 3 | 62.5% |
-| 🟢 低 | 7 | 4 | 3 | 57% |
-| **总计** | **20** | **12** | **8** | **60%** |
+### 3. 后台异步检测
+```python
+# ai_cli/core/tools.py
+class ToolDetector:
+    def __init__(self):
+        self._background_task = None
+    
+    def start_background_detection(self, tools_config: List[ToolConfig]):
+        self._background_task = asyncio.create_task(
+            self._background_detect(tools_config)
+        )
+    
+    async def _background_detect(self, tools_config: List[ToolConfig]):
+        tools = await self.detect_all_tools(tools_config)
+        # 更新缓存和配置
+```
 
----
+## 🔄 版本历史
 
-## 🚀 下一步行动
+- **v2.2** (PowerShell) - 原始版本，功能完整
+- **v3.0** (Python) - 初始移植，核心功能实现
+- **v3.1.0** (Python) - 功能补全，85% 功能完成
 
-### 立即实现 (本周)
+## 📌 总结
 
-1. **N 键 - 新增项目** (2-3 小时)
-   - 创建 `_add_project()` 方法
-   - 实现输入流程
-   - 集成到主循环
+Python 版本 (v3.1.0) 已经实现了 PowerShell 版本 (v2.2) 的 **85%** 功能，核心功能完全可用。
 
-2. **D 键 - 删除项目** (1-2 小时)
-   - 创建 `_delete_project()` 方法
-   - 实现确认流程
-   - 更新配置文件
+**主要优势：**
+- ✅ 跨平台支持（Windows、Linux、macOS）
+- ✅ 更好的代码结构和可维护性
+- ✅ 国际化支持
+- ✅ 现代化的异步架构
 
-3. **I 键 - 安装工具** (2-3 小时)
-   - 创建 `_install_tool()` 方法
-   - 执行安装命令
-   - 显示进度
+**待改进：**
+- ⚠️ 滚动显示支持
+- ⚠️ Git Worktree 选择界面
+- ⚠️ 后台异步检测
+- ⚠️ 部分细节优化
 
-### 短期实现 (下周)
-
-4. **Git Worktree 集成** (3-4 小时)
-   - 集成到 `_select_project()`
-   - 创建 worktree 选择界面
-   - 测试多 worktree 场景
-
-5. **多标签启动** (2-3 小时)
-   - 添加 T 键支持
-   - 实现 Windows Terminal 集成
-   - 添加动态标签命名
-
-### 长期完善 (下月)
-
-6. **--config 命令** (1 小时)
-7. **进度条** (2 小时)
-8. **完整测试** (4 小时)
-
----
-
-## 📊 总结
-
-### 当前状态
-- ✅ **核心功能完整**: 可以正常使用
-- ✅ **基础交互完成**: 导航和选择流畅
-- ⏳ **高级功能待实现**: 增删改、Worktree、多标签
-
-### 与原版对比
-- ✅ **核心功能**: 100% 对等
-- ⏳ **交互功能**: 70% 对等 (缺少 N/D/I 键)
-- ⏳ **高级功能**: 20% 对等 (缺少 Worktree、多标签)
-- ✅ **平台支持**: 超越原版 (新增 Linux/macOS)
-
-### 建议
-1. **优先实现 N/D/I 键** - 这是用户最常用的功能
-2. **Git Worktree 集成** - 这是核心卖点
-3. **多标签启动** - 提升用户体验
-4. **完整测试** - 确保稳定性
-
----
-
-**评审人**: AI Assistant  
-**评审时间**: 2026-03-01 11:44  
-**当前版本**: 0.1.4  
-**目标版本**: 1.0.0 (功能完整)
+**建议：**
+优先实现高优先级功能（滚动显示、空列表提示、Worktree 选择），即可达到 **95%** 功能完成度，满足日常使用需求。
