@@ -1,408 +1,715 @@
-# AI CLI Launcher (AI プログラミングワークベンチ)
+# AI-CLI (Python エディション)
 
 > 🌐 [English](README.md) | [中文](README.zh.md) | **日本語**
 
-## 1. はじめに
+[![Python バージョン](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![ライセンス](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![ステータス](https://img.shields.io/badge/status-beta-yellow.svg)](https://github.com/hyfhot/AI-CLI)
 
-**AI CLI Launcher** は、PowerShell をベースに作成された軽量ターミナルランチャーツールです。現代の AI 支援プログラミングシーン向けに設計され、さまざまな AI CLI ツール（`kiro-cli`、`Claude Code`、`Kimi CLI`、`Cursor Agent`、`OpenCode` など）を一元管理し、素早く起動することを目的としています。
+**AI-CLI** は、複数の AI コーディングアシスタントを管理するためのクロスプラットフォームターミナルランチャーです。Kiro CLI、Claude Code、Cursor Agent などのツールをシームレスに切り替えます。
 
-このツールは、Windows ネイティブ環境と Windows Subsystem for Linux (WSL) の間の壁を取り払い、開発者が統一されたターミナルインターフェースでターゲットプロジェクトを選択し、ワンクリックで対応する AI プログラミングツールを起動し、パス変換とターミナル環境の初期化を自動的に完了させることができます。
+## ✨ コア機能
 
-> 📚 **サポートされているツール**: ツールの詳細なリスト、インストール手順、比較については、[docs/TOOLS.ja.md](docs/TOOLS.ja.md) を参照してください
+### 🌍 クロスプラットフォームサポート
+- **Windows**: ネイティブサポート + WSL 統合
+- **Linux**: すべての主要ディストリビューションを完全サポート
+- **macOS**: Terminal.app と iTerm2 をサポート
 
-### 🎯 なぜ AI-CLI を選ぶのか？
+### 🔄 深い WSL 統合
+- WSL 環境の自動検出
+- Windows ↔ WSL パスの自動変換
+- Windows から WSL ツールを起動
+- WSL から Windows ツールを起動
 
-**複数の AI コーディングアシスタントを使用する開発者向け**、AI-CLI はこれらの課題を解決します：
+### 📁 プロジェクト管理
+- **ツリー構造**: フォルダでプロジェクトを整理
+- **Git Worktree**: Git worktree の自動検出と選択
+- **環境変数**: プロジェクトごとの環境変数設定
+- **パス正規化**: 異なるプラットフォームのパス形式を自動処理
 
-✅ **コマンドの暗記不要** - 1つの `ai-cli` コマンドで 8+ のツール専用コマンドを置き換え  
-✅ **Windows ↔ WSL のシームレスな切り替え** - 自動パス変換、手動翻訳不要  
-✅ **Git Worktree インテリジェンス** - ブランチを自動検出、並行開発のためにワークツリーを即座に切り替え  
-✅ **環境変数の自動注入** - プロジェクト固有の環境変数を自動読み込み、手動 `export` 不要  
-✅ **マルチタブワークフロー** - `Ctrl+Enter` で複数の AI ツールを並行起動、動的タブ名で整理  
+### ⚡ ツール検出と管理
+- **非同期検出**: async/await を使用した並列ツール検出
+- **スマートキャッシング**: バックグラウンド検出と結果のキャッシング
+- **ワンクリックインストール**: `I` キーを押して不足しているツールをインストール
+- **手動更新**: `R` キーを押してツールリストを更新
+- **環境認識**: Windows、WSL、Linux、macOS 環境を自動検出
 
-**実際の効果**：ターミナルを開く → パスを移動 → 環境変数を設定 → ツールを起動（2-3分）が **3回のキー操作**（↓ Enter Enter）に短縮。
+### 🎨 ユーザーインターフェース
+- **Rich UI**: Rich ライブラリによる美しいターミナルインターフェース
+- **キーボードナビゲーション**: 完全なキーボードショートカットサポート
+- **リアルタイムフィードバック**: ツール検出とインストールの進行状況を表示
+- **テーマサポート**: カスタマイズ可能なカラーテーマ
 
-## 2. 主な機能
+### 🌐 国際化
+- **多言語対応**: 英語、中国語、日本語、ドイツ語
+- **自動検出**: システム言語に基づいて自動選択
+- **設定可能**: 設定ファイルで言語を手動指定
 
-* **🤖 インテリジェント二重環境検出**: 起動時に Windows ホストと WSL 環境にインストールされた AI CLI ツールを自動的に検出し、`[Win]` または `[WSL]` ラベルで分類します。
-* **📂 統合プロジェクト管理**: `config.json` を通じてプロジェクトパスを一元管理し、クロスドライブ・クロス環境をサポートします。
-* **🔄 クロス環境パス変換**: 内蔵のパス変換エンジンが、Windows 絶対パス（例：`C:\Projects\...`）を WSL 準拠のマウントパス（例：`/mnt/c/Projects/...`）に自動的に変換します。
-* **⚡ 純粋なターミナルインタラクション**: キーボード駆動の CLI インターフェース、GUI の読み込み遅延なし、即時応答。
-* **🔁 ループ起動モード**: プログラムは終了せず、ツールとプロジェクトの連続選択をサポートし、作業効率を向上させます。
-* **📑 マルチタブサポート**: Ctrl+Enter で Windows Terminal の新規タブでツールを起動し、マルチタスク管理を容易にします。
-* **🛠️ ツールインストール機能**: I キーを押して、インストールされていない AI CLI ツールをすばやくインストールします。
-* **🏷️ 動的タブ命名**: 起動時に ANSI エスケープシーケンスと Windows ネイティブコマンドを通じて、ターミナルタブタイトル（例：`KIRO-CLI BT2400`）を動的に変更し、マルチタスク管理の明確性を大幅に向上させます。
+## 🚀 クイックスタート
 
----
+### インストール
 
-## 3. インストールと設定ガイド
+#### インストールスクリプトを使用（推奨）
 
-### 3.1 環境要件
-
-* オペレーティングシステム：Windows 10 / Windows 11
-* ランタイム環境：PowerShell 5.1 以上
-* 依存関係：WSL がインストールおよび設定されていること（Linux ツールを使用する場合）
-
-### 3.2 クイックインストール（推奨）
-
-プロジェクトは自動インストールスクリプトを提供しています。以下のコマンドを実行するだけでインストールが完了します：
-
+**Windows**:
 ```powershell
-irm https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.ps1 | iex
+powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
-インストールスクリプトは自動的に以下を実行します：
-1. GitHub から最新バージョンをダウンロード（アイコンファイルを含む）
-2. プログラムファイルを `%LOCALAPPDATA%\AI-CLI` ディレクトリにコピー
-3. デスクトップショートカットを作成（カスタムアイコン付き）
-4. システム PATH 環境変数に追加
-
-インストール完了後、以下の方法で起動できます：
-- デスクトップの "AI-CLI" ショートカットをダブルクリック
-- コマンドラインで `ai-cli` を実行（ターミナルの再起動が必要）
-
-**一般的なコマンド：**
-```powershell
-ai-cli           # インタラクティブインターフェースを起動
-ai-cli --help    # ヘルプ情報を表示
-ai-cli --init    # 設定を初期化
-ai-cli --config  # 設定を編集
+**Linux/macOS**:
+```bash
+bash install.sh
 ```
 
-**アンインストールコマンド：**
-```powershell
-ai-cli -Uninstall
-```
+#### 手動インストール
 
-PATH にまだ追加されていない場合は、以下を使用してアンインストールできます：
-```powershell
-& "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall
-```
-
-**パラメータの説明**: `-` と `--` の両方のパラメータプレフィックスをサポートしています。例：`-Init` と `--init` は同等です（大文字小文字を区別しません）。
-
-### 3.3 手動デプロイ手順
-
-**ステップ 1: プロジェクトのクローンまたはダウンロード**
-```powershell
+```bash
+# リポジトリをクローン
 git clone https://github.com/hyfhot/AI-CLI.git
 cd AI-CLI
+
+# Git worktree を使用する場合
+git worktree add ../ai-cli-multi-platform python-migration
+cd ../ai-cli-multi-platform
+
+# 依存関係をインストール
+pip install -e ".[dev]"
 ```
 
-**ステップ 2: 設定の初期化**
-```powershell
-.\ai-cli.ps1 -Init
+### 設定の初期化
+
+```bash
+ai-cli --init
 ```
 
-これにより、ユーザー設定ディレクトリ（`%APPDATA%\AI-CLI\config.json`）に設定ファイルが作成されます。プログラムディレクトリにデフォルトの設定がある場合は自動的にコピーされます。それ以外の場合は、新しい設定が作成されます。
+これにより、一般的な AI ツールの設定を含むデフォルトの設定ファイルが作成されます。
 
-設定ファイルを手動で編集してプロジェクトを追加できます：
+### 実行
 
-```json
-{
-  "projects": [
-    {
-      "name": "プロジェクト名",
-      "path": "C:\\Projects\\MyProject",
-      "description": "プロジェクトの説明（オプション）"
-    }
-  ]
-}
+```bash
+ai-cli
 ```
 
-**ステップ 3: プログラムの実行**
-```powershell
-.\ai-cli.ps1
+## 📖 使用方法
+
+### コマンドラインオプション
+
+```bash
+ai-cli              # インタラクティブインターフェースを起動
+ai-cli --init       # 設定ファイルを初期化
+ai-cli --config     # 設定ファイルを編集
+ai-cli --uninstall  # AI-CLI をアンインストール
+ai-cli --version    # バージョン情報を表示
+ai-cli --help       # ヘルプ情報を表示
 ```
 
-**ヘルプの表示**
-```powershell
-.\ai-cli.ps1 --help
-```
+### キーボードショートカット
 
----
+#### プロジェクト選択画面
 
-## 4. 使用手順
+| キー | 機能 |
+|------|------|
+| `↑` / `↓` | 上下に移動 |
+| `Enter` | プロジェクトを選択 / フォルダに入る |
+| `Esc` | 親フォルダに戻る |
+| `N` | 新しいプロジェクトまたはフォルダを作成 |
+| `D` | 選択したプロジェクトまたはフォルダを削除 |
+| `Q` | アプリケーションを終了 |
 
-### 4.1 起動とインターフェースの説明
+#### ツール選択画面
 
-`ai-cli` を実行すると、純粋なターミナルインタラクションインターフェースに入ります：
+| キー | 機能 |
+|------|------|
+| `↑` / `↓` | 上下に移動 |
+| `Enter` | ツールを起動（新しいウィンドウ） |
+| `Ctrl+Enter` | ツールを起動（新しいタブ） |
+| `I` | 不足しているツールをインストール |
+| `R` | ツールリストを更新 |
+| `Esc` | プロジェクト選択に戻る |
+| `Q` | アプリケーションを終了 |
 
-#### プロジェクト選択インターフェース（ツリー構造）
-```
-=== プロジェクトを選択 ===
-> 📁 フロントエンドプロジェクト (3 件)
-  📁 バックエンドプロジェクト (2 件)
-  📄 スタンドアローンプロジェクト (C:\Projects\standalone)
+### ワークフロー
 
-[↑↓] 選択  [Enter] 入室/確認  [N] 新規  [D] 削除  [Q] 終了
-```
+1. **起動**: `ai-cli` を実行
+2. **プロジェクトを選択**: 矢印キーでプロジェクトを選択し、`Enter` で確定
+3. **ツールを選択**: 使用する AI ツールを選択
+4. **作業開始**: ツールが新しいウィンドウまたはタブで起動
 
-フォルダに入った後：
-```
-  Home > フロントエンドプロジェクト
+## 🔧 設定ガイド
 
-=== プロジェクトを選択 ===
-> 📄 Vue プロジェクト (C:\Projects\vue-app)
-  📁 React プロジェクト (2 件)
-  📄 Angular プロジェクト (C:\Projects\angular-app)
+### 設定ファイルの場所
 
-[↑↓] 選択  [Enter] 入室/確認  [N] 新規  [D] 削除  [Esc] 戻る  [Q] 終了
-```
+- **Windows**: `%APPDATA%\AI-CLI\config.json`
+- **Linux**: `~/.config/ai-cli/config.json`
+- **macOS**: `~/Library/Application Support/ai-cli/config.json`
 
-#### ツール選択インターフェース
-```
-=== AI ツールを選択 (プロジェクト：プロジェクト 1) ===
-> [WSL] kiro-cli
-  [Win] claude
-  [WSL] opencode
-  [Win] aider
+### 設定ファイルの構造
 
-[↑↓] 選択  [Enter] 起動  [Ctrl+Enter] 新規タブ  [I] インストール  [Esc] 戻る  [Q] 終了
-```
-
-#### 新規作成インターフェース（タイプ選択）
-```
-=== タイプを選択 ===
-> 📄 プロジェクト
-  📁 フォルダ
-
-[↑↓] 選択  [Enter] 確認  [Esc] キャンセル
-```
-
-#### 削除確認インターフェース
-```
-=== 削除確認 ===
-プロジェクト名：MyProject_
-
-プロジェクト名：MyProject
-プロジェクトパス：C:\Projects\MyProject
-環境変数（オプション、Enter キーでスキップ）:
-  形式：KEY=VALUE、1 行 1 つ、空行で終了
-  環境変数：API_KEY=sk-xxx
-    追加済み：API_KEY=sk-xxx
-削除予定：📁 フロントエンドプロジェクト (5 件を含む)
-
-⚠️  警告：この操作は元に戻せません！
-削除を確認するには名前を入力してください：フロントエンドプロジェクト_
-
-[名前を入力] 確認  [Esc] キャンセル
-```
-
-### 4.2 キーボードショートカット
-
-#### プロジェクト選択インターフェース
-- `↑↓` - ナビゲーション選択
-- `Enter` - フォルダに入るまたはプロジェクトを選択
-- `N` - 新しいプロジェクトまたはフォルダ
-- `D` - プロジェクトまたはフォルダを削除
-- `Esc` - 親フォルダに戻る
-- `Q` - プログラムを終了
-
-#### ツール選択インターフェース
-- `↑↓` - ナビゲーション選択
-- `Enter` - 新しいウィンドウでツールを起動
-- `Ctrl+Enter` - 新しいタブでツールを起動（Windows Terminal が必要）
-- `I` - 新しいツールをインストール
-- `Esc` - プロジェクト選択に戻る
-- `Q` - プログラムを終了
-
-#### 新規作成インターフェース
-- プロジェクト名を入力（必須、重複不可）
-- プロジェクトパスを入力（必須、パスの存在を自動検出）
-- 環境変数を入力（オプション、形式：KEY=VALUE）
-- 追加を確認またはキャンセル
-
-### 4.3 ツリー構造管理
-
-プロジェクトはツリー構造の組織をサポートしています：
-- **フォルダ**: プロジェクトの分類管理に使用され、プロジェクトとサブフォルダを含めることができます
-- **プロジェクト**: 実際の作業ディレクトリ、パスと環境変数を含む
-- **パンくずリストナビゲーション**: 現在位置を表示し、マルチレベルナビゲーションに便利
-- **再帰的削除**: フォルダを削除するときに含まれるアイテムの数を表示
-
-### 4.4 実行効果
-
-* スクリプトは自動的に該当するターミナル（Cmd または WSL）を起動します。
-* ターミナルは自動的に選択されたプロジェクトの対応するパスに `cd` します。
-* プロジェクトで設定された環境変数は、実行環境に自動的に注入されます。
-  * **インテリジェントパス変換**: WSL 環境では、Windows パス形式の環境変数値（例：`C:\Projects\...`）が WSL パス形式（`/mnt/c/Projects/...`）に自動的に変換されます。
-* ターミナル上部のタブ名は自動的に `[ツール名] [プロジェクト名]` に変更され、マルチインスタンスの識別に便利です。
-
----
-
-## 5. 技術アーキテクチャと実装原理
-
-### 5.1 ツリー構造の実装
-
-プロジェクト設定は再帰的なツリー構造を使用しています：
 ```json
 {
   "projects": [
     {
       "type": "folder",
-      "name": "フロントエンドプロジェクト",
+      "name": "マイプロジェクト",
       "children": [
         {
           "type": "project",
-          "name": "Vue プロジェクト",
-          "path": "C:\\Projects\\vue-app"
+          "name": "Web アプリ",
+          "path": "/path/to/project",
+          "env": {
+            "API_KEY": "your-api-key",
+            "DEBUG": "true"
+          }
         }
       ]
-    }
-  ]
-}
-```
-
-- 古いバージョンのフラット設定をツリー構造に自動的に移行
-- 再帰的なトラバース、追加、削除操作をサポート
-- パンくずリストナビゲーションが現在のパスを追跡
-
-### 5.2 パス解決エンジン (`ConvertTo-WslPath`)
-
-正規表現 `^([a-zA-Z]):(.*)` を使用して Windows ドライブ文字を取得し、`/mnt/小文字のドライブ文字` 形式に変換し、バックスラッシュ `\` をフォワードスラッシュ `/` に置き換えて、WSL が Windows ファイルシステムを正しくマウントおよびアクセスできるようにします。
-
-### 5.3 ツール検出メカニズム
-
-* **Windows 環境**: PowerShell 組み込み cmdlet `Get-Command -ErrorAction SilentlyContinue` を使用して、低オーバーヘッドのサイレント検出を実行します。
-* **WSL 環境**: `wsl.exe -e bash -ic "command -v tool"` を通じて検出を実行し、`-ic` パラメータを使用して `.bashrc` 環境変数がロードされることを保証します。
-
-### 5.4 ターミナル起動とプロセス配布
-
-ツール環境フラグ（`[Win]` / `[WSL]`）に基づいて、異なる戦略を実行します：
-
-* **WSL の場合**:
-`-e bash -ic` を組み合わせて使用し、完全な Linux 環境変数がロードされることを保証し（`command not found` などの問題を解決）、`echo -ne '\033]0;TITLE\007'` を使用して ANSI シーケンスを送信し、ターミナルタイトルを設定します。
-* **Windows の場合**:
-`cmd.exe /k` を使用してコンソールウィンドウを開いたままにし、`title` コマンドを通じてタイトルを変更し、`cd /d` を使用して安全なクロスドライブディレクトリ切り替えを実現します。
-
----
-
-## 6. ツールインストール機能
-
-### 6.1 使用方法
-
-ツール選択インターフェースで `I` キーを押すと、ツールインストールインターフェースに入ります：
-
-```
-=== AI ツールをインストール ===
-> [WSL] kiro-cli
-  [Win] gemini
-  [WSL] cursor-agent
-
-[↑↓] 選択  [Enter] インストール  [Esc] 戻る  [Q] 終了
-```
-
-インストールするツールを選択し、Enter キーを押して確認すると、プログラムは自動的にインストールコマンドを実行します。
-
-### 6.2 サポートされているツール
-
-`config.json` 設定によると、現在 8 つのメインストリーム AI CLI ツールのインストールをサポートしています。詳細については、[docs/TOOLS.ja.md](docs/TOOLS.ja.md) と [docs/INSTALL-GUIDE.ja.md](docs/INSTALL-GUIDE.ja.md) を参照してください。
-
----
-
-## 7. 設定ファイルの説明
-
-設定ファイルの場所：`%APPDATA%\AI-CLI\config.json`（通常は `C:\Users\<ユーザー名>\AppData\Roaming\AI-CLI\config.json`）
-
-**設定の優先順位**:
-1. ユーザー設定ディレクトリの `config.json` を優先的に読み取る
-2. 存在しない場合は、プログラムディレクトリのデフォルトの `config.json` を読み取る
-3. すべての変更はユーザー設定ディレクトリに保存される
-
-**注意**: 設定ファイルはプログラムとは別に保存され、プログラムをアンインストールしても設定は失われません。
-
-### 7.1 config.json の構造
-
-```json
-{
-  "projects": [
-    {
-      "name": "プロジェクト名",
-      "path": "プロジェクトパス",
-      "description": "プロジェクトの説明（オプション）",
-      "env": {
-        "API_KEY": "your-api-key",
-        "DEBUG": "true"
-      }
     }
   ],
   "tools": [
     {
-      "name": "ツールコマンド",
-      "displayName": "表示名",
-      "winInstall": "Windows インストールコマンドまたは null",
-      "wslInstall": "WSL インストールコマンドまたは null",
-      "checkCommand": "検出コマンド",
-      "url": "公式ウェブサイト"
+      "name": "kiro-cli",
+      "displayName": "Kiro CLI",
+      "windowsInstall": "winget install kiro-cli",
+      "wslInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "linuxInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "macosInstall": "brew install kiro-cli",
+      "checkCommand": "kiro-cli --version",
+      "url": "https://kiro.dev/cli/"
     }
   ],
   "settings": {
     "language": "auto",
-    "defaultEnv": "wsl",
-    "terminalEmulator": "default"
+    "terminalEmulator": "default",
+    "theme": "default"
   }
 }
 ```
 
-### 7.2 プロジェクトの追加
+### プロジェクト設定
 
-`config.json` を編集し、`projects` 配列に追加します：
+#### プロジェクトタイプ
 
+**フォルダ**:
 ```json
 {
-  "name": "MyProject",
-  "path": "C:\\Projects\\MyProject",
-  "description": "マイプロジェクト"
+  "type": "folder",
+  "name": "プロジェクトグループ名",
+  "children": [...]
 }
 ```
 
-### 7.3 カスタムツールの追加
-
-`config.json` を編集し、`tools` 配列に追加します：
-
+**プロジェクト**:
 ```json
 {
-  "name": "mytool",
-  "displayName": "マイツール",
-  "winInstall": "npm install -g mytool",
-  "wslInstall": "npm install -g mytool",
-  "checkCommand": "mytool --version",
-  "url": "https://mytool.com"
+  "type": "project",
+  "name": "プロジェクト名",
+  "path": "/absolute/path/to/project",
+  "env": {
+    "KEY": "value"
+  }
 }
 ```
 
+#### 環境変数
+
+各プロジェクトに独立した環境変数を設定：
+
+```json
+{
+  "type": "project",
+  "name": "API プロジェクト",
+  "path": "/path/to/api",
+  "env": {
+    "API_KEY": "sk-xxx",
+    "API_BASE_URL": "https://api.example.com",
+    "DEBUG": "true",
+    "LOG_LEVEL": "info"
+  }
+}
+```
+
+### ツール設定
+
+#### 必須フィールド
+
+- `name`: ツールのコマンド名（検出に使用）
+- `displayName`: 表示名
+- `checkCommand`: ツールがインストールされているかチェックするコマンド
+
+#### インストールコマンド（プラットフォーム別）
+
+- `windowsInstall`: Windows ネイティブインストールコマンド
+- `wslInstall`: WSL 環境インストールコマンド
+- `linuxInstall`: Linux インストールコマンド
+- `macosInstall`: macOS インストールコマンド
+
+#### オプションフィールド
+
+- `url`: ツールの公式ウェブサイト（ツールリストに表示）
+
+#### 設定例
+
+```json
+{
+  "name": "cursor",
+  "displayName": "Cursor Agent",
+  "windowsInstall": "winget install Cursor",
+  "wslInstall": "curl -fsSL https://cursor.sh/install | bash",
+  "linuxInstall": "curl -fsSL https://cursor.sh/install | bash",
+  "macosInstall": "brew install --cask cursor",
+  "checkCommand": "cursor --version",
+  "url": "https://cursor.sh"
+}
+```
+
+### 設定オプション
+
+#### language（言語）
+
+- `auto`: システム言語を自動検出（デフォルト）
+- `en`: 英語
+- `zh`: 中国語
+- `ja`: 日本語
+- `de`: ドイツ語
+
+#### terminalEmulator（ターミナルエミュレータ）
+
+- `default`: システムデフォルトターミナルを使用（デフォルト）
+- `wt`: Windows Terminal（Windows のみ）
+- `iterm`: iTerm2（macOS のみ）
+- `gnome-terminal`: GNOME Terminal（Linux のみ）
+- `konsole`: Konsole（Linux のみ）
+
+#### theme（テーマ）
+
+- `default`: デフォルトダークテーマ
+- 将来のバージョンでより多くのテーマをサポート予定
+
+## 🏗️ プロジェクトアーキテクチャ
+
+### ディレクトリ構造
+
+```
+ai_cli/
+├── __init__.py        # パッケージ初期化
+├── cli.py             # CLI エントリーポイント
+├── app.py             # メインアプリケーションロジック
+├── models.py          # データモデル
+├── config.py          # 設定管理
+├── utils.py           # パス変換ユーティリティ
+├── core/              # コア機能モジュール
+│   ├── __init__.py
+│   ├── tools.py       # ツール検出
+│   ├── projects.py    # プロジェクト管理
+│   ├── git.py         # Git 統合
+│   └── installer.py   # ツールインストール
+├── ui/                # ユーザーインターフェースモジュール
+│   ├── __init__.py
+│   ├── theme.py       # テーマ設定
+│   ├── menu.py        # メニューレンダリング
+│   └── input.py       # キーボード入力処理
+├── platform/          # プラットフォームアダプターモジュール
+│   ├── __init__.py
+│   ├── base.py        # 抽象基底クラス
+│   ├── windows.py     # Windows アダプター
+│   ├── linux.py       # Linux アダプター
+│   ├── macos.py       # macOS アダプター
+│   └── factory.py     # プラットフォームファクトリー
+└── i18n/              # 国際化モジュール
+    ├── __init__.py
+    └── manager.py     # 言語マネージャー
+```
+
+### コアモジュールの説明
+
+#### models.py - データモデル
+
+すべてのデータ構造を定義：
+- `Config`: メイン設定オブジェクト
+- `Settings`: 設定オプション
+- `ProjectNode`: プロジェクトノード（ツリー構造をサポート）
+- `Tool`: ツールオブジェクト
+- `ToolConfig`: ツール設定
+- `ToolEnvironment`: ツール実行環境列挙型
+
+#### config.py - 設定管理
+
+- クロスプラットフォーム設定ファイルパス処理
+- 設定ファイルの読み込みと保存
+- レガシー設定バージョンからの移行
+- デフォルト設定の作成
+
+#### app.py - メインアプリケーション
+
+- アプリケーションメインループ
+- プロジェクト選択ロジック
+- ツール選択ロジック
+- ツール起動ロジック
+- プロジェクトとフォルダの CRUD 操作
+
+#### core/tools.py - ツール検出
+
+- 非同期並列ツール検出
+- プラットフォーム固有の検出ロジック
+- Windows ネイティブツール検出
+- WSL ツール検出
+- ツールキャッシュ管理
+
+#### core/git.py - Git 統合
+
+- Git worktree の検出
+- ブランチステータスの表示
+- インタラクティブな worktree 選択
+
+#### core/installer.py - ツールインストール
+
+- プラットフォームごとのインストールコマンド選択
+- インストールプロセスの実行
+- インストール後のパス更新
+- インストール済みツールの検索
+
+#### ui/menu.py - メニューレンダリング
+
+- プロジェクトツリーのレンダリング
+- ツールリストのレンダリング
+- パンくずナビゲーションの表示
+- 画面クリアと更新
+
+#### ui/input.py - キーボード入力
+
+- クロスプラットフォームキーボード入力処理
+- Windows と Unix システムの異なる実装
+- テキスト入力サポート
+- 特殊キー処理
+
+#### platform/ - プラットフォームアダプター
+
+- 抽象プラットフォームインターフェース
+- Windows 固有の実装（Windows Terminal サポート）
+- Linux 固有の実装（複数のターミナルサポート）
+- macOS 固有の実装（iTerm2 サポート）
+- プラットフォームファクトリーパターン
+
+#### i18n/manager.py - 国際化
+
+- 言語検出
+- 翻訳辞書管理
+- テキスト取得インターフェース
+
+## 🔍 高度な機能
+
+### Git Worktree サポート
+
+プロジェクトパスが Git worktree の場合、AI-CLI は：
+
+1. すべての worktree を自動検出
+2. 各 worktree のブランチとステータスを表示
+3. 使用する worktree の選択を許可
+4. ブランチの先行/遅延コミット数を表示
+
+### WSL パス変換
+
+AI-CLI は Windows と WSL 間のパス変換を自動処理：
+
+- Windows パス: `C:\Users\username\project`
+- WSL パス: `/mnt/c/Users/username/project`
+
+変換は双方向で、以下をサポート：
+- Windows から WSL ツールを起動
+- WSL から Windows ツールを起動
+
+### 非同期ツール検出
+
+ツール検出は非同期並列処理を使用：
+
+1. **起動時**: インターフェースを素早く表示し、バックグラウンドでツールを検出
+2. **キャッシング**: 検出結果をキャッシュして繰り返しチェックを回避
+3. **更新**: `R` キーを押してキャッシュをクリアして再検出
+
+### 環境変数インジェクション
+
+各プロジェクトに設定された環境変数は、ツール起動時に注入されます：
+
+```json
+{
+  "type": "project",
+  "name": "API プロジェクト",
+  "path": "/path/to/api",
+  "env": {
+    "API_KEY": "sk-xxx",
+    "DEBUG": "true"
+  }
+}
+```
+
+ツールを起動すると、これらの環境変数がツールの実行環境に追加されます。
+
+## 🧪 テスト
+
+### テストの実行
+
+```bash
+# すべてのテストを実行
+pytest
+
+# 特定のテストファイルを実行
+pytest tests/test_models.py
+
+# 特定のテストを実行
+pytest tests/test_models.py::TestConfig::test_from_dict
+
+# 詳細出力を表示
+pytest -v
+
+# 印刷出力を表示
+pytest -s
+```
+
+### テストカバレッジ
+
+```bash
+# カバレッジレポート付きでテストを実行
+pytest --cov=ai_cli
+
+# HTML カバレッジレポートを生成
+pytest --cov=ai_cli --cov-report=html
+
+# レポートを表示
+open htmlcov/index.html  # macOS
+xdg-open htmlcov/index.html  # Linux
+start htmlcov/index.html  # Windows
+```
+
+### テストファイルの説明
+
+- `test_models.py`: データモデルテスト
+- `test_config.py`: 設定管理テスト
+- `test_utils.py`: パス変換テスト
+- `test_platform.py`: プラットフォームアダプターテスト
+- `test_git.py`: Git 統合テスト
+- `test_tools.py`: ツール検出テスト
+- `test_projects.py`: プロジェクト管理テスト
+- `test_ui.py`: UI コンポーネントテスト
+- `test_app.py`: アプリケーション統合テスト
+- `test_cli.py`: CLI エントリーポイントテスト
+
+## 📝 開発ガイド
+
+### 要件
+
+- **Python**: 3.8 以上
+- **依存関係**:
+  - `rich`: ターミナル UI レンダリング
+  - `prompt-toolkit`: キーボード入力処理
+  - `click`: CLI フレームワーク
+  - `platformdirs`: クロスプラットフォームパス
+
+### 開発環境のセットアップ
+
+```bash
+# 1. リポジトリをクローン
+git clone https://github.com/hyfhot/AI-CLI.git
+cd AI-CLI
+
+# 2. Python バージョンの worktree を作成（必要な場合）
+git worktree add ../ai-cli-multi-platform python-migration
+cd ../ai-cli-multi-platform
+
+# 3. 仮想環境を作成（推奨）
+python -m venv venv
+
+# 仮想環境をアクティブ化
+# Windows:
+venv\Scripts\activate
+# Linux/macOS:
+source venv/bin/activate
+
+# 4. 開発依存関係をインストール
+pip install -e ".[dev]"
+
+# 5. テストを実行して環境を確認
+pytest
+```
+
+### コードスタイル
+
+プロジェクトは PEP 8 スタイルガイドに従います：
+
+```bash
+# コードチェックツールをインストール
+pip install flake8 black mypy
+
+# コードチェックを実行
+flake8 ai_cli tests
+
+# コードを自動フォーマット
+black ai_cli tests
+
+# 型チェック
+mypy ai_cli
+```
+
+### 新しいツールの追加
+
+`config.json` に新しいツール設定を追加：
+
+```json
+{
+  "name": "new-tool",
+  "displayName": "New Tool",
+  "windowsInstall": "winget install new-tool",
+  "wslInstall": "curl -fsSL https://example.com/install | bash",
+  "linuxInstall": "curl -fsSL https://example.com/install | bash",
+  "macosInstall": "brew install new-tool",
+  "checkCommand": "new-tool --version",
+  "url": "https://example.com"
+}
+```
+
+### 新しい言語の追加
+
+`ai_cli/i18n/manager.py` に翻訳を追加：
+
+```python
+translations = {
+    'new_lang': {
+        'app_title': 'AI-CLI',
+        'select_project': 'Select Project',
+        # ... その他の翻訳
+    }
+}
+```
+
+### デバッグのヒント
+
+```bash
+# デバッグモードを有効化
+ai-cli --debug
+
+# Python デバッガーを使用
+python -m pdb -m ai_cli.cli
+
+# 詳細ログを表示
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+## 🐛 トラブルシューティング
+
+### Windows の問題
+
+**問題**: Windows Terminal を検出できない
+```bash
+# 解決策: Windows Terminal がインストールされていることを確認
+winget install Microsoft.WindowsTerminal
+```
+
+**問題**: WSL ツール検出が失敗
+```bash
+# 解決策: WSL が有効になっていることを確認
+wsl --install
+```
+
+### Linux の問題
+
+**問題**: ターミナルエミュレータ検出が失敗
+```bash
+# 解決策: サポートされているターミナルをインストール
+sudo apt install gnome-terminal  # Ubuntu/Debian
+sudo dnf install gnome-terminal  # Fedora
+```
+
+### macOS の問題
+
+**問題**: iTerm2 が検出されない
+```bash
+# 解決策: iTerm2 がインストールされていることを確認
+brew install --cask iterm2
+```
+
+### 一般的な問題
+
+**問題**: 設定ファイルが破損
+```bash
+# 解決策: 設定を再初期化
+ai-cli --init
+```
+
+**問題**: ツール検出キャッシュが古い
+```bash
+# 解決策: ツール選択画面で R キーを押して更新
+```
+
+## 🤝 貢献
+
+あらゆる形式の貢献を歓迎します！
+
+### 貢献方法
+
+1. **バグ報告**: [GitHub Issues](https://github.com/hyfhot/AI-CLI/issues) で問題を報告
+2. **機能リクエスト**: 新機能のアイデアを提案
+3. **コード貢献**: Pull Request を送信
+4. **ドキュメント**: ドキュメントと例を改善
+5. **翻訳**: 新しい言語サポートを追加
+
+### Pull Request プロセス
+
+1. プロジェクトをフォーク
+2. 機能ブランチを作成 (`git checkout -b feature/AmazingFeature`)
+3. 変更をコミット (`git commit -m 'Add some AmazingFeature'`)
+4. ブランチにプッシュ (`git push origin feature/AmazingFeature`)
+5. Pull Request を開く
+
+### コミット規約
+
+[Conventional Commits](https://www.conventionalcommits.org/) に従う：
+
+```
+feat: 新機能を追加
+fix: バグを修正
+docs: ドキュメント更新
+style: コードフォーマット
+refactor: コードリファクタリング
+test: テスト関連
+chore: ビルド/ツールチェーン更新
+```
+
+## 📄 ライセンス
+
+このプロジェクトは MIT ライセンスの下でライセンスされています - 詳細は [LICENSE](LICENSE) ファイルを参照してください。
+
+## 🔗 関連リンク
+
+- **オリジナルプロジェクト**: [AI-CLI (PowerShell エディション)](https://github.com/hyfhot/AI-CLI)
+- **ドキュメント**: [docs/](docs/)
+- **問題トラッカー**: [GitHub Issues](https://github.com/hyfhot/AI-CLI/issues)
+- **変更履歴**: [CHANGELOG.md](CHANGELOG.md)
+
+## 🙏 謝辞
+
+これらのオープンソースプロジェクトに感謝：
+
+- [Rich](https://github.com/Textualize/rich) - 強力なターミナル UI ライブラリ
+- [Prompt Toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit) - インタラクティブコマンドラインツール
+- [Click](https://github.com/pallets/click) - Python CLI フレームワーク
+- [platformdirs](https://github.com/platformdirs/platformdirs) - クロスプラットフォームディレクトリパス
+
+## 📊 プロジェクトステータス
+
+- **バージョン**: Beta
+- **Python バージョン**: 3.8+
+- **プラットフォーム**: Windows, Linux, macOS
+- **メンテナンス**: 活発に開発中
+
+## 🗺️ ロードマップ
+
+- [ ] より多くの AI ツールをサポート
+- [ ] プラグインシステム
+- [ ] 設定ファイル検証
+- [ ] より多くのテーマオプション
+- [ ] ツール使用統計
+- [ ] クラウド設定同期
+- [ ] プロジェクトテンプレートサポート
+
 ---
 
-## 8. よくある質問 (FAQ)
-
-**Q1: 新しいプロジェクトを追加するには？**
-`config.json` ファイルを編集し、`projects` 配列にプロジェクト情報を追加するか、`ai-cli -Init` を実行して設定を再初期化します。
-
-**Q2: 実行時にツールが見つからないというメッセージが表示される？**
-1. ツールが正しくインストールされていることを確認する
-2. PATH 環境変数を確認する
-3. WSL ツールの場合、WSL 環境が正しく設定されていることを確認する
-4. `ai-cli` を実行してツールを再検出する
-
-**Q3: WSL 起動後に `No such file or directory` と表示される？**
-プロジェクトパスが正しいか確認し、そのドライブ（C ドライブ、D ドライブなど）が WSL によって正常にマウントされていることを確認します。
-
-**Q4: マルチタブ機能を使用するには？**
-Windows Terminal がインストールされていることを確認し、ツール選択インターフェースで `Ctrl+Enter` を押してツールを起動します。
-
-**Q5: アンインストールするには？**
-`ai-cli -Uninstall` または `& "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall` を実行します。
-
----
-
-## 9. 関連ドキュメント
-
-- **[docs/TOOLS.ja.md](docs/TOOLS.ja.md)** - 8 つのメインストリーム AI CLI ツールの詳細なリファレンスマニュアル
-- **[docs/INSTALL-GUIDE.ja.md](docs/INSTALL-GUIDE.ja.md)** - ツールインストール機能の使用ガイド
-- **[docs/BUGFIX.ja.md](docs/BUGFIX.ja.md)** - バグ修正記録と技術詳細
-- **[docs/CHANGELOG.ja.md](docs/CHANGELOG.ja.md)** - バージョン更新ログ
-
----
-
-*最終更新日：2026-02-26*
+**AI-CLI チームが ❤️ を込めて作成**

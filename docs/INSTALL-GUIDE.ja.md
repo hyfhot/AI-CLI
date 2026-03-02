@@ -1,126 +1,133 @@
-🌐 [English](INSTALL-GUIDE.md) | [中文](INSTALL-GUIDE.zh.md) | [日本語](INSTALL-GUIDE.ja.md)
+# AI-CLI インストールガイド
 
-# AI-CLI インストールツールガイド
+> 🌐 [English](INSTALL-GUIDE.md) | [中文](INSTALL-GUIDE.zh.md) | **日本語**
 
-## 機能概要
+## クイックインストール
 
-ツール選択画面で `I` キーを押すと、未インストールの AI CLI ツールをすばやくインストールできます。
+### インストールスクリプトを使用（推奨）
 
-## 使用手順
-
-### 1. AI-CLI の起動
+**Windows**:
 ```powershell
-.\ai-cli.ps1
+powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
-### 2. プロジェクトの選択
-↑↓ キーを使用してプロジェクトを選択し、Enter キーを押して確定します。
-
-### 3. I キーを押してインストール画面に入る
-ツール選択画面で `I` キーを押すと、インストールツールリストが開きます。
-
-### 4. インストールするツールの選択
-- リストには、未インストールだがインストールコマンドが設定されているすべてのツールが表示されます
-- ツール名の後の `[Win]` または `[WSL]` は、インストール環境を示します
-- ↑↓ キーを使用して選択し、Enter キーでインストールを確定します
-- Esc キーを押すとツール選択画面に戻ります
-
-### 5. インストール完了を待つ
-- 画面にインストールコマンドと実行プロセスが表示されます
-- インストール完了後、任意のキーを押して戻ります
-
-## キーボードショートカット
-
-### ツール選択画面
-- `↑↓` - ナビゲーション選択
-- `Enter` - 新しいウィンドウでツールを起動
-- `Ctrl+Enter` - 新しいタブでツールを起動（Windows Terminal が必要）
-- `I` - 新しいツールをインストール
-- `Esc` - プロジェクト選択に戻る
-- `Q` - プログラムを終了
-
-### インストールツール画面
-- `↑↓` - ナビゲーション選択
-- `Enter` - 選択したツールをインストール
-- `Esc` - ツール選択に戻る
-- `Q` - プログラムを終了
-
-## インストールロジック
-
-### Windows 環境ツール
-PowerShell でインストールコマンドを直接実行します。例：
-```powershell
-npm install -g @anthropic-ai/claude-code
-```
-
-### WSL 環境ツール
-WSL を通じて bash コマンドを実行します。例：
+**Linux/macOS**:
 ```bash
-wsl.exe -e bash -ic "curl -fsSL https://cli.kiro.dev/install | bash"
+bash install.sh
 ```
 
-## サポートされているツール
+### 手動インストール
 
-`config.json` の設定に基づき、現在以下のツールのインストールをサポートしています：
+```bash
+# リポジトリをクローン
+git clone https://github.com/hyfhot/AI-CLI.git
+cd AI-CLI
 
-| ツール | Windows | WSL/Linux |
-|------|---------|-----------|
-| Kiro CLI | ❌ | ✅ |
-| Claude Code | ✅ | ✅ |
-| OpenAI Codex | ✅ | ✅ |
-| Kimi CLI | ✅ | ✅ |
-| Gemini CLI | ✅ | ✅ |
-| Cursor Agent | ❌ | ✅ |
-| OpenCode | ✅ | ✅ |
-| Aider | ✅ | ✅ |
+# Git worktree を使用する場合
+git worktree add ../ai-cli-multi-platform python-migration
+cd ../ai-cli-multi-platform
 
-## 注意事項
-
-1. **権限要件**：一部のインストールコマンドには管理者権限が必要な場合があります
-2. **ネットワーク接続**：インストール中は安定したネットワーク接続が必要です
-3. **依存関係の確認**：必要な依存関係（Node.js、Python、pip など）がインストールされていることを確認してください
-4. **WSL 設定**：WSL ツールには事前に WSL 環境の設定が必要です
-5. **インストール検証**：インストール完了後、次回の起動時にツールが自動的に検出されます
-
-## カスタムインストールコマンド
-
-`config.json` ファイルを編集して、ツールのインストールコマンドを変更または追加できます：
-
-```json
-{
-  "name": "tool-name",
-  "displayName": "Tool Display Name",
-  "winInstall": "npm install -g tool-name",
-  "wslInstall": "curl -fsSL https://example.com/install.sh | bash",
-  "checkCommand": "tool-name --version",
-  "url": "https://official-website.com"
-}
+# 依存関係をインストール
+pip install -e ".[dev]"
 ```
 
-- `winInstall`: Windows 環境のインストールコマンド（null はサポートされていないことを示します）
-- `wslInstall`: WSL/Linux 環境のインストールコマンド（null はサポートされていないことを示します）
-- `checkCommand`: ツールがインストールされているかどうかを検出するためのコマンド
+## ツールインストール機能
+
+ツール選択画面で `I` キーを押すと、まだインストールされていない AI CLI ツールを素早くインストールできます。
+
+### 使用手順
+
+1. **AI-CLI を起動**
+   ```bash
+   ai-cli
+   ```
+
+2. **プロジェクトを選択**
+   - ↑↓ キーでプロジェクトを選択
+   - Enter で確定
+
+3. **I キーを押してインストール画面に入る**
+   - ツール選択画面で `I` キーを押す
+   - インストールツールリストが開く
+
+4. **インストールするツールを選択**
+   - リストには、インストールされていないがインストールコマンドが設定されているすべてのツールが表示される
+   - `[Windows]`、`[WSL]`、`[Linux]`、または `[macOS]` はインストール環境を示す
+   - ↑↓ キーで選択
+   - Enter でインストールを確定
+   - Esc でツール選択画面に戻る
+
+5. **インストール完了を待つ**
+   - 画面にインストールコマンドと実行プロセスが表示される
+   - インストール完了後、任意のキーを押して戻る
+
+## 設定
+
+### 設定の初期化
+
+```bash
+ai-cli --init
+```
+
+これにより、以下の場所にデフォルトの設定ファイルが作成されます：
+- **Windows**: `%APPDATA%\AI-CLI\config.json`
+- **Linux**: `~/.config/ai-cli/config.json`
+- **macOS**: `~/Library/Application Support/ai-cli/config.json`
+
+### 設定の編集
+
+```bash
+ai-cli --config
+```
+
+または、お好みのテキストエディタで設定ファイルを手動で編集します。
 
 ## トラブルシューティング
 
-### インストールの失敗
-1. ネットワーク接続を確認する
-2. 依存関係（Node.js、Python など）がインストールされていることを確認する
-3. エラーメッセージを確認し、インストールコマンドを手動で実行する
-4. ツールの公式ドキュメントを参照する
+### Python バージョンの問題
 
-### インストール後に検出されない
-1. AI-CLI を再起動する
-2. PATH 環境変数を確認する
-3. `tool-name --version` を手動で実行してインストールを検証する
-4. `config.json` の `checkCommand` が正しいか確認する
+**問題**: コマンドが見つからない、またはインポートエラー
 
-### WSL ツールのインストール失敗
-1. WSL が正しくインストールおよび設定されていることを確認する
-2. WSL でインストールコマンドを手動で実行してテストする
-3. WSL のネットワーク接続を確認する
-4. WSL を更新する：`wsl --update`
+**解決策**: Python 3.8+ がインストールされていることを確認
+```bash
+python --version  # 3.8 以上である必要がある
+```
+
+### 権限の問題
+
+**問題**: インストール中に権限が拒否される
+
+**解決策**: 
+- Linux/macOS: 必要に応じて `sudo` を使用
+- Windows: 管理者として実行
+
+### パスの問題
+
+**問題**: インストール後に `ai-cli` コマンドが見つからない
+
+**解決策**: 
+- pip インストールディレクトリが PATH に含まれていることを確認
+- 代わりに `python -m ai_cli.cli` を使用してみる
+
+### WSL の問題
+
+**問題**: WSL ツールが検出されない
+
+**解決策**: 
+- WSL がインストールされていることを確認: `wsl --install`
+- WSL がアクセス可能か確認: `wsl --list`
+
+## アンインストール
+
+```bash
+ai-cli --uninstall
+```
+
+これにより：
+- 設定ディレクトリを削除
+- Python パッケージをアンインストール
+- すべての一時ファイルをクリーンアップ
 
 ---
 
-*最終更新日：2026-02-26*
+詳細については、[メイン README](../README.ja.md) を参照してください。
