@@ -90,20 +90,6 @@ def init_config():
             manager.save(config)
             click.echo(f"Configuration created: {config_file}")
         
-        # Show usage examples
-        click.echo("\n" + "=" * 50)
-        click.echo("Quick Start:")
-        click.echo("=" * 50)
-        click.echo("\n  ai-cli              # Start interactive launcher")
-        click.echo("  ai-cli --config     # Edit configuration")
-        click.echo("  ai-cli --version    # Show version")
-        click.echo("  ai-cli --help       # Show all options")
-        click.echo("\nKeyboard Shortcuts:")
-        click.echo("  ↑↓    Navigate")
-        click.echo("  Enter Launch tool")
-        click.echo("  I     Install tool")
-        click.echo("  R     Refresh tools")
-        click.echo("  Q     Quit")
         click.echo("")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
