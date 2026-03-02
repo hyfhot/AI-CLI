@@ -73,18 +73,17 @@ class GitManager:
             return None
         
         from ai_cli.ui.input import InputHandler, InputEvent
+        from rich.live import Live
+        from rich.console import Group
+        from rich.text import Text
         
         selected = 0
         input_handler = InputHandler()
         
-        # Initial clear
-        self.console.clear()
-        
-        while True:
-            # Move cursor to top and render (no clear)
-            self.console.print("\033[H", end="")  # Move cursor to home
-            
-            self.console.print("\n[bold cyan]=== Select Git Worktree ===[/bold cyan]\n")
+        def render_menu():
+            """Render the worktree selection menu."""
+            lines = []
+            lines.append(Text("\n=== Select Git Worktree ===\n", style="bold cyan"))
             
             for i, wt in enumerate(worktrees):
                 is_current = wt['path'] == current_path
@@ -103,25 +102,31 @@ class GitManager:
                             if status['behind'] > 0:
                                 status_str += f" ↓{status['behind']}"
                     except:
-                        pass  # Skip status if path is invalid
+                        pass
                 
                 prefix = "> " if i == selected else "  "
                 current_mark = " [current]" if is_current else ""
                 style = "bold green" if i == selected else "dim"
                 
-                self.console.print(f"{prefix}{branch}{status_str}{current_mark}", style=style)
-                self.console.print(f"   [dim]{wt['path']}[/dim]")
+                lines.append(Text(f"{prefix}{branch}{status_str}{current_mark}", style=style))
+                lines.append(Text(f"   {wt['path']}", style="dim"))
             
-            self.console.print("\n[dim][↑↓] Select  [Enter] Confirm  [Esc] Cancel[/dim]")
-            self.console.print("\033[J", end="")  # Clear from cursor to end of screen
-            
-            event = input_handler.get_input()
-            
-            if event == InputEvent.UP:
-                selected = max(0, selected - 1)
-            elif event == InputEvent.DOWN:
-                selected = min(len(worktrees) - 1, selected + 1)
-            elif event == InputEvent.ENTER:
-                return worktrees[selected]['path']
-            elif event == InputEvent.ESCAPE or event == InputEvent.QUIT:
-                return None
+            lines.append(Text("\n[↑↓] Select  [Enter] Confirm  [Esc] Cancel", style="dim"))
+            return Group(*lines)
+        
+        self.console.clear()
+        
+        with Live(render_menu(), console=self.console, refresh_per_second=10) as live:
+            while True:
+                event = input_handler.get_input()
+                
+                if event == InputEvent.UP:
+                    selected = max(0, selected - 1)
+                    live.update(render_menu())
+                elif event == InputEvent.DOWN:
+                    selected = min(len(worktrees) - 1, selected + 1)
+                    live.update(render_menu())
+                elif event == InputEvent.ENTER:
+                    return worktrees[selected]['path']
+                elif event == InputEvent.ESCAPE or event == InputEvent.QUIT:
+                    return None
