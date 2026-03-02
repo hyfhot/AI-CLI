@@ -42,12 +42,24 @@ class ProjectNode:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'ProjectNode':
         """Create from dictionary."""
+        # Handle case where data might be a string (malformed config)
+        if isinstance(data, str):
+            raise ValueError(f"Expected dict for ProjectNode, got string: {data}")
+        
+        if not isinstance(data, dict):
+            raise ValueError(f"Expected dict for ProjectNode, got {type(data)}")
+        
         children_data = data.get("children", [])
+        
+        # Ensure children_data is a list
+        if not isinstance(children_data, list):
+            children_data = []
+        
         children = [cls.from_dict(child) for child in children_data]
         
         return cls(
-            type=data["type"],
-            name=data["name"],
+            type=data.get("type", "project"),
+            name=data.get("name", "Unknown"),
             path=data.get("path"),
             children=children,
             env=data.get("env", {}),

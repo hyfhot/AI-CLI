@@ -40,7 +40,10 @@ def main(init, config, uninstall, version):
     except KeyboardInterrupt:
         click.echo("\nGoodbye!")
     except Exception as e:
+        import traceback
         click.echo(f"Error: {e}", err=True)
+        click.echo("\nFull traceback:", err=True)
+        click.echo(traceback.format_exc(), err=True)
 
 
 def init_config():

@@ -30,30 +30,147 @@ class InputHandler:
             return self._get_input_unix()
     
     def get_text_input(self, prompt: str, placeholder: str = "", allow_cancel: bool = True) -> Optional[str]:
-        """Get text input with ESC cancellation support."""
-        from prompt_toolkit import prompt as pt_prompt
-        from prompt_toolkit.key_binding import KeyBindings
+        """Get text input with ESC cancellation support using raw keyboard input."""
+        import sys
         
-        bindings = KeyBindings()
+        # Print prompt
+        sys.stdout.write(prompt)
+        if placeholder:
+            sys.stdout.write(placeholder)
+        sys.stdout.flush()
         
-        @bindings.add('escape')
-        def _(event):
-            if allow_cancel:
-                event.app.exit(result='__CANCEL__')
+        # Use raw keyboard input for immediate ESC response
+        if sys.platform == 'win32':
+            return self._get_text_input_windows(placeholder, allow_cancel)
+        else:
+            return self._get_text_input_unix(placeholder, allow_cancel)
+    
+    def _get_text_input_unix(self, initial: str = "", allow_cancel: bool = True) -> Optional[str]:
+        """Get text input on Unix with raw keyboard handling."""
+        import sys
+        import tty
+        import termios
+        
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        
+        buffer = list(initial)
+        cursor_pos = len(buffer)
         
         try:
-            result = pt_prompt(
-                prompt,
-                default=placeholder,
-                key_bindings=bindings if allow_cancel else None
-            )
+            tty.setraw(fd)
             
-            if result == '__CANCEL__':
-                return None
+            while True:
+                ch = sys.stdin.read(1)
+                
+                # ESC key - immediate cancel
+                if ch == '\x1b':
+                    # Check if it's a standalone ESC or part of escape sequence
+                    import select
+                    if select.select([sys.stdin], [], [], 0.0)[0]:
+                        # More data available, it's an escape sequence
+                        ch2 = sys.stdin.read(1)
+                        if ch2 == '[':
+                            ch3 = sys.stdin.read(1)
+                            # Ignore arrow keys in text input
+                            continue
+                    else:
+                        # Standalone ESC - cancel
+                        if allow_cancel:
+                            sys.stdout.write('\n')
+                            sys.stdout.flush()
+                            return None
+                
+                # Enter key
+                elif ch == '\r' or ch == '\n':
+                    sys.stdout.write('\n')
+                    sys.stdout.flush()
+                    return ''.join(buffer)
+                
+                # Backspace
+                elif ch == '\x7f' or ch == '\x08':
+                    if cursor_pos > 0:
+                        buffer.pop(cursor_pos - 1)
+                        cursor_pos -= 1
+                        # Redraw line
+                        sys.stdout.write('\r' + ' ' * (len(buffer) + 10) + '\r')
+                        sys.stdout.write(''.join(buffer))
+                        sys.stdout.flush()
+                
+                # Ctrl+C
+                elif ch == '\x03':
+                    if allow_cancel:
+                        sys.stdout.write('\n')
+                        sys.stdout.flush()
+                        return None
+                
+                # Regular character
+                elif ch.isprintable():
+                    buffer.insert(cursor_pos, ch)
+                    cursor_pos += 1
+                    sys.stdout.write(ch)
+                    sys.stdout.flush()
+                    
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    
+    def _get_text_input_windows(self, initial: str = "", allow_cancel: bool = True) -> Optional[str]:
+        """Get text input on Windows with raw keyboard handling."""
+        import sys
+        import msvcrt
+        
+        buffer = list(initial)
+        cursor_pos = len(buffer)
+        
+        while True:
+            ch = msvcrt.getch()
             
-            return result.strip() if result else None
-        except (KeyboardInterrupt, EOFError):
-            return None
+            # ESC key - immediate cancel
+            if ch == b'\x1b':
+                if allow_cancel:
+                    sys.stdout.write('\n')
+                    sys.stdout.flush()
+                    return None
+            
+            # Enter key
+            elif ch == b'\r':
+                sys.stdout.write('\n')
+                sys.stdout.flush()
+                return ''.join(buffer)
+            
+            # Backspace
+            elif ch == b'\x08':
+                if cursor_pos > 0:
+                    buffer.pop(cursor_pos - 1)
+                    cursor_pos -= 1
+                    # Redraw line
+                    sys.stdout.write('\r' + ' ' * (len(buffer) + 10) + '\r')
+                    sys.stdout.write(''.join(buffer))
+                    sys.stdout.flush()
+            
+            # Ctrl+C
+            elif ch == b'\x03':
+                if allow_cancel:
+                    sys.stdout.write('\n')
+                    sys.stdout.flush()
+                    return None
+            
+            # Arrow keys and special keys
+            elif ch in (b'\xe0', b'\x00'):
+                msvcrt.getch()  # Consume second byte
+                continue
+            
+            # Regular character
+            else:
+                try:
+                    char = ch.decode('utf-8')
+                    if char.isprintable():
+                        buffer.insert(cursor_pos, char)
+                        cursor_pos += 1
+                        sys.stdout.write(char)
+                        sys.stdout.flush()
+                except:
+                    pass
     
     def _get_input_unix(self) -> Optional[InputEvent]:
         """Get input on Unix/Linux/macOS."""

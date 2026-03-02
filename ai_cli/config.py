@@ -41,6 +41,14 @@ class ConfigManager:
             with open(self.config_file, 'r', encoding='utf-8-sig') as f:
                 data = json.load(f)
             
+            # Debug: print config structure
+            import sys
+            if '--debug' in sys.argv:
+                print(f"DEBUG: Config data type: {type(data)}")
+                print(f"DEBUG: Projects type: {type(data.get('projects', []))}")
+                if data.get('projects'):
+                    print(f"DEBUG: First project: {data['projects'][0]}")
+            
             # Check if legacy flat config needs migration
             if self._needs_migration(data):
                 data = self.migrate_legacy(data)

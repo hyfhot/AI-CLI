@@ -32,7 +32,8 @@ class Application:
         self.tool_detector = ToolDetector()  # Single instance with cache
         self.tool_installer = ToolInstaller()  # Tool installer
         self.current_path: List[str] = []
-        self.selected_index = 0
+        self.selected_project_index = 0  # For project selection
+        self.selected_tool_index = 0  # For tool selection
         
         # Detect Windows Terminal availability once at startup
         self.wt_available = self._check_wt_available()
@@ -72,7 +73,12 @@ class Application:
             except KeyboardInterrupt:
                 break
             except Exception as e:
-                print(f"Error: {e}")
+                import traceback
+                self.menu.console.print(f"\n[red]Error: {e}[/red]")
+                self.menu.console.print(f"[dim]{traceback.format_exc()}[/dim]")
+                import time
+                time.sleep(3)
+                break
     
     async def _start_background_detection(self):
         """Start background tool detection."""
@@ -83,29 +89,33 @@ class Application:
         from rich.live import Live
         
         while True:
-            self.menu.clear()
-            
             current_node = self._get_current_node()
             items = current_node.children if current_node else self.config.projects
             
-            # Handle empty project list
-            if not items:
-                self.menu.console.print("\n[yellow]No projects configured. Press 'N' to add a project or 'Q' to quit.[/yellow]")
-                event = self.input_handler.get_input()
-                if event == InputEvent.NEW:
-                    if self._add_new_item():
-                        # After adding, continue to show the menu
-                        continue
-                    else:
-                        continue
-                elif event == InputEvent.QUIT:
-                    return None
-                continue
+            # Ensure selected_project_index is within bounds
+            if items:
+                self.selected_project_index = min(self.selected_project_index, len(items) - 1)
+            else:
+                self.selected_project_index = 0
+            
+            self.menu.clear()
             
             breadcrumb = ["Home"] + self.current_path
+            
+            # Build item list with path and children count
+            item_list = []
+            for item in items:
+                item_dict = {
+                    "name": item.name,
+                    "type": item.type,
+                    "path": item.path if item.type == "project" else None,
+                    "children_count": len(item.children) if (item.type == "folder" and hasattr(item, 'children') and item.children) else 0
+                }
+                item_list.append(item_dict)
+            
             display = self.menu.build_tree_display(
-                [{"name": item.name, "type": item.type} for item in items],
-                self.selected_index,
+                item_list,
+                self.selected_project_index,
                 breadcrumb=breadcrumb
             )
             
@@ -115,51 +125,58 @@ class Application:
                     event = self.input_handler.get_input()
                     
                     if event == InputEvent.UP:
-                        self.selected_index = max(0, self.selected_index - 1)
+                        self.selected_project_index = max(0, self.selected_project_index - 1)
                         live.update(self.menu.build_tree_display(
-                            [{"name": item.name, "type": item.type} for item in items],
-                            self.selected_index,
+                            item_list,
+                            self.selected_project_index,
                             breadcrumb=breadcrumb
                         ))
                     elif event == InputEvent.DOWN:
-                        self.selected_index = min(len(items) - 1, self.selected_index + 1)
+                        self.selected_project_index = min(len(items) - 1, self.selected_project_index + 1)
                         live.update(self.menu.build_tree_display(
-                            [{"name": item.name, "type": item.type} for item in items],
-                            self.selected_index,
+                            item_list,
+                            self.selected_project_index,
                             breadcrumb=breadcrumb
                         ))
                     elif event == InputEvent.ENTER:
-                        selected = items[self.selected_index]
+                        selected = items[self.selected_project_index]
                         if selected.type == "folder":
                             self.current_path.append(selected.name)
-                            self.selected_index = 0
+                            self.selected_project_index = 0  # Reset when entering folder
                             break
                         else:
                             result = selected
+                            # Don't reset selected_index - keep it for when we return
                             break
                     elif event == InputEvent.NEW:
-                        if self._add_new_item():
-                            # Refresh items after adding
-                            current_node = self._get_current_node()
-                            items = current_node.children if current_node else self.config.projects
-                            self.selected_index = min(self.selected_index, len(items) - 1) if items else 0
+                        # Exit Live context before showing add dialog
+                        result = "__ADD_NEW__"
                         break
                     elif event == InputEvent.DELETE:
-                        selected = items[self.selected_index]
-                        if self._delete_item(selected):
-                            # Refresh items after deletion
-                            current_node = self._get_current_node()
-                            items = current_node.children if current_node else self.config.projects
-                            self.selected_index = min(self.selected_index, len(items) - 1) if items else 0
+                        # Exit Live context before showing delete dialog
+                        result = "__DELETE__"
                         break
                     elif event == InputEvent.ESCAPE:
                         if self.current_path:
                             self.current_path.pop()
-                            self.selected_index = 0
+                            self.selected_project_index = 0
                             break
                     elif event == InputEvent.QUIT:
                         result = None
                         break
+            
+            # Handle special actions after exiting Live context
+            if result == "__ADD_NEW__":
+                if self._add_new_item():
+                    # Refresh and continue
+                    pass
+                continue
+            elif result == "__DELETE__":
+                selected = items[self.selected_project_index]
+                if self._delete_item(selected):
+                    # Refresh and continue
+                    self.selected_project_index = 0
+                continue
             
             if result is not None or event == InputEvent.QUIT:
                 return result
@@ -190,17 +207,6 @@ class Application:
             except Exception as e:
                 pass
         
-        # Detect tools with progress indicator (uses cache if available)
-        self.menu.console.print(f"[yellow]{get_text('detecting_tools')}[/yellow]")
-        tools = await self.tool_detector.detect_all_tools(self.config.tools)
-        
-        if not tools:
-            self.menu.console.print(f"\n[red]{get_text('no_tools')}[/red]")
-            time.sleep(2)
-            return None
-        
-        self.selected_index = 0
-        
         # Prepare project info using working_path
         project_info = {
             'name': project.name,
@@ -219,20 +225,52 @@ class Application:
             except:
                 pass
         
-        # Show tool list
-        tool_items = []
-        for t in tools:
-            tool_items.append({
-                "name": t.get_display_label()
-            })
-        
+        # Show detecting message in tool display
         self.menu.clear()
-        display = self.menu.build_tools_display(
-            tool_items,
-            self.selected_index,
-            show_new_tab=self.wt_available,
-            project_info=project_info
-        )
+        from rich.live import Live
+        from rich.text import Text
+        from rich.console import Group
+        
+        detecting_lines = []
+        if project_info:
+            detecting_lines.append(Text(f"\nProject: {project_info.get('name', 'Unknown')}", style="bold cyan"))
+            if project_info.get('path'):
+                detecting_lines.append(Text(f"Path: {project_info['path']}", style="dim"))
+            if project_info.get('branch'):
+                detecting_lines.append(Text(f"Branch: {project_info['branch']}", style="dim"))
+        
+        detecting_lines.append(Text("\n=== Select AI Tool ===\n", style="bold cyan"))
+        detecting_lines.append(Text("  Detecting tools...", style="yellow"))
+        detecting_display = Group(*detecting_lines)
+        
+        with Live(detecting_display, console=self.menu.console, refresh_per_second=10, screen=False) as live:
+            # Detect tools with progress indicator (uses cache if available)
+            tools = await self.tool_detector.detect_all_tools(self.config.tools)
+            
+            if not tools:
+                self.menu.clear()
+                self.menu.console.print(f"\n[red]{get_text('no_tools')}[/red]")
+                time.sleep(2)
+                return None
+            
+            self.selected_tool_index = 0
+            
+            # Show tool list
+            tool_items = []
+            for t in tools:
+                tool_items.append({
+                    "name": t.display_name,  # Use display_name without env label
+                    "env": t.environment.value  # Pass env separately
+                })
+            
+            # Update with actual tool list
+            display = self.menu.build_tools_display(
+                tool_items,
+                self.selected_tool_index,
+                show_new_tab=self.wt_available,
+                project_info=project_info
+            )
+            live.update(display)
         
         result = None
         with Live(display, console=self.menu.console, refresh_per_second=10, screen=True) as live:
@@ -240,23 +278,23 @@ class Application:
                 event = self.input_handler.get_input()
                 
                 if event == InputEvent.UP:
-                    self.selected_index = max(0, self.selected_index - 1)
+                    self.selected_tool_index = max(0, self.selected_tool_index - 1)
                     live.update(self.menu.build_tools_display(
-                        tool_items, self.selected_index,
+                        tool_items, self.selected_tool_index,
                         show_new_tab=self.wt_available, project_info=project_info
                     ))
                 elif event == InputEvent.DOWN:
-                    self.selected_index = min(len(tools) - 1, self.selected_index + 1)
+                    self.selected_tool_index = min(len(tools) - 1, self.selected_tool_index + 1)
                     live.update(self.menu.build_tools_display(
-                        tool_items, self.selected_index,
+                        tool_items, self.selected_tool_index,
                         show_new_tab=self.wt_available, project_info=project_info
                     ))
                 elif event == InputEvent.ENTER:
-                    result = (tools[self.selected_index], False, working_path)
+                    result = (tools[self.selected_tool_index], False, working_path)
                     break
                 elif event == InputEvent.NEW_TAB:
                     if self.wt_available:
-                        result = (tools[self.selected_index], True, working_path)
+                        result = (tools[self.selected_tool_index], True, working_path)
                         break
                 elif event == InputEvent.INSTALL:
                     await self._install_tool_menu()
@@ -267,7 +305,7 @@ class Application:
                         break
                     tool_items = [{"name": t.get_display_label()} for t in tools]
                     live.update(self.menu.build_tools_display(
-                        tool_items, self.selected_index,
+                        tool_items, self.selected_tool_index,
                         show_new_tab=self.wt_available, project_info=project_info
                     ))
                 elif event == InputEvent.RUN:
@@ -279,9 +317,9 @@ class Application:
                         time.sleep(1)
                         result = None
                         break
-                    tool_items = [{"name": t.get_display_label()} for t in tools]
+                    tool_items = [{"name": t.display_name, "env": t.environment.value} for t in tools]
                     live.update(self.menu.build_tools_display(
-                        tool_items, self.selected_index,
+                        tool_items, self.selected_tool_index,
                         show_new_tab=self.wt_available, project_info=project_info
                     ))
                 elif event == InputEvent.ESCAPE:
@@ -302,10 +340,13 @@ class Application:
             self.platform_adapter.launch_terminal(tool, project, new_tab=new_tab, wt_available=self.wt_available)
             tab_mode = "new tab" if new_tab else "new window"
             self.menu.console.print(f"\n[green]✓ Launched {tool.name} for {project.name} in {tab_mode}[/green]")
-            self.menu.console.print(f"[dim]Tool: {tool.name}[/dim]")
-            self.menu.console.print(f"[dim]Project: {project.name}[/dim]")
-            self.menu.console.print(f"[dim]Path: {project.path}[/dim]")
-            self.menu.console.print(f"[dim]Environment: {tool.environment.value}[/dim]")
+            
+            # Use Text objects to avoid markup interpretation
+            from rich.text import Text
+            self.menu.console.print(Text(f"Tool: {tool.name}", style="dim"))
+            self.menu.console.print(Text(f"Project: {project.name}", style="dim"))
+            self.menu.console.print(Text(f"Path: {project.path}", style="dim"))
+            self.menu.console.print(Text(f"Environment: {tool.environment.value}", style="dim"))
             
             # Countdown 5 seconds with live update
             with Live(Text(""), console=self.menu.console, refresh_per_second=4) as live:
@@ -419,157 +460,178 @@ class Application:
     def _add_new_item(self) -> bool:
         """Add new project or folder. Returns True if added successfully."""
         import os
-        from rich.prompt import Prompt, Confirm
+        from rich.live import Live
+        from rich.text import Text
+        from rich.console import Group
         
+        # Step 1: Select type with up/down keys
         self.menu.clear()
-        self.menu.console.print("\n[cyan]Add New Item[/cyan]")
-        self.menu.console.print("=" * 60, style="dim")
-        self.menu.console.print()
+        types = ["Project", "Folder"]
+        selected_type = 0
         
-        # Select type
-        self.menu.console.print("[cyan]Select Type:[/cyan]")
-        self.menu.console.print("  1. Project")
-        self.menu.console.print("  2. Folder")
-        self.menu.console.print("\n[dim]Press ESC to cancel[/dim]")
+        def build_type_display():
+            lines = []
+            lines.append(Text("\n=== Add New Item ===\n", style="bold cyan"))
+            lines.append(Text("Select Type:\n", style="cyan"))
+            
+            for i, type_name in enumerate(types):
+                icon = "📁" if type_name == "Folder" else "📄"
+                prefix = "> " if i == selected_type else "  "
+                style = "green" if i == selected_type else "white"
+                lines.append(Text(f"{prefix}{icon} {type_name}", style=style))
+            
+            lines.append(Text("\n[↑↓] Navigate  [Enter] Confirm  [Esc] Cancel  [Q] Quit", style="dim"))
+            return Group(*lines)
         
-        type_choice = None
-        while type_choice is None:
-            event = self.input_handler.get_input()
-            if event == InputEvent.QUIT or event == InputEvent.ESCAPE:
-                return False
-            # Check for number keys
-            import sys
-            if sys.platform == 'win32':
-                # On Windows, we need to handle this differently
-                pass
-            # For now, use prompt
-            break
+        with Live(build_type_display(), console=self.menu.console, refresh_per_second=10, screen=False) as live:
+            while True:
+                event = self.input_handler.get_input()
+                
+                if event == InputEvent.UP:
+                    selected_type = max(0, selected_type - 1)
+                    live.update(build_type_display())
+                elif event == InputEvent.DOWN:
+                    selected_type = min(len(types) - 1, selected_type + 1)
+                    live.update(build_type_display())
+                elif event == InputEvent.ENTER:
+                    break
+                elif event == InputEvent.ESCAPE:
+                    return False
+                elif event == InputEvent.QUIT:
+                    raise KeyboardInterrupt
         
+        item_type = "project" if selected_type == 0 else "folder"
+        
+        # Step 2: Input name with ESC support
         self.menu.clear()
-        self.menu.console.print("\n[cyan]Add New Item[/cyan]")
+        self.menu.console.print("\n[cyan]=== Add New Item ===[/cyan]")
         self.menu.console.print("=" * 60, style="dim")
-        self.menu.console.print("\n[dim](Press Ctrl+C to cancel)[/dim]\n")
+        self.menu.console.print(f"\nType: [green]{item_type.capitalize()}[/green]")
+        self.menu.console.print("\n[dim](Press ESC to cancel)[/dim]\n")
         
-        try:
-            # Get type
-            type_input = Prompt.ask("[cyan]Type[/cyan] (1=Project, 2=Folder)", default="1")
-            if type_input not in ["1", "2"]:
-                self.menu.console.print("[red]Invalid type[/red]")
-                time.sleep(1)
+        # Loop until valid name or cancel
+        while True:
+            item_name = self.input_handler.get_text_input(f"{item_type.capitalize()} Name: ")
+            if item_name is None:
                 return False
             
-            item_type = "project" if type_input == "1" else "folder"
-            
-            # Get name
-            item_name = Prompt.ask(f"[cyan]{item_type.capitalize()} Name[/cyan]")
-            if not item_name or not item_name.strip():
+            if not item_name:
                 self.menu.console.print("[red]Name is required[/red]")
-                time.sleep(1)
-                return False
-            
-            item_name = item_name.strip()
+                continue
             
             # Check for duplicate names
             current_node = self._get_current_node()
             items = current_node.children if current_node else self.config.projects
             if any(item.name == item_name for item in items):
-                self.menu.console.print(f"[red]Name '{item_name}' already exists in current location[/red]")
+                self.menu.console.print(f"[red]Name '{item_name}' already exists. Please try another name.[/red]")
+                continue
+            
+            # Valid name, break the loop
+            break
+        
+        if item_type == "folder":
+            # Create folder
+            new_item = ProjectNode(type="folder", name=item_name, path="", children=[])
+            
+            self.menu.console.print("\n[cyan]Folder Summary:[/cyan]")
+            self.menu.console.print(f"  Name: {item_name}")
+            self.menu.console.print()
+            
+            confirm = self.input_handler.get_text_input("Add this folder? (Y/n): ")
+            if confirm is None:
+                return False
+            if confirm and confirm.lower() != 'y':
+                return False
+            
+            self._add_item_to_current_path(new_item)
+            self.config_manager.save(self.config)
+            self.menu.console.print("[green]Folder added successfully![/green]")
+            time.sleep(1)
+            return True
+        
+        # Project needs path
+        current_dir = os.getcwd()
+        self.menu.console.print(f"[dim](Press Enter to use current directory: {current_dir})[/dim]")
+        
+        project_path = self.input_handler.get_text_input("Project Path: ")
+        if project_path is None:
+            return False
+        
+        if not project_path:
+            project_path = current_dir
+        
+        # Check if path exists
+        if not os.path.exists(project_path):
+            confirm = self.input_handler.get_text_input(f"Path does not exist: {project_path}\nCreate it? (Y/n): ")
+            if confirm is None:
+                return False
+            if confirm and confirm.lower() == 'n':
+                return False
+            
+            try:
+                os.makedirs(project_path, exist_ok=True)
+                self.menu.console.print("[green]Directory created successfully[/green]")
+            except Exception as e:
+                self.menu.console.print(f"[red]Failed to create directory: {e}[/red]")
                 time.sleep(2)
                 return False
-            
-            if item_type == "folder":
-                # Create folder
-                new_item = ProjectNode(type="folder", name=item_name, path="", children=[])
-                
-                self.menu.console.print("\n[cyan]Folder Summary:[/cyan]")
-                self.menu.console.print(f"  Name: {item_name}")
-                self.menu.console.print()
-                
-                if Confirm.ask("[yellow]Add this folder?[/yellow]", default=True):
-                    self._add_item_to_current_path(new_item)
-                    self.config_manager.save(self.config)
-                    self.menu.console.print("[green]Folder added successfully![/green]")
-                    time.sleep(1)
-                    return True
+        
+        # Get environment variables
+        self.menu.console.print("\n[cyan]Environment Variables (optional)[/cyan]")
+        self.menu.console.print("[dim]Format: KEY=VALUE, one per line, empty line to finish[/dim]\n")
+        
+        env_vars = {}
+        while True:
+            env_input = self.input_handler.get_text_input("Env Var: ")
+            if env_input is None:
                 return False
             
-            # Project needs path
-            current_dir = os.getcwd()
-            self.menu.console.print(f"[dim](Press Enter to use current directory: {current_dir})[/dim]")
+            if not env_input:
+                break
             
-            project_path = Prompt.ask("[cyan]Project Path[/cyan]", default=current_dir)
-            if not project_path:
-                project_path = current_dir
-            
-            # Check if path exists
-            if not os.path.exists(project_path):
-                if Confirm.ask(f"[yellow]Path does not exist: {project_path}\nCreate it?[/yellow]", default=False):
-                    try:
-                        os.makedirs(project_path, exist_ok=True)
-                        self.menu.console.print("[green]Directory created successfully[/green]")
-                    except Exception as e:
-                        self.menu.console.print(f"[red]Failed to create directory: {e}[/red]")
-                        time.sleep(2)
-                        return False
-                else:
-                    return False
-            
-            # Get environment variables
-            self.menu.console.print("\n[cyan]Environment Variables (optional)[/cyan]")
-            self.menu.console.print("[dim]Format: KEY=VALUE, one per line, empty line to finish[/dim]\n")
-            
-            env_vars = {}
-            while True:
-                env_input = Prompt.ask("[cyan]Env Var[/cyan]", default="")
-                if not env_input:
-                    break
-                
-                if "=" in env_input:
-                    key, value = env_input.split("=", 1)
-                    key = key.strip()
-                    value = value.strip()
+            if "=" in env_input:
+                key, value = env_input.split("=", 1)
+                key = key.strip()
+                value = value.strip()
+                if key:  # Ensure key is not empty
                     env_vars[key] = value
                     self.menu.console.print(f"  [green]Added: {key}={value}[/green]")
                 else:
-                    self.menu.console.print("  [red]Invalid format. Use KEY=VALUE[/red]")
-            
-            # Create project
-            new_project = ProjectNode(
-                type="project",
-                name=item_name,
-                path=project_path,
-                env=env_vars if env_vars else None
-            )
-            
-            # Show summary
-            self.menu.console.print("\n[cyan]Project Summary:[/cyan]")
-            self.menu.console.print(f"  Name: {item_name}")
-            self.menu.console.print(f"  Path: {project_path}")
-            if env_vars:
-                self.menu.console.print(f"  Env Vars: {len(env_vars)} variable(s)")
-                for key, value in env_vars.items():
-                    self.menu.console.print(f"    [dim]{key}={value}[/dim]")
-            self.menu.console.print()
-            
-            if Confirm.ask("[yellow]Add this project?[/yellow]", default=True):
-                self._add_item_to_current_path(new_project)
-                self.config_manager.save(self.config)
-                self.menu.console.print("[green]Project added successfully![/green]")
-                time.sleep(1)
-                return True
+                    self.menu.console.print("  [red]Invalid format. Key cannot be empty.[/red]")
             else:
-                self.menu.console.print("[yellow]Cancelled[/yellow]")
-                time.sleep(1)
-                return False
-                
-        except KeyboardInterrupt:
-            self.menu.console.print("\n[yellow]Cancelled[/yellow]")
-            time.sleep(1)
+                self.menu.console.print("  [red]Invalid format. Use KEY=VALUE[/red]")
+        
+        # Create project
+        new_project = ProjectNode(
+            type="project",
+            name=item_name,
+            path=project_path,
+            env=env_vars if env_vars else None
+        )
+        
+        # Show summary
+        self.menu.console.print("\n[cyan]Project Summary:[/cyan]")
+        self.menu.console.print(f"  Name: {item_name}")
+        self.menu.console.print(f"  Path: {project_path}")
+        if env_vars:
+            self.menu.console.print(f"  Env Vars: {len(env_vars)} variable(s)")
+            for key, value in env_vars.items():
+                self.menu.console.print(f"    [dim]{key}={value}[/dim]")
+        self.menu.console.print()
+        
+        confirm = self.input_handler.get_text_input("Add this project? (Y/n): ")
+        if confirm is None:
             return False
-        except Exception as e:
-            self.menu.console.print(f"\n[red]Error: {e}[/red]")
-            time.sleep(2)
+        
+        # Empty input or 'y'/'Y' means yes, anything else means no
+        if confirm and confirm.lower() != 'y':
             return False
+        
+        self._add_item_to_current_path(new_project)
+        self.config_manager.save(self.config)
+        self.menu.console.print("[green]Project added successfully![/green]")
+        time.sleep(1)
+        return True
     
     def _delete_item(self, item: ProjectNode) -> bool:
         """Delete project or folder. Returns True if deleted successfully."""
