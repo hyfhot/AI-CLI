@@ -5,7 +5,7 @@ import platform
 import subprocess
 from pathlib import Path
 
-__version__ = "0.1.0"
+__version__ = "3.1.0"
 
 
 @click.command()
@@ -53,11 +53,58 @@ def init_config():
         config_file = config_dir / "config.json"
         
         if config_file.exists():
-            click.echo(f"Configuration already exists: {config_file}")
+            # Config exists - merge tools incrementally
+            click.echo(f"Configuration exists: {config_file}")
+            click.echo("Updating tool definitions...")
+            
+            existing_config = manager.load()
+            default_config = manager.create_default_tools()
+            
+            # Keep existing projects
+            # Merge tools: add new tools from default, keep user custom tools
+            existing_tool_names = {t.name for t in existing_config.tools}
+            default_tool_names = {t.name for t in default_config}
+            
+            # Add new default tools that don't exist
+            for tool in default_config:
+                if tool.name not in existing_tool_names:
+                    existing_config.tools.append(tool)
+                    click.echo(f"  Added: {tool.display_name}")
+            
+            # Update existing default tools (keep user custom tools unchanged)
+            for i, tool in enumerate(existing_config.tools):
+                if tool.name in default_tool_names:
+                    # Find matching default tool
+                    for default_tool in default_config:
+                        if default_tool.name == tool.name:
+                            # Update tool definition
+                            existing_config.tools[i] = default_tool
+                            click.echo(f"  Updated: {tool.display_name}")
+                            break
+            
+            manager.save(existing_config)
+            click.echo(f"Configuration updated: {config_file}")
         else:
+            # No config - create new
             config = manager.create_default()
             manager.save(config)
             click.echo(f"Configuration created: {config_file}")
+        
+        # Show usage examples
+        click.echo("\n" + "=" * 50)
+        click.echo("Quick Start:")
+        click.echo("=" * 50)
+        click.echo("\n  ai-cli              # Start interactive launcher")
+        click.echo("  ai-cli --config     # Edit configuration")
+        click.echo("  ai-cli --version    # Show version")
+        click.echo("  ai-cli --help       # Show all options")
+        click.echo("\nKeyboard Shortcuts:")
+        click.echo("  ↑↓    Navigate")
+        click.echo("  Enter Launch tool")
+        click.echo("  I     Install tool")
+        click.echo("  R     Refresh tools")
+        click.echo("  Q     Quit")
+        click.echo("")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 

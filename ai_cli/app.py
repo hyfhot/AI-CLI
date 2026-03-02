@@ -143,20 +143,36 @@ class Application:
         
         self.selected_index = 0
         
+        # Prepare project info
+        project_info = {
+            'name': project.name,
+            'path': project.path,
+            'env': project.env if project.env else None
+        }
+        
+        # Detect git branch if path exists
+        if project.path:
+            try:
+                from ai_cli.core.git import GitDetector
+                git_detector = GitDetector()
+                branch = git_detector.get_current_branch(project.path)
+                if branch:
+                    project_info['branch'] = branch
+            except:
+                pass
+        
         while True:
             self.menu.clear()
             
-            # Show tool list with command and env vars
+            # Show tool list
             tool_items = []
             for t in tools:
                 tool_items.append({
                     "name": t.get_display_label(),
-                    "env": t.environment.value,
-                    "command": t.name,
-                    "project_env": project.env if project.env else None
+                    "env": t.environment.value
                 })
             
-            self.menu.render_tools(tool_items, self.selected_index, show_new_tab=self.wt_available)
+            self.menu.render_tools(tool_items, self.selected_index, show_new_tab=self.wt_available, project_info=project_info)
             
             event = self.input_handler.get_input()
             

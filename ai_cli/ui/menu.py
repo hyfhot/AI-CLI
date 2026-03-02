@@ -23,8 +23,20 @@ class MenuRenderer:
         
         self.console.print("\n[dim][↑↓] Select  [Enter] Enter/Confirm  [N] New  [D] Delete  [Esc] Back  [Q] Quit[/dim]")
         
-    def render_tools(self, tools: List[Dict[str, Any]], selected: int = 0, show_new_tab: bool = True) -> None:
-        """Render tools list with command and environment variables."""
+    def render_tools(self, tools: List[Dict[str, Any]], selected: int = 0, show_new_tab: bool = True, project_info: Dict[str, Any] = None) -> None:
+        """Render tools list with project information."""
+        
+        # Show project information
+        if project_info:
+            self.console.print(f"\n[bold cyan]Project:[/bold cyan] {project_info.get('name', 'Unknown')}")
+            if project_info.get('path'):
+                self.console.print(f"[dim]Path: {project_info['path']}[/dim]")
+            if project_info.get('branch'):
+                self.console.print(f"[dim]Branch: {project_info['branch']}[/dim]")
+            if project_info.get('env'):
+                env_str = ', '.join([f"{k}={v}" for k, v in project_info['env'].items()])
+                self.console.print(f"[dim]Env: {env_str}[/dim]")
+        
         self.console.print("\n[bold cyan]=== Select AI Tool ===[/bold cyan]\n")
         
         for i, tool in enumerate(tools):
@@ -32,17 +44,8 @@ class MenuRenderer:
             env_label = f"[{tool.get('env', 'Win')}]"
             prefix = "> " if i == selected else "  "
             
-            # Show tool name
+            # Show tool name only
             self.console.print(f"{prefix}{env_label} {tool['name']}", style=style)
-            
-            # Show command and env vars if selected
-            if i == selected:
-                if tool.get('command'):
-                    self.console.print(f"      [dim]Command: {tool['command']}[/dim]")
-                if tool.get('project_env'):
-                    env_str = ', '.join([f"{k}={v}" for k, v in tool['project_env'].items()])
-                    if env_str:
-                        self.console.print(f"      [dim]Env: {env_str}[/dim]")
         
         # Show [T] New Tab only if Windows Terminal is available
         if show_new_tab:
