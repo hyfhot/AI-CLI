@@ -1,5 +1,5 @@
 """Menu rendering with rich console."""
-from rich.console import Console
+from rich.console import Console, Group
 from rich.tree import Tree
 from rich.text import Text
 from typing import List, Dict, Any
@@ -10,15 +10,26 @@ class MenuRenderer:
     
     def __init__(self):
         self.console = Console()
+    
+    def build_tree_display(self, items: List[Dict[str, Any]], selected: int = 0, max_display: int = 15, breadcrumb: List[str] = None) -> Group:
+        """Build project tree display for Live rendering."""
+        lines = []
         
-    def render_tree(self, items: List[Dict[str, Any]], selected: int = 0, max_display: int = 15) -> None:
-        """Render project tree structure with scrolling."""
-        self.console.print("\n[bold cyan]=== Select Project ===[/bold cyan]\n")
+        # Breadcrumb
+        if breadcrumb:
+            bc = Text()
+            for i, item in enumerate(breadcrumb):
+                if i > 0:
+                    bc.append(f" {Theme.ARROW} ", style=Theme.MUTED)
+                bc.append(item, style=Theme.PRIMARY)
+            lines.append(bc)
+        
+        lines.append(Text("\n=== Select Project ===\n", style="bold cyan"))
         
         if not items:
-            self.console.print("[dim]No projects yet. Press [N] to add your first project.[/dim]\n")
-            self.console.print("[dim][N] New Project  [Q] Quit[/dim]")
-            return
+            lines.append(Text("No projects yet. Press [N] to add your first project.\n", style="dim"))
+            lines.append(Text("[N] New Project  [Q] Quit", style="dim"))
+            return Group(*lines)
         
         # Calculate scroll window
         total = len(items)
@@ -31,7 +42,7 @@ class MenuRenderer:
         
         # Show scroll indicator (top)
         if offset > 0:
-            self.console.print(f"[dim]  ↑ {offset} more above[/dim]")
+            lines.append(Text(f"  ↑ {offset} more above", style="dim"))
         
         # Show visible items
         for i, item in enumerate(visible_items):
@@ -39,30 +50,32 @@ class MenuRenderer:
             style = Theme.HIGHLIGHT if actual_index == selected else Theme.SECONDARY
             icon = Theme.FOLDER if item.get("type") == "folder" else Theme.FILE
             prefix = "> " if actual_index == selected else "  "
-            self.console.print(f"{prefix}{icon} {item['name']}", style=style)
+            lines.append(Text(f"{prefix}{icon} {item['name']}", style=style))
         
         # Show scroll indicator (bottom)
         if offset + max_display < total:
             remaining = total - offset - max_display
-            self.console.print(f"[dim]  ↓ {remaining} more below[/dim]")
+            lines.append(Text(f"  ↓ {remaining} more below", style="dim"))
         
-        self.console.print("\n[dim][↑↓] Select  [Enter] Enter/Confirm  [N] New  [D] Delete  [Esc] Back  [Q] Quit[/dim]")
-        
-    def render_tools(self, tools: List[Dict[str, Any]], selected: int = 0, show_new_tab: bool = True, project_info: Dict[str, Any] = None, max_display: int = 15) -> None:
-        """Render tools list with project information and scrolling."""
+        lines.append(Text("\n[↑↓] Select  [Enter] Enter/Confirm  [N] New  [D] Delete  [Esc] Back  [Q] Quit", style="dim"))
+        return Group(*lines)
+    
+    def build_tools_display(self, tools: List[Dict[str, Any]], selected: int = 0, show_new_tab: bool = True, project_info: Dict[str, Any] = None, max_display: int = 15) -> Group:
+        """Build tools list display for Live rendering."""
+        lines = []
         
         # Show project information
         if project_info:
-            self.console.print(f"\n[bold cyan]Project:[/bold cyan] {project_info.get('name', 'Unknown')}")
+            lines.append(Text(f"\nProject: {project_info.get('name', 'Unknown')}", style="bold cyan"))
             if project_info.get('path'):
-                self.console.print(f"[dim]Path: {project_info['path']}[/dim]")
+                lines.append(Text(f"Path: {project_info['path']}", style="dim"))
             if project_info.get('branch'):
-                self.console.print(f"[dim]Branch: {project_info['branch']}[/dim]")
+                lines.append(Text(f"Branch: {project_info['branch']}", style="dim"))
             if project_info.get('env'):
                 env_str = ', '.join([f"{k}={v}" for k, v in project_info['env'].items()])
-                self.console.print(f"[dim]Env: {env_str}[/dim]")
+                lines.append(Text(f"Env: {env_str}", style="dim"))
         
-        self.console.print("\n[bold cyan]=== Select AI Tool ===[/bold cyan]\n")
+        lines.append(Text("\n=== Select AI Tool ===\n", style="bold cyan"))
         
         # Calculate scroll window
         total = len(tools)
@@ -75,7 +88,7 @@ class MenuRenderer:
         
         # Show scroll indicator (top)
         if offset > 0:
-            self.console.print(f"[dim]  ↑ {offset} more above[/dim]")
+            lines.append(Text(f"  ↑ {offset} more above", style="dim"))
         
         # Show visible tools
         for i, tool in enumerate(visible_tools):
@@ -83,31 +96,20 @@ class MenuRenderer:
             style = Theme.HIGHLIGHT if actual_index == selected else Theme.SECONDARY
             env_label = f"[{tool.get('env', 'Win')}]"
             prefix = "> " if actual_index == selected else "  "
-            self.console.print(f"{prefix}{env_label} {tool['name']}", style=style)
+            lines.append(Text(f"{prefix}{env_label} {tool['name']}", style=style))
         
         # Show scroll indicator (bottom)
         if offset + max_display < total:
             remaining = total - offset - max_display
-            self.console.print(f"[dim]  ↓ {remaining} more below[/dim]")
+            lines.append(Text(f"  ↓ {remaining} more below", style="dim"))
         
         # Show [T] New Tab only if Windows Terminal is available
         if show_new_tab:
-            self.console.print("\n[dim][↑↓] Select  [Enter] Launch  [T] New Tab  [I] Install  [R] Refresh  [Esc] Back  [Q] Quit[/dim]")
+            lines.append(Text("\n[↑↓] Select  [Enter] Launch  [T] New Tab  [I] Install  [R] Refresh  [Esc] Back  [Q] Quit", style="dim"))
         else:
-            self.console.print("\n[dim][↑↓] Select  [Enter] Launch  [I] Install  [R] Refresh  [Esc] Back  [Q] Quit[/dim]")
-            
-    def render_breadcrumb(self, path: List[str]) -> None:
-        """Render navigation breadcrumb."""
-        if not path:
-            return
-            
-        breadcrumb = Text()
-        for i, item in enumerate(path):
-            if i > 0:
-                breadcrumb.append(f" {Theme.ARROW} ", style=Theme.MUTED)
-            breadcrumb.append(item, style=Theme.PRIMARY)
-            
-        self.console.print(breadcrumb)
+            lines.append(Text("\n[↑↓] Select  [Enter] Launch  [I] Install  [R] Refresh  [Esc] Back  [Q] Quit", style="dim"))
+        
+        return Group(*lines)
         
     def clear(self) -> None:
         """Clear console."""

@@ -76,69 +76,81 @@ class Application:
     
     def _select_project(self) -> Optional[ProjectNode]:
         """Project selection menu. Returns None only on Q (quit)."""
+        from rich.live import Live
+        
+        self.menu.clear()
+        
         while True:
-            try:
-                current_node = self._get_current_node()
-                
-                self.menu.clear()
-                self.menu.render_breadcrumb(["Home"] + self.current_path)
-                
-                items = current_node.children if current_node else self.config.projects
-                
-                # Handle empty project list
-                if not items:
-                    self.menu.console.print("\n[yellow]No projects configured. Press 'N' to add a project or 'Q' to quit.[/yellow]")
-                    event = self.input_handler.get_input()
-                    if event == InputEvent.NEW:
-                        # TODO: Add project creation
-                        self.menu.console.print("\n[red]Project creation not yet implemented[/red]")
-                        import time
-                        time.sleep(1)
-                    elif event == InputEvent.QUIT:
-                        return None
-                    continue
-                
-                self.menu.render_tree([{"name": item.name, "type": item.type} for item in items], self.selected_index)
-                
+            current_node = self._get_current_node()
+            items = current_node.children if current_node else self.config.projects
+            
+            # Handle empty project list
+            if not items:
+                self.menu.console.print("\n[yellow]No projects configured. Press 'N' to add a project or 'Q' to quit.[/yellow]")
                 event = self.input_handler.get_input()
-                
-                if event == InputEvent.UP:
-                    self.selected_index = max(0, self.selected_index - 1)
-                elif event == InputEvent.DOWN:
-                    self.selected_index = min(len(items) - 1, self.selected_index + 1)
-                elif event == InputEvent.ENTER:
-                    selected = items[self.selected_index]
-                    if selected.type == "folder":
-                        self.current_path.append(selected.name)
-                        self.selected_index = 0
-                    else:
-                        return selected
-                elif event == InputEvent.NEW:
-                    # TODO: Add project/folder creation
+                if event == InputEvent.NEW:
                     self.menu.console.print("\n[red]Project creation not yet implemented[/red]")
                     import time
                     time.sleep(1)
-                elif event == InputEvent.DELETE:
-                    # TODO: Add delete confirmation
-                    self.menu.console.print("\n[red]Delete function not yet implemented[/red]")
-                    import time
-                    time.sleep(1)
-                elif event == InputEvent.ESCAPE:
-                    # ESC only goes back, never quits
-                    if self.current_path:
-                        self.current_path.pop()
-                        self.selected_index = 0
-                    # If at root, do nothing (stay in menu)
                 elif event == InputEvent.QUIT:
-                    # Q always quits
                     return None
-            except Exception as e:
-                self.menu.console.print(f"\n[red]Error: {e}[/red]")
-                import time
-                time.sleep(1)
+                continue
+            
+            breadcrumb = ["Home"] + self.current_path
+            display = self.menu.build_tree_display(
+                [{"name": item.name, "type": item.type} for item in items],
+                self.selected_index,
+                breadcrumb=breadcrumb
+            )
+            
+            with Live(display, console=self.menu.console, refresh_per_second=10) as live:
+                while True:
+                    event = self.input_handler.get_input()
+                    
+                    if event == InputEvent.UP:
+                        self.selected_index = max(0, self.selected_index - 1)
+                        live.update(self.menu.build_tree_display(
+                            [{"name": item.name, "type": item.type} for item in items],
+                            self.selected_index,
+                            breadcrumb=breadcrumb
+                        ))
+                    elif event == InputEvent.DOWN:
+                        self.selected_index = min(len(items) - 1, self.selected_index + 1)
+                        live.update(self.menu.build_tree_display(
+                            [{"name": item.name, "type": item.type} for item in items],
+                            self.selected_index,
+                            breadcrumb=breadcrumb
+                        ))
+                    elif event == InputEvent.ENTER:
+                        selected = items[self.selected_index]
+                        if selected.type == "folder":
+                            self.current_path.append(selected.name)
+                            self.selected_index = 0
+                            break  # Exit Live context to refresh
+                        else:
+                            return selected
+                    elif event == InputEvent.NEW:
+                        self.menu.console.print("\n[red]Project creation not yet implemented[/red]")
+                        import time
+                        time.sleep(1)
+                        break
+                    elif event == InputEvent.DELETE:
+                        self.menu.console.print("\n[red]Delete function not yet implemented[/red]")
+                        import time
+                        time.sleep(1)
+                        break
+                    elif event == InputEvent.ESCAPE:
+                        if self.current_path:
+                            self.current_path.pop()
+                            self.selected_index = 0
+                            break
+                    elif event == InputEvent.QUIT:
+                        return None
     
     async def _select_tool(self, project: ProjectNode) -> Optional[Tuple]:
         """Tool selection menu. Returns (tool, new_tab) or None."""
+        from rich.live import Live
+        
         # Check for git worktrees and let user select if multiple exist
         if project.path:
             try:
@@ -146,17 +158,12 @@ class Application:
                 git_manager = GitManager()
                 worktrees = git_manager.detect_worktrees(project.path)
                 
-                # Debug: Show worktree count
-                self.menu.console.print(f"[dim]Debug: Found {len(worktrees)} worktree(s)[/dim]")
-                
                 if len(worktrees) > 1:
-                    self.menu.console.print(f"[yellow]Multiple worktrees detected. Select one:[/yellow]")
                     selected_path = git_manager.select_worktree(worktrees, project.path)
                     if selected_path:
                         project.path = selected_path
-                        self.menu.console.print(f"[green]Selected: {selected_path}[/green]")
             except Exception as e:
-                self.menu.console.print(f"[dim]Debug: Worktree detection error: {e}[/dim]")
+                pass
         
         # Detect tools with progress indicator (uses cache if available)
         self.menu.console.print(f"[yellow]{get_text('detecting_tools')}[/yellow]")
@@ -187,51 +194,72 @@ class Application:
             except:
                 pass
         
-        while True:
-            self.menu.clear()
-            
-            # Show tool list
-            tool_items = []
-            for t in tools:
-                tool_items.append({
-                    "name": t.get_display_label(),
-                    "env": t.environment.value
-                })
-            
-            self.menu.render_tools(tool_items, self.selected_index, show_new_tab=self.wt_available, project_info=project_info)
-            
-            event = self.input_handler.get_input()
-            
-            if event == InputEvent.UP:
-                self.selected_index = max(0, self.selected_index - 1)
-            elif event == InputEvent.DOWN:
-                self.selected_index = min(len(tools) - 1, self.selected_index + 1)
-            elif event == InputEvent.ENTER:
-                return (tools[self.selected_index], False)
-            elif event == InputEvent.NEW_TAB:
-                if self.wt_available:
-                    return (tools[self.selected_index], True)
-            elif event == InputEvent.INSTALL:
-                # Show install menu
-                await self._install_tool_menu()
-                # Refresh tools after installation
-                self.tool_detector.clear_cache()
-                tools = await self.tool_detector.detect_all_tools(self.config.tools)
-                if not tools:
+        # Show tool list
+        tool_items = []
+        for t in tools:
+            tool_items.append({
+                "name": t.get_display_label(),
+                "env": t.environment.value
+            })
+        
+        self.menu.clear()
+        display = self.menu.build_tools_display(
+            tool_items,
+            self.selected_index,
+            show_new_tab=self.wt_available,
+            project_info=project_info
+        )
+        
+        with Live(display, console=self.menu.console, refresh_per_second=10) as live:
+            while True:
+                event = self.input_handler.get_input()
+                
+                if event == InputEvent.UP:
+                    self.selected_index = max(0, self.selected_index - 1)
+                    live.update(self.menu.build_tools_display(
+                        tool_items, self.selected_index,
+                        show_new_tab=self.wt_available, project_info=project_info
+                    ))
+                elif event == InputEvent.DOWN:
+                    self.selected_index = min(len(tools) - 1, self.selected_index + 1)
+                    live.update(self.menu.build_tools_display(
+                        tool_items, self.selected_index,
+                        show_new_tab=self.wt_available, project_info=project_info
+                    ))
+                elif event == InputEvent.ENTER:
+                    return (tools[self.selected_index], False)
+                elif event == InputEvent.NEW_TAB:
+                    if self.wt_available:
+                        return (tools[self.selected_index], True)
+                elif event == InputEvent.INSTALL:
+                    await self._install_tool_menu()
+                    self.tool_detector.clear_cache()
+                    tools = await self.tool_detector.detect_all_tools(self.config.tools)
+                    if not tools:
+                        return None
+                    # Rebuild tool items
+                    tool_items = [{"name": t.get_display_label(), "env": t.environment.value} for t in tools]
+                    live.update(self.menu.build_tools_display(
+                        tool_items, self.selected_index,
+                        show_new_tab=self.wt_available, project_info=project_info
+                    ))
+                elif event == InputEvent.RUN:
+                    self.menu.console.print(f"\n[yellow]{get_text('refreshing')}[/yellow]")
+                    self.tool_detector.clear_cache()
+                    tools = await self.tool_detector.detect_all_tools(self.config.tools)
+                    if not tools:
+                        self.menu.console.print(f"\n[red]{get_text('no_tools')}[/red]")
+                        time.sleep(1)
+                        return None
+                    tool_items = [{"name": t.get_display_label(), "env": t.environment.value} for t in tools]
+                    live.update(self.menu.build_tools_display(
+                        tool_items, self.selected_index,
+                        show_new_tab=self.wt_available, project_info=project_info
+                    ))
+                elif event == InputEvent.ESCAPE:
                     return None
-            elif event == InputEvent.RUN:
-                # Manual refresh
-                self.menu.console.print(f"\n[yellow]{get_text('refreshing')}[/yellow]")
-                self.tool_detector.clear_cache()
-                tools = await self.tool_detector.detect_all_tools(self.config.tools)
-                if not tools:
-                    self.menu.console.print(f"\n[red]{get_text('no_tools')}[/red]")
-                    time.sleep(1)
-                    return None
-            elif event == InputEvent.ESCAPE:
-                return None
-            elif event == InputEvent.QUIT:
-                raise KeyboardInterrupt
+                elif event == InputEvent.QUIT:
+                    raise KeyboardInterrupt
     
     def _launch_tool(self, tool: Tool, project: ProjectNode, new_tab: bool = False) -> None:
         """Launch tool in terminal."""
