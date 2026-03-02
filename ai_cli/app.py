@@ -78,9 +78,9 @@ class Application:
         """Project selection menu. Returns None only on Q (quit)."""
         from rich.live import Live
         
-        self.menu.clear()
-        
         while True:
+            self.menu.clear()
+            
             current_node = self._get_current_node()
             items = current_node.children if current_node else self.config.projects
             
@@ -151,6 +151,8 @@ class Application:
         """Tool selection menu. Returns (tool, new_tab) or None."""
         from rich.live import Live
         
+        self.menu.clear()
+        
         # Check for git worktrees and let user select if multiple exist
         if project.path:
             try:
@@ -162,6 +164,7 @@ class Application:
                     selected_path = git_manager.select_worktree(worktrees, project.path)
                     if selected_path:
                         project.path = selected_path
+                    self.menu.clear()  # Clear after worktree selection
             except Exception as e:
                 pass
         
