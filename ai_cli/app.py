@@ -63,8 +63,12 @@ class Application:
                 if not result:
                     continue
                 
-                tool, new_tab = result
-                self._launch_tool(tool, project, new_tab)
+                tool, new_tab, working_path = result
+                # Create temporary project with working_path
+                from copy import copy
+                temp_project = copy(project)
+                temp_project.path = working_path
+                self._launch_tool(tool, temp_project, new_tab)
             except KeyboardInterrupt:
                 break
             except Exception as e:
@@ -103,7 +107,8 @@ class Application:
                 breadcrumb=breadcrumb
             )
             
-            with Live(display, console=self.menu.console, refresh_per_second=10) as live:
+            result = None
+            with Live(display, console=self.menu.console, refresh_per_second=10, screen=True) as live:
                 while True:
                     event = self.input_handler.get_input()
                     
@@ -126,9 +131,10 @@ class Application:
                         if selected.type == "folder":
                             self.current_path.append(selected.name)
                             self.selected_index = 0
-                            break  # Exit Live context to refresh
+                            break
                         else:
-                            return selected
+                            result = selected
+                            break
                     elif event == InputEvent.NEW:
                         self.menu.console.print("\n[red]Project creation not yet implemented[/red]")
                         import time
@@ -145,7 +151,11 @@ class Application:
                             self.selected_index = 0
                             break
                     elif event == InputEvent.QUIT:
-                        return None
+                        result = None
+                        break
+            
+            if result is not None or event == InputEvent.QUIT:
+                return result
     
     async def _select_tool(self, project: ProjectNode) -> Optional[Tuple]:
         """Tool selection menu. Returns (tool, new_tab) or None."""
@@ -153,18 +163,23 @@ class Application:
         
         self.menu.clear()
         
+        # Use working_path to avoid modifying project.path permanently
+        working_path = project.path
+        
         # Check for git worktrees and let user select if multiple exist
-        if project.path:
+        if working_path:
             try:
                 from ai_cli.core.git import GitManager
                 git_manager = GitManager()
-                worktrees = git_manager.detect_worktrees(project.path)
+                worktrees = git_manager.detect_worktrees(working_path)
                 
                 if len(worktrees) > 1:
-                    selected_path = git_manager.select_worktree(worktrees, project.path)
+                    selected_path = git_manager.select_worktree(worktrees, working_path)
                     if selected_path:
-                        project.path = selected_path
-                    self.menu.clear()  # Clear after worktree selection
+                        working_path = selected_path
+                    else:
+                        return None
+                    self.menu.clear()
             except Exception as e:
                 pass
         
@@ -179,19 +194,19 @@ class Application:
         
         self.selected_index = 0
         
-        # Prepare project info
+        # Prepare project info using working_path
         project_info = {
             'name': project.name,
-            'path': project.path,
+            'path': working_path,
             'env': project.env if project.env else None
         }
         
         # Detect git branch if path exists
-        if project.path:
+        if working_path:
             try:
                 from ai_cli.core.git import GitDetector
                 git_detector = GitDetector()
-                branch = git_detector.get_current_branch(project.path)
+                branch = git_detector.get_current_branch(working_path)
                 if branch:
                     project_info['branch'] = branch
             except:
@@ -201,8 +216,7 @@ class Application:
         tool_items = []
         for t in tools:
             tool_items.append({
-                "name": t.get_display_label(),
-                "env": t.environment.value
+                "name": t.get_display_label()
             })
         
         self.menu.clear()
@@ -213,7 +227,8 @@ class Application:
             project_info=project_info
         )
         
-        with Live(display, console=self.menu.console, refresh_per_second=10) as live:
+        result = None
+        with Live(display, console=self.menu.console, refresh_per_second=10, screen=True) as live:
             while True:
                 event = self.input_handler.get_input()
                 
@@ -230,18 +245,20 @@ class Application:
                         show_new_tab=self.wt_available, project_info=project_info
                     ))
                 elif event == InputEvent.ENTER:
-                    return (tools[self.selected_index], False)
+                    result = (tools[self.selected_index], False, working_path)
+                    break
                 elif event == InputEvent.NEW_TAB:
                     if self.wt_available:
-                        return (tools[self.selected_index], True)
+                        result = (tools[self.selected_index], True, working_path)
+                        break
                 elif event == InputEvent.INSTALL:
                     await self._install_tool_menu()
                     self.tool_detector.clear_cache()
                     tools = await self.tool_detector.detect_all_tools(self.config.tools)
                     if not tools:
-                        return None
-                    # Rebuild tool items
-                    tool_items = [{"name": t.get_display_label(), "env": t.environment.value} for t in tools]
+                        result = None
+                        break
+                    tool_items = [{"name": t.get_display_label()} for t in tools]
                     live.update(self.menu.build_tools_display(
                         tool_items, self.selected_index,
                         show_new_tab=self.wt_available, project_info=project_info
@@ -253,25 +270,49 @@ class Application:
                     if not tools:
                         self.menu.console.print(f"\n[red]{get_text('no_tools')}[/red]")
                         time.sleep(1)
-                        return None
-                    tool_items = [{"name": t.get_display_label(), "env": t.environment.value} for t in tools]
+                        result = None
+                        break
+                    tool_items = [{"name": t.get_display_label()} for t in tools]
                     live.update(self.menu.build_tools_display(
                         tool_items, self.selected_index,
                         show_new_tab=self.wt_available, project_info=project_info
                     ))
                 elif event == InputEvent.ESCAPE:
-                    return None
+                    result = None
+                    break
                 elif event == InputEvent.QUIT:
                     raise KeyboardInterrupt
+        
+        return result
     
     def _launch_tool(self, tool: Tool, project: ProjectNode, new_tab: bool = False) -> None:
         """Launch tool in terminal."""
+        import time
+        from rich.live import Live
+        from rich.text import Text
+        
         try:
             self.platform_adapter.launch_terminal(tool, project, new_tab=new_tab, wt_available=self.wt_available)
             tab_mode = "new tab" if new_tab else "new window"
-            print(f"Launched {tool.name} for {project.name} in {tab_mode}")
+            self.menu.console.print(f"\n[green]✓ Launched {tool.name} for {project.name} in {tab_mode}[/green]")
+            self.menu.console.print(f"[dim]Tool: {tool.name}[/dim]")
+            self.menu.console.print(f"[dim]Project: {project.name}[/dim]")
+            self.menu.console.print(f"[dim]Path: {project.path}[/dim]")
+            self.menu.console.print(f"[dim]Environment: {tool.environment.value}[/dim]")
+            
+            # Countdown 5 seconds with live update
+            with Live(Text(""), console=self.menu.console, refresh_per_second=4) as live:
+                for i in range(5, 0, -1):
+                    live.update(Text(f"Returning to project selection in {i} seconds...", style="yellow"))
+                    time.sleep(1)
         except Exception as e:
-            print(f"Failed to launch tool: {e}")
+            self.menu.console.print(f"\n[red]✗ Failed to launch tool: {e}[/red]")
+            
+            # Countdown 5 seconds with live update
+            with Live(Text(""), console=self.menu.console, refresh_per_second=4) as live:
+                for i in range(5, 0, -1):
+                    live.update(Text(f"Returning to project selection in {i} seconds...", style="yellow"))
+                    time.sleep(1)
     
     async def _install_tool_menu(self):
         """Show menu to install uninstalled tools."""
