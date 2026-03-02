@@ -93,9 +93,11 @@ class Application:
                 self.menu.console.print("\n[yellow]No projects configured. Press 'N' to add a project or 'Q' to quit.[/yellow]")
                 event = self.input_handler.get_input()
                 if event == InputEvent.NEW:
-                    self.menu.console.print("\n[red]Project creation not yet implemented[/red]")
-                    import time
-                    time.sleep(1)
+                    if self._add_new_item():
+                        # After adding, continue to show the menu
+                        continue
+                    else:
+                        continue
                 elif event == InputEvent.QUIT:
                     return None
                 continue
@@ -136,14 +138,19 @@ class Application:
                             result = selected
                             break
                     elif event == InputEvent.NEW:
-                        self.menu.console.print("\n[red]Project creation not yet implemented[/red]")
-                        import time
-                        time.sleep(1)
+                        if self._add_new_item():
+                            # Refresh items after adding
+                            current_node = self._get_current_node()
+                            items = current_node.children if current_node else self.config.projects
+                            self.selected_index = min(self.selected_index, len(items) - 1) if items else 0
                         break
                     elif event == InputEvent.DELETE:
-                        self.menu.console.print("\n[red]Delete function not yet implemented[/red]")
-                        import time
-                        time.sleep(1)
+                        selected = items[self.selected_index]
+                        if self._delete_item(selected):
+                            # Refresh items after deletion
+                            current_node = self._get_current_node()
+                            items = current_node.children if current_node else self.config.projects
+                            self.selected_index = min(self.selected_index, len(items) - 1) if items else 0
                         break
                     elif event == InputEvent.ESCAPE:
                         if self.current_path:
@@ -408,3 +415,221 @@ class Application:
                     break
         
         return node
+    
+    def _add_new_item(self) -> bool:
+        """Add new project or folder. Returns True if added successfully."""
+        import os
+        from rich.prompt import Prompt, Confirm
+        
+        self.menu.clear()
+        self.menu.console.print("\n[cyan]Add New Item[/cyan]")
+        self.menu.console.print("=" * 60, style="dim")
+        self.menu.console.print()
+        
+        # Select type
+        self.menu.console.print("[cyan]Select Type:[/cyan]")
+        self.menu.console.print("  1. Project")
+        self.menu.console.print("  2. Folder")
+        self.menu.console.print("\n[dim]Press ESC to cancel[/dim]")
+        
+        type_choice = None
+        while type_choice is None:
+            event = self.input_handler.get_input()
+            if event == InputEvent.QUIT or event == InputEvent.ESCAPE:
+                return False
+            # Check for number keys
+            import sys
+            if sys.platform == 'win32':
+                # On Windows, we need to handle this differently
+                pass
+            # For now, use prompt
+            break
+        
+        self.menu.clear()
+        self.menu.console.print("\n[cyan]Add New Item[/cyan]")
+        self.menu.console.print("=" * 60, style="dim")
+        self.menu.console.print("\n[dim](Press Ctrl+C to cancel)[/dim]\n")
+        
+        try:
+            # Get type
+            type_input = Prompt.ask("[cyan]Type[/cyan] (1=Project, 2=Folder)", default="1")
+            if type_input not in ["1", "2"]:
+                self.menu.console.print("[red]Invalid type[/red]")
+                time.sleep(1)
+                return False
+            
+            item_type = "project" if type_input == "1" else "folder"
+            
+            # Get name
+            item_name = Prompt.ask(f"[cyan]{item_type.capitalize()} Name[/cyan]")
+            if not item_name or not item_name.strip():
+                self.menu.console.print("[red]Name is required[/red]")
+                time.sleep(1)
+                return False
+            
+            item_name = item_name.strip()
+            
+            # Check for duplicate names
+            current_node = self._get_current_node()
+            items = current_node.children if current_node else self.config.projects
+            if any(item.name == item_name for item in items):
+                self.menu.console.print(f"[red]Name '{item_name}' already exists in current location[/red]")
+                time.sleep(2)
+                return False
+            
+            if item_type == "folder":
+                # Create folder
+                new_item = ProjectNode(type="folder", name=item_name, path="", children=[])
+                
+                self.menu.console.print("\n[cyan]Folder Summary:[/cyan]")
+                self.menu.console.print(f"  Name: {item_name}")
+                self.menu.console.print()
+                
+                if Confirm.ask("[yellow]Add this folder?[/yellow]", default=True):
+                    self._add_item_to_current_path(new_item)
+                    self.config_manager.save(self.config)
+                    self.menu.console.print("[green]Folder added successfully![/green]")
+                    time.sleep(1)
+                    return True
+                return False
+            
+            # Project needs path
+            current_dir = os.getcwd()
+            self.menu.console.print(f"[dim](Press Enter to use current directory: {current_dir})[/dim]")
+            
+            project_path = Prompt.ask("[cyan]Project Path[/cyan]", default=current_dir)
+            if not project_path:
+                project_path = current_dir
+            
+            # Check if path exists
+            if not os.path.exists(project_path):
+                if Confirm.ask(f"[yellow]Path does not exist: {project_path}\nCreate it?[/yellow]", default=False):
+                    try:
+                        os.makedirs(project_path, exist_ok=True)
+                        self.menu.console.print("[green]Directory created successfully[/green]")
+                    except Exception as e:
+                        self.menu.console.print(f"[red]Failed to create directory: {e}[/red]")
+                        time.sleep(2)
+                        return False
+                else:
+                    return False
+            
+            # Get environment variables
+            self.menu.console.print("\n[cyan]Environment Variables (optional)[/cyan]")
+            self.menu.console.print("[dim]Format: KEY=VALUE, one per line, empty line to finish[/dim]\n")
+            
+            env_vars = {}
+            while True:
+                env_input = Prompt.ask("[cyan]Env Var[/cyan]", default="")
+                if not env_input:
+                    break
+                
+                if "=" in env_input:
+                    key, value = env_input.split("=", 1)
+                    key = key.strip()
+                    value = value.strip()
+                    env_vars[key] = value
+                    self.menu.console.print(f"  [green]Added: {key}={value}[/green]")
+                else:
+                    self.menu.console.print("  [red]Invalid format. Use KEY=VALUE[/red]")
+            
+            # Create project
+            new_project = ProjectNode(
+                type="project",
+                name=item_name,
+                path=project_path,
+                env=env_vars if env_vars else None
+            )
+            
+            # Show summary
+            self.menu.console.print("\n[cyan]Project Summary:[/cyan]")
+            self.menu.console.print(f"  Name: {item_name}")
+            self.menu.console.print(f"  Path: {project_path}")
+            if env_vars:
+                self.menu.console.print(f"  Env Vars: {len(env_vars)} variable(s)")
+                for key, value in env_vars.items():
+                    self.menu.console.print(f"    [dim]{key}={value}[/dim]")
+            self.menu.console.print()
+            
+            if Confirm.ask("[yellow]Add this project?[/yellow]", default=True):
+                self._add_item_to_current_path(new_project)
+                self.config_manager.save(self.config)
+                self.menu.console.print("[green]Project added successfully![/green]")
+                time.sleep(1)
+                return True
+            else:
+                self.menu.console.print("[yellow]Cancelled[/yellow]")
+                time.sleep(1)
+                return False
+                
+        except KeyboardInterrupt:
+            self.menu.console.print("\n[yellow]Cancelled[/yellow]")
+            time.sleep(1)
+            return False
+        except Exception as e:
+            self.menu.console.print(f"\n[red]Error: {e}[/red]")
+            time.sleep(2)
+            return False
+    
+    def _delete_item(self, item: ProjectNode) -> bool:
+        """Delete project or folder. Returns True if deleted successfully."""
+        from rich.prompt import Prompt
+        from ai_cli.core.projects import ProjectManager
+        
+        self.menu.clear()
+        self.menu.console.print("\n[red]Delete Confirmation[/red]")
+        self.menu.console.print("=" * 60, style="dim")
+        self.menu.console.print()
+        
+        icon = "📁" if item.type == "folder" else "📄"
+        self.menu.console.print(f"[yellow]Item to delete: {icon} {item.name}[/yellow]")
+        
+        if item.type == "folder":
+            count = ProjectManager.count_children_recursive(item)
+            self.menu.console.print(f"[yellow]Contains: {count} item(s)[/yellow]")
+        else:
+            self.menu.console.print(f"[dim]Path: {item.path}[/dim]")
+        
+        self.menu.console.print()
+        self.menu.console.print("[red]⚠️  WARNING: This action cannot be undone![/red]")
+        self.menu.console.print()
+        
+        try:
+            confirmation = Prompt.ask(f"[cyan]Type the name to confirm deletion[/cyan]")
+            
+            if confirmation == item.name:
+                self._remove_item_from_current_path(item.name)
+                self.config_manager.save(self.config)
+                self.menu.console.print("[green]Deleted successfully![/green]")
+                time.sleep(1)
+                return True
+            else:
+                self.menu.console.print("[yellow]Name mismatch. Deletion cancelled.[/yellow]")
+                time.sleep(1)
+                return False
+        except KeyboardInterrupt:
+            self.menu.console.print("\n[yellow]Cancelled[/yellow]")
+            time.sleep(1)
+            return False
+    
+    def _add_item_to_current_path(self, item: ProjectNode) -> None:
+        """Add item to current path in config."""
+        if not self.current_path:
+            # Add to root
+            self.config.projects.append(item)
+        else:
+            # Navigate to current folder and add
+            current_node = self._get_current_node()
+            if current_node:
+                current_node.children.append(item)
+    
+    def _remove_item_from_current_path(self, item_name: str) -> None:
+        """Remove item from current path in config."""
+        if not self.current_path:
+            # Remove from root
+            self.config.projects = [p for p in self.config.projects if p.name != item_name]
+        else:
+            # Navigate to current folder and remove
+            current_node = self._get_current_node()
+            if current_node:
+                current_node.children = [c for c in current_node.children if c.name != item_name]
