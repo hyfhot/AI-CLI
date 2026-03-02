@@ -1,6 +1,6 @@
 # AI-CLI (Python エディション)
 
-> 🌐 [English](README.md) | [中文](README.zh.md) | **日本語**
+> 🌐 [English](README.md) | [中文](README.zh.md) | **日本語** | [Deutsch](README.de.md)
 
 [![Python バージョン](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![ライセンス](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -95,13 +95,24 @@ ai-cli
 ### コマンドラインオプション
 
 ```bash
-ai-cli              # インタラクティブインターフェースを起動
-ai-cli --init       # 設定ファイルを初期化
-ai-cli --config     # 設定ファイルを編集
-ai-cli --uninstall  # AI-CLI をアンインストール
-ai-cli --version    # バージョン情報を表示
-ai-cli --help       # ヘルプ情報を表示
+ai-cli                    # インタラクティブインターフェースを起動
+ai-cli --init             # 設定ファイルを初期化
+ai-cli --config           # 設定ファイルを編集
+ai-cli --lang zh          # 中国語で起動
+ai-cli --lang ja          # 日本語で起動
+ai-cli --uninstall        # AI-CLI をアンインストール
+ai-cli --version          # バージョン情報を表示
+ai-cli --help             # ヘルプ情報を表示
 ```
+
+**言語オプション** (`--lang` / `-l`):
+- `auto` - システム言語を自動検出（デフォルト）
+- `en` - 英語 (English)
+- `zh` - 中国語 (中文)
+- `ja` - 日本語
+- `de` - ドイツ語 (Deutsch)
+
+**注意**: CLI言語パラメータは設定ファイルの設定より優先されます。
 
 ### キーボードショートカット
 

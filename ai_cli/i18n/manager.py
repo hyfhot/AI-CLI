@@ -18,7 +18,21 @@ class LanguageManager:
     def _detect_language(self, language: str) -> str:
         """Detect system language."""
         if language != "auto":
-            return language
+            # Normalize language code (e.g., zh_CN -> zh)
+            if language.startswith('zh'):
+                return 'zh'
+            elif language.startswith('ja'):
+                return 'ja'
+            elif language.startswith('de'):
+                return 'de'
+            elif language.startswith('en'):
+                return 'en'
+            # If it's a simple supported code, return as-is
+            elif language in ['zh', 'ja', 'de', 'en']:
+                return language
+            # Invalid language, fallback to English
+            else:
+                return 'en'
         
         try:
             system_lang = locale.getdefaultlocale()[0]

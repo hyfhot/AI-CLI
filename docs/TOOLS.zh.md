@@ -1,6 +1,6 @@
 # AI CLI 工具参考
 
-> 🌐 [English](TOOLS.md) | **中文** | [日本語](TOOLS.ja.md)
+> 🌐 [English](TOOLS.md) | **中文** | [日本語](TOOLS.ja.md) | [Deutsch](TOOLS.de.md)
 
 本文档列出了 AI-CLI 支持的主流 AI 编程工具及其安装和配置信息。
 

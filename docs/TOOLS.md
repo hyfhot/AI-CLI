@@ -1,6 +1,6 @@
 # AI CLI Tools Reference
 
-> 🌐 **English** | [中文](TOOLS.zh.md) | [日本語](TOOLS.ja.md)
+> 🌐 **English** | [中文](TOOLS.zh.md) | [日本語](TOOLS.ja.md) | [Deutsch](TOOLS.de.md)
 
 This document lists the mainstream AI programming tools supported by AI-CLI along with their installation and configuration information.
 

@@ -4,6 +4,7 @@ from rich.tree import Tree
 from rich.text import Text
 from typing import List, Dict, Any
 from .theme import Theme
+from ai_cli.i18n import get_text
 
 class MenuRenderer:
     """Renders menus and navigation."""
@@ -25,7 +26,7 @@ class MenuRenderer:
             lines.append(bc)
             lines.append(Text())  # Empty line
         
-        lines.append(Text("  Select Project"))
+        lines.append(Text(f"  {get_text('select_project')}"))
         lines.append(Text("  " + "=" * 60, style="dim"))
         lines.append(Text())  # Empty line
         
@@ -35,9 +36,9 @@ class MenuRenderer:
             
             # Show appropriate menu based on location
             if breadcrumb and len(breadcrumb) > 1:
-                lines.append(Text("  [N] New  [Esc] Back  [Q] Quit", style="dim"))
+                lines.append(Text(f"  [N] {get_text('new')}  [Esc] {get_text('back')}  [Q] {get_text('quit')}", style="dim"))
             else:
-                lines.append(Text("  [N] New  [Q] Quit", style="dim"))
+                lines.append(Text(f"  [N] {get_text('new')}  [Q] {get_text('quit')}", style="dim"))
             return Group(*lines)
         
         # Calculate scroll window
@@ -88,10 +89,10 @@ class MenuRenderer:
         lines.append(Text())  # Empty line
         
         # Show menu hint
-        hint = "  [↑↓] Navigate  [Enter] Select  [N] New  [D] Delete"
+        hint = f"  [↑↓] Navigate  [Enter] Select  [N] {get_text('new')}  [D] {get_text('delete')}"
         if breadcrumb and len(breadcrumb) > 1:  # Show Back only when not at root
-            hint += "  [Esc] Back"
-        hint += "  [Q] Quit"
+            hint += f"  [Esc] {get_text('back')}"
+        hint += f"  [Q] {get_text('quit')}"
         lines.append(Text(hint, style="dim"))
         
         return Group(*lines)
@@ -111,7 +112,7 @@ class MenuRenderer:
                 env_str = ', '.join([f"{k}={v}" for k, v in project_info['env'].items()])
                 lines.append(Text(f"Env: {env_str}", style="dim"))
         
-        lines.append(Text("\n=== Select AI Tool ===\n", style="bold cyan"))
+        lines.append(Text(f"\n=== {get_text('select_tool')} ===\n", style="bold cyan"))
         
         # Calculate scroll window
         total = len(tools)
@@ -149,9 +150,9 @@ class MenuRenderer:
         
         # Show [T] New Tab only if Windows Terminal is available
         if show_new_tab:
-            lines.append(Text("\n[↑↓] Select  [Enter] Launch  [T] New Tab  [I] Install  [R] Refresh  [Esc] Back  [Q] Quit", style="dim"))
+            lines.append(Text(f"\n[↑↓] Select  [Enter] {get_text('new_window')}  [T] {get_text('new_tab')}  [I] {get_text('install')}  [R] {get_text('refresh')}  [Esc] {get_text('back')}  [Q] {get_text('quit')}", style="dim"))
         else:
-            lines.append(Text("\n[↑↓] Select  [Enter] Launch  [I] Install  [R] Refresh  [Esc] Back  [Q] Quit", style="dim"))
+            lines.append(Text(f"\n[↑↓] Select  [Enter] {get_text('new_window')}  [I] {get_text('install')}  [R] {get_text('refresh')}  [Esc] {get_text('back')}  [Q] {get_text('quit')}", style="dim"))
         
         return Group(*lines)
         

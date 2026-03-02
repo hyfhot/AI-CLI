@@ -1,6 +1,6 @@
 # AI-CLI (Python Edition)
 
-> 🌐 **English** | [中文](README.zh.md) | [日本語](README.ja.md)
+> 🌐 **English** | [中文](README.zh.md) | [日本語](README.ja.md) | [Deutsch](README.de.md)
 
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -95,13 +95,24 @@ ai-cli
 ### Command Line Options
 
 ```bash
-ai-cli              # Start interactive interface
-ai-cli --init       # Initialize configuration file
-ai-cli --config     # Edit configuration file
-ai-cli --uninstall  # Uninstall AI-CLI
-ai-cli --version    # Show version information
-ai-cli --help       # Show help information
+ai-cli                    # Start interactive interface
+ai-cli --init             # Initialize configuration file
+ai-cli --config           # Edit configuration file
+ai-cli --lang zh          # Start with Chinese language
+ai-cli --lang ja          # Start with Japanese language
+ai-cli --uninstall        # Uninstall AI-CLI
+ai-cli --version          # Show version information
+ai-cli --help             # Show help information
 ```
+
+**Language Options** (`--lang` / `-l`):
+- `auto` - Auto-detect system language (default)
+- `en` - English
+- `zh` - Chinese (中文)
+- `ja` - Japanese (日本語)
+- `de` - German (Deutsch)
+
+**Note**: CLI language parameter takes priority over config file settings.
 
 ### Keyboard Shortcuts
 

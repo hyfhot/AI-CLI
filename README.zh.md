@@ -1,6 +1,6 @@
 # AI-CLI (Python 版本)
 
-> 🌐 [English](README.md) | **中文** | [日本語](README.ja.md)
+> 🌐 [English](README.md) | **中文** | [日本語](README.ja.md) | [Deutsch](README.de.md)
 
 [![Python 版本](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![许可证](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -95,13 +95,24 @@ ai-cli
 ### 命令行选项
 
 ```bash
-ai-cli              # 启动交互界面
-ai-cli --init       # 初始化配置文件
-ai-cli --config     # 编辑配置文件
-ai-cli --uninstall  # 卸载 AI-CLI
-ai-cli --version    # 显示版本信息
-ai-cli --help       # 显示帮助信息
+ai-cli                    # 启动交互界面
+ai-cli --init             # 初始化配置文件
+ai-cli --config           # 编辑配置文件
+ai-cli --lang zh          # 使用中文启动
+ai-cli --lang ja          # 使用日语启动
+ai-cli --uninstall        # 卸载 AI-CLI
+ai-cli --version          # 显示版本信息
+ai-cli --help             # 显示帮助信息
 ```
+
+**语言选项** (`--lang` / `-l`):
+- `auto` - 自动检测系统语言（默认）
+- `en` - 英语 (English)
+- `zh` - 中文
+- `ja` - 日语 (日本語)
+- `de` - 德语 (Deutsch)
+
+**注意**: 命令行语言参数优先级高于配置文件设置。
 
 ### 键盘快捷键
 

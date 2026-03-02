@@ -13,7 +13,8 @@ __version__ = "3.1.0"
 @click.option('--config', '-c', is_flag=True, help='Open configuration file for editing')
 @click.option('--uninstall', '-u', is_flag=True, help='Uninstall AI-CLI')
 @click.option('--version', '-v', is_flag=True, help='Show version information')
-def main(init, config, uninstall, version):
+@click.option('--lang', '-l', type=click.Choice(['auto', 'en', 'zh', 'ja', 'de'], case_sensitive=False), help='Set language (auto, en, zh, ja, de)')
+def main(init, config, uninstall, version, lang):
     """AI-CLI: Terminal launcher for AI coding assistants."""
     
     if version:
@@ -35,7 +36,7 @@ def main(init, config, uninstall, version):
     # Default: start interactive interface
     try:
         from .app import Application
-        app = Application()
+        app = Application(language=lang)
         app.run()
     except KeyboardInterrupt:
         click.echo("\nGoodbye!")

@@ -1,6 +1,6 @@
 # AI-CLI Installation Guide
 
-> 🌐 **English** | [中文](INSTALL-GUIDE.zh.md) | [日本語](INSTALL-GUIDE.ja.md)
+> 🌐 **English** | [中文](INSTALL-GUIDE.zh.md) | [日本語](INSTALL-GUIDE.ja.md) | [Deutsch](INSTALL-GUIDE.de.md)
 
 ## Quick Installation
 

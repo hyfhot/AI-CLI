@@ -17,14 +17,18 @@ from ai_cli.i18n import get_text
 class Application:
     """Main application class."""
     
-    def __init__(self):
+    def __init__(self, language: Optional[str] = None):
         self.config_manager = ConfigManager()
         self.config = self.config_manager.load()
         
         # Initialize i18n
         from ai_cli.i18n import init_language
-        language = self.config.settings.language if hasattr(self.config.settings, 'language') else 'auto'
-        init_language(language)
+        # Priority: CLI argument > config file > auto
+        if language:
+            init_language(language)
+        else:
+            language = self.config.settings.language if hasattr(self.config.settings, 'language') else 'auto'
+            init_language(language)
         
         self.menu = MenuRenderer()
         self.input_handler = InputHandler()
@@ -239,8 +243,8 @@ class Application:
             if project_info.get('branch'):
                 detecting_lines.append(Text(f"Branch: {project_info['branch']}", style="dim"))
         
-        detecting_lines.append(Text("\n=== Select AI Tool ===\n", style="bold cyan"))
-        detecting_lines.append(Text("  Detecting tools...", style="yellow"))
+        detecting_lines.append(Text(f"\n=== {get_text('select_tool')} ===\n", style="bold cyan"))
+        detecting_lines.append(Text(f"  {get_text('detecting_tools')}", style="yellow"))
         detecting_display = Group(*detecting_lines)
         
         with Live(detecting_display, console=self.menu.console, refresh_per_second=10, screen=False) as live:
