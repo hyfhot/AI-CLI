@@ -31,19 +31,24 @@ try {
 Write-Host "`nInitializing configuration..." -ForegroundColor Yellow
 ai-cli --init
 
-# Create desktop shortcut
+# Create desktop shortcut with icon
 Write-Host "`nCreating desktop shortcut..." -ForegroundColor Yellow
 $desktopPath = [Environment]::GetFolderPath("Desktop")
-$shortcutPath = Join-Path $desktopPath "AI-CLI.lnk"
+$shortcutPath = Join-Path $desktopPath "AI-CLI 3.0.lnk"
+$scriptDir = $PSScriptRoot
+$iconPath = Join-Path $scriptDir "ai-cli.ico"
 
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut($shortcutPath)
 $shortcut.TargetPath = "powershell.exe"
 $shortcut.Arguments = "-NoProfile -Command `"ai-cli`""
 $shortcut.WorkingDirectory = $HOME
+if (Test-Path $iconPath) {
+    $shortcut.IconLocation = $iconPath
+}
 $shortcut.Save()
 
-Write-Host "  Desktop shortcut created!" -ForegroundColor Green
+Write-Host "  Desktop shortcut created: AI-CLI 3.0" -ForegroundColor Green
 
 Write-Host "`n" -ForegroundColor Green
 Write-Host ("=" * 50) -ForegroundColor DarkGray

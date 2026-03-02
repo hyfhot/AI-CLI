@@ -146,13 +146,14 @@ class Application:
         while True:
             self.menu.clear()
             
-            # Show tool list with URLs
+            # Show tool list with command and env vars
             tool_items = []
             for t in tools:
                 tool_items.append({
                     "name": t.get_display_label(),
                     "env": t.environment.value,
-                    "url": t.url if hasattr(t, 'url') and t.url else None
+                    "command": t.name,
+                    "project_env": project.env if project.env else None
                 })
             
             self.menu.render_tools(tool_items, self.selected_index, show_new_tab=self.wt_available)

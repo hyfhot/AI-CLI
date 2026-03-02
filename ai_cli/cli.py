@@ -106,10 +106,12 @@ def uninstall_app():
         # On Windows, remove desktop shortcut if exists
         if platform.system() == "Windows":
             desktop = Path.home() / "Desktop"
-            shortcut = desktop / "AI-CLI.lnk"
-            if shortcut.exists():
-                shortcut.unlink()
-                click.echo("  Removed desktop shortcut")
+            # Try both old and new shortcut names
+            for shortcut_name in ["AI-CLI 3.0.lnk", "AI-CLI.lnk"]:
+                shortcut = desktop / shortcut_name
+                if shortcut.exists():
+                    shortcut.unlink()
+                    click.echo(f"  Removed desktop shortcut: {shortcut_name}")
         
         click.echo("\nUninstallation complete!")
         click.echo("To remove the program, run: pip uninstall ai-cli")

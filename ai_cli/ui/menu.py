@@ -24,7 +24,7 @@ class MenuRenderer:
         self.console.print("\n[dim][↑↓] Select  [Enter] Enter/Confirm  [N] New  [D] Delete  [Esc] Back  [Q] Quit[/dim]")
         
     def render_tools(self, tools: List[Dict[str, Any]], selected: int = 0, show_new_tab: bool = True) -> None:
-        """Render tools list with environment labels and URLs."""
+        """Render tools list with command and environment variables."""
         self.console.print("\n[bold cyan]=== Select AI Tool ===[/bold cyan]\n")
         
         for i, tool in enumerate(tools):
@@ -35,9 +35,14 @@ class MenuRenderer:
             # Show tool name
             self.console.print(f"{prefix}{env_label} {tool['name']}", style=style)
             
-            # Show URL if selected and available
-            if i == selected and tool.get('url'):
-                self.console.print(f"      [dim]URL: {tool['url']}[/dim]")
+            # Show command and env vars if selected
+            if i == selected:
+                if tool.get('command'):
+                    self.console.print(f"      [dim]Command: {tool['command']}[/dim]")
+                if tool.get('project_env'):
+                    env_str = ', '.join([f"{k}={v}" for k, v in tool['project_env'].items()])
+                    if env_str:
+                        self.console.print(f"      [dim]Env: {env_str}[/dim]")
         
         # Show [T] New Tab only if Windows Terminal is available
         if show_new_tab:
