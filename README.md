@@ -18,12 +18,24 @@
 - 🔧 **Auto Path Conversion**: Automatic Windows ↔ WSL path translation
 - 🌳 **Git Worktree**: Detect and manage Git worktrees
 - 🎯 **Environment Variables**: Project-specific env var injection
+- 🛠️ **Tool Installation**: Press I key to install uninstalled tools
+- 🔄 **Manual Refresh**: Press R key to refresh tool list
+- 🌐 **Multi-language**: Support for English, Chinese, Japanese, German
+- 🔗 **Tool URLs**: Display tool website URLs in selection menu
 
 ## 🚀 Quick Start
 
 ### Installation
 
 ```bash
+# Using installation script (recommended)
+# Windows:
+powershell -ExecutionPolicy Bypass -File install.ps1
+
+# Linux/macOS:
+bash install.sh
+
+# Or manual installation:
 pip install -e ".[dev]"
 ```
 
@@ -47,6 +59,7 @@ ai-cli
 ai-cli              # Start interactive interface
 ai-cli --init       # Initialize configuration
 ai-cli --config     # Edit configuration file
+ai-cli --uninstall  # Uninstall AI-CLI
 ai-cli --version    # Show version
 ai-cli --help       # Show help
 ```

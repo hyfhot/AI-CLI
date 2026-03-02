@@ -2,13 +2,16 @@
 import asyncio
 import subprocess
 import sys
-from typing import Optional, List
+import time
+from typing import Optional, List, Tuple
 from ai_cli.config import ConfigManager
-from ai_cli.models import Config, ProjectNode, Tool
+from ai_cli.models import Config, ProjectNode, Tool, ToolEnvironment
 from ai_cli.ui.menu import MenuRenderer
 from ai_cli.ui.input import InputHandler, InputEvent
 from ai_cli.platform.factory import get_platform_adapter
 from ai_cli.core.tools import ToolDetector
+from ai_cli.core.installer import ToolInstaller
+from ai_cli.i18n import get_text
 
 
 class Application:
@@ -17,10 +20,17 @@ class Application:
     def __init__(self):
         self.config_manager = ConfigManager()
         self.config = self.config_manager.load()
+        
+        # Initialize i18n
+        from ai_cli.i18n import init_language
+        language = self.config.settings.language if hasattr(self.config.settings, 'language') else 'auto'
+        init_language(language)
+        
         self.menu = MenuRenderer()
         self.input_handler = InputHandler()
         self.platform_adapter = get_platform_adapter()
         self.tool_detector = ToolDetector()  # Single instance with cache
+        self.tool_installer = ToolInstaller()  # Tool installer
         self.current_path: List[str] = []
         self.selected_index = 0
         
@@ -120,15 +130,14 @@ class Application:
                 import time
                 time.sleep(1)
     
-    async def _select_tool(self, project: ProjectNode) -> Optional[tuple]:
+    async def _select_tool(self, project: ProjectNode) -> Optional[Tuple]:
         """Tool selection menu. Returns (tool, new_tab) or None."""
         # Detect tools with progress indicator (uses cache if available)
-        self.menu.console.print("[yellow]Detecting tools...[/yellow]")
+        self.menu.console.print(f"[yellow]{get_text('detecting_tools')}[/yellow]")
         tools = await self.tool_detector.detect_all_tools(self.config.tools)
         
         if not tools:
-            self.menu.console.print("\n[red]No AI tools detected. Press 'I' to install tools or 'Q' to quit.[/red]")
-            import time
+            self.menu.console.print(f"\n[red]{get_text('no_tools')}[/red]")
             time.sleep(2)
             return None
         
@@ -136,9 +145,17 @@ class Application:
         
         while True:
             self.menu.clear()
-            self.menu.render_tools([{"name": t.get_display_label(), "env": t.environment.value} for t in tools], 
-                                  self.selected_index, 
-                                  show_new_tab=self.wt_available)
+            
+            # Show tool list with URLs
+            tool_items = []
+            for t in tools:
+                tool_items.append({
+                    "name": t.get_display_label(),
+                    "env": t.environment.value,
+                    "url": t.url if hasattr(t, 'url') and t.url else None
+                })
+            
+            self.menu.render_tools(tool_items, self.selected_index, show_new_tab=self.wt_available)
             
             event = self.input_handler.get_input()
             
@@ -151,22 +168,27 @@ class Application:
             elif event == InputEvent.NEW_TAB:
                 if self.wt_available:
                     return (tools[self.selected_index], True)
-                # Ignore T key if wt not available
-            elif event == InputEvent.ESCAPE:
-                # ESC returns to project selection
-                return None
-            elif event == InputEvent.QUIT:
-                # Q quits the program - raise exception to exit main loop
-                raise KeyboardInterrupt
-            elif event == InputEvent.RUN:
-                self.menu.console.print("\n[yellow]Refreshing tools...[/yellow]")
+            elif event == InputEvent.INSTALL:
+                # Show install menu
+                await self._install_tool_menu()
+                # Refresh tools after installation
                 self.tool_detector.clear_cache()
                 tools = await self.tool_detector.detect_all_tools(self.config.tools)
                 if not tools:
-                    self.menu.console.print("\n[red]No tools detected.[/red]")
-                    import time
+                    return None
+            elif event == InputEvent.RUN:
+                # Manual refresh
+                self.menu.console.print(f"\n[yellow]{get_text('refreshing')}[/yellow]")
+                self.tool_detector.clear_cache()
+                tools = await self.tool_detector.detect_all_tools(self.config.tools)
+                if not tools:
+                    self.menu.console.print(f"\n[red]{get_text('no_tools')}[/red]")
                     time.sleep(1)
                     return None
+            elif event == InputEvent.ESCAPE:
+                return None
+            elif event == InputEvent.QUIT:
+                raise KeyboardInterrupt
     
     def _launch_tool(self, tool: Tool, project: ProjectNode, new_tab: bool = False) -> None:
         """Launch tool in terminal."""
@@ -176,6 +198,87 @@ class Application:
             print(f"Launched {tool.name} for {project.name} in {tab_mode}")
         except Exception as e:
             print(f"Failed to launch tool: {e}")
+    
+    async def _install_tool_menu(self):
+        """Show menu to install uninstalled tools."""
+        # Get all tools and check which are not installed
+        all_tools_config = self.config.tools
+        detected_tools = await self.tool_detector.detect_all_tools(all_tools_config)
+        detected_names = {(t.name, t.environment) for t in detected_tools}
+        
+        # Build list of uninstalled tools
+        uninstalled = []
+        for tool_config in all_tools_config:
+            # Check WSL
+            if tool_config.wsl_install and (tool_config.name, ToolEnvironment.WSL) not in detected_names:
+                uninstalled.append({
+                    "name": f"[WSL] {tool_config.display_name}",
+                    "tool": tool_config,
+                    "env": ToolEnvironment.WSL
+                })
+            # Check Windows
+            if sys.platform == 'win32' and tool_config.win_install and (tool_config.name, ToolEnvironment.WINDOWS) not in detected_names:
+                uninstalled.append({
+                    "name": f"[Win] {tool_config.display_name}",
+                    "tool": tool_config,
+                    "env": ToolEnvironment.WINDOWS
+                })
+            # Check Linux
+            if sys.platform == 'linux' and tool_config.linux_install and (tool_config.name, ToolEnvironment.LINUX) not in detected_names:
+                uninstalled.append({
+                    "name": f"[Linux] {tool_config.display_name}",
+                    "tool": tool_config,
+                    "env": ToolEnvironment.LINUX
+                })
+            # Check macOS
+            if sys.platform == 'darwin' and tool_config.macos_install and (tool_config.name, ToolEnvironment.MACOS) not in detected_names:
+                uninstalled.append({
+                    "name": f"[macOS] {tool_config.display_name}",
+                    "tool": tool_config,
+                    "env": ToolEnvironment.MACOS
+                })
+        
+        if not uninstalled:
+            self.menu.console.print(f"\n[green]{get_text('install_success')}[/green]")
+            time.sleep(1)
+            return
+        
+        # Show selection menu
+        selected_index = 0
+        while True:
+            self.menu.clear()
+            self.menu.console.print(f"\n[cyan]{get_text('install')}[/cyan]\n")
+            
+            for i, item in enumerate(uninstalled):
+                prefix = "→ " if i == selected_index else "  "
+                self.menu.console.print(f"{prefix}{item['name']}")
+            
+            self.menu.console.print(f"\n[dim]↑↓: Navigate | Enter: {get_text('install')} | Esc: {get_text('back')}[/dim]")
+            
+            event = self.input_handler.get_input()
+            
+            if event == InputEvent.UP:
+                selected_index = max(0, selected_index - 1)
+            elif event == InputEvent.DOWN:
+                selected_index = min(len(uninstalled) - 1, selected_index + 1)
+            elif event == InputEvent.ENTER:
+                # Install selected tool
+                selected = uninstalled[selected_index]
+                self.menu.clear()
+                self.menu.console.print(f"\n[cyan]{get_text('installing', selected['name'])}[/cyan]\n")
+                
+                success = self.tool_installer.install_tool(selected['tool'], selected['env'])
+                
+                if success:
+                    self.menu.console.print(f"\n[green]{get_text('install_success')}[/green]")
+                else:
+                    self.menu.console.print(f"\n[red]{get_text('install_failed', 'Unknown error')}[/red]")
+                
+                self.menu.console.print(f"\n[dim]{get_text('press_key')}[/dim]")
+                self.input_handler.get_input()
+                return
+            elif event == InputEvent.ESCAPE or event == InputEvent.QUIT:
+                return
     
     def _get_current_node(self) -> Optional[ProjectNode]:
         """Get current node from path."""

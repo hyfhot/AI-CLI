@@ -24,14 +24,20 @@ class MenuRenderer:
         self.console.print("\n[dim][↑↓] Select  [Enter] Enter/Confirm  [N] New  [D] Delete  [Esc] Back  [Q] Quit[/dim]")
         
     def render_tools(self, tools: List[Dict[str, Any]], selected: int = 0, show_new_tab: bool = True) -> None:
-        """Render tools list with environment labels."""
+        """Render tools list with environment labels and URLs."""
         self.console.print("\n[bold cyan]=== Select AI Tool ===[/bold cyan]\n")
         
         for i, tool in enumerate(tools):
             style = Theme.HIGHLIGHT if i == selected else Theme.SECONDARY
             env_label = f"[{tool.get('env', 'Win')}]"
             prefix = "> " if i == selected else "  "
+            
+            # Show tool name
             self.console.print(f"{prefix}{env_label} {tool['name']}", style=style)
+            
+            # Show URL if selected and available
+            if i == selected and tool.get('url'):
+                self.console.print(f"      [dim]URL: {tool['url']}[/dim]")
         
         # Show [T] New Tab only if Windows Terminal is available
         if show_new_tab:

@@ -102,6 +102,7 @@ class Tool:
     display_name: str
     environment: ToolEnvironment
     available: bool
+    url: Optional[str] = None
     version: Optional[str] = None
     
     def get_display_label(self) -> str:

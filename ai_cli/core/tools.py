@@ -46,6 +46,7 @@ class WindowsToolDetector:
                     display_name=tool_config.display_name,
                     environment=ToolEnvironment.WINDOWS,
                     available=True,
+                    url=tool_config.url,
                     version=None
                 ))
         
@@ -82,6 +83,7 @@ class WindowsToolDetector:
                         display_name=tool_config.display_name,
                         environment=ToolEnvironment.WSL,
                         available=True,
+                        url=tool_config.url,
                         version=None
                     ))
             
@@ -138,6 +140,7 @@ class LinuxToolDetector:
                     display_name=tool_config.display_name,
                     environment=ToolEnvironment.LINUX,
                     available=True,
+                    url=tool_config.url,
                     version=None
                 ))
         
@@ -174,6 +177,7 @@ class MacOSToolDetector:
                     display_name=tool_config.display_name,
                     environment=ToolEnvironment.MACOS,
                     available=True,
+                    url=tool_config.url,
                     version=None
                 ))
         

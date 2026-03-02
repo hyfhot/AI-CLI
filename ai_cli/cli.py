@@ -11,8 +11,9 @@ __version__ = "0.1.0"
 @click.command()
 @click.option('--init', '-i', is_flag=True, help='Initialize configuration file')
 @click.option('--config', '-c', is_flag=True, help='Open configuration file for editing')
+@click.option('--uninstall', '-u', is_flag=True, help='Uninstall AI-CLI')
 @click.option('--version', '-v', is_flag=True, help='Show version information')
-def main(init, config, version):
+def main(init, config, uninstall, version):
     """AI-CLI: Terminal launcher for AI coding assistants."""
     
     if version:
@@ -25,6 +26,10 @@ def main(init, config, version):
     
     if config:
         edit_config()
+        return
+    
+    if uninstall:
+        uninstall_app()
         return
     
     # Default: start interactive interface
@@ -79,6 +84,36 @@ def edit_config():
         else:
             editor = os.environ.get('EDITOR', 'nano')
             subprocess.run([editor, str(config_file)])
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+def uninstall_app():
+    """Uninstall AI-CLI."""
+    try:
+        from .config import ConfigManager
+        import shutil
+        
+        click.echo("Uninstalling AI-CLI...")
+        
+        manager = ConfigManager()
+        config_dir = manager.get_config_dir()
+        
+        # Remove config directory
+        if config_dir.exists():
+            shutil.rmtree(config_dir)
+            click.echo(f"  Removed configuration: {config_dir}")
+        
+        # On Windows, remove desktop shortcut if exists
+        if platform.system() == "Windows":
+            desktop = Path.home() / "Desktop"
+            shortcut = desktop / "AI-CLI.lnk"
+            if shortcut.exists():
+                shortcut.unlink()
+                click.echo("  Removed desktop shortcut")
+        
+        click.echo("\nUninstallation complete!")
+        click.echo("To remove the program, run: pip uninstall ai-cli")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
