@@ -1,0 +1,114 @@
+{
+  "projects": [
+    {
+      "type": "folder",
+      "name": "Frontend Projects",
+      "children": [
+        {
+          "type": "project",
+          "name": "React App",
+          "path": "C:\\Projects\\react-app",
+          "env": {
+            "NODE_ENV": "development",
+            "API_URL": "http://localhost:3000"
+          }
+        },
+        {
+          "type": "project",
+          "name": "Vue App",
+          "path": "C:\\Projects\\vue-app",
+          "env": {
+            "VITE_API_URL": "http://localhost:8080"
+          }
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "name": "Backend Projects",
+      "children": [
+        {
+          "type": "project",
+          "name": "Python API",
+          "path": "C:\\Projects\\python-api",
+          "env": {
+            "FLASK_ENV": "development",
+            "DATABASE_URL": "postgresql://localhost/mydb"
+          }
+        },
+        {
+          "type": "project",
+          "name": "Node API",
+          "path": "C:\\Projects\\node-api",
+          "env": {
+            "NODE_ENV": "development",
+            "PORT": "3000"
+          }
+        }
+      ]
+    },
+    {
+      "type": "project",
+      "name": "AI-CLI Project",
+      "path": "C:\\Projects\\AIStudio\\AI-CLI",
+      "env": {}
+    }
+  ],
+  "tools": [
+    {
+      "name": "kiro-cli",
+      "displayName": "Kiro CLI",
+      "winInstall": null,
+      "wslInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "linuxInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "macosInstall": "brew install kiro-cli",
+      "checkCommand": "kiro-cli --version",
+      "url": "https://kiro.dev/cli/"
+    },
+    {
+      "name": "claude",
+      "displayName": "Claude Code",
+      "winInstall": "npm install -g @anthropic-ai/claude-code",
+      "wslInstall": "npm install -g @anthropic-ai/claude-code",
+      "linuxInstall": "npm install -g @anthropic-ai/claude-code",
+      "macosInstall": "npm install -g @anthropic-ai/claude-code",
+      "checkCommand": "claude --version",
+      "url": "https://claude.ai/code"
+    },
+    {
+      "name": "cursor",
+      "displayName": "Cursor Agent",
+      "winInstall": "winget install Cursor.Cursor",
+      "wslInstall": null,
+      "linuxInstall": "curl -fsSL https://cursor.sh/install.sh | bash",
+      "macosInstall": "brew install --cask cursor",
+      "checkCommand": "cursor --version",
+      "url": "https://cursor.sh"
+    },
+    {
+      "name": "aider",
+      "displayName": "Aider",
+      "winInstall": "pip install aider-chat",
+      "wslInstall": "pip install aider-chat",
+      "linuxInstall": "pip install aider-chat",
+      "macosInstall": "pip install aider-chat",
+      "checkCommand": "aider --version",
+      "url": "https://aider.chat"
+    },
+    {
+      "name": "opencode",
+      "displayName": "OpenCode",
+      "winInstall": null,
+      "wslInstall": "npm install -g opencode-cli",
+      "linuxInstall": "npm install -g opencode-cli",
+      "macosInstall": "npm install -g opencode-cli",
+      "checkCommand": "opencode --version",
+      "url": "https://opencode.dev"
+    }
+  ],
+  "settings": {
+    "language": "auto",
+    "terminalEmulator": "default",
+    "theme": "default"
+  }
+}
