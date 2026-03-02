@@ -54,6 +54,17 @@ Write-Host "`n" -ForegroundColor Green
 Write-Host ("=" * 50) -ForegroundColor DarkGray
 Write-Host "Installation Complete!" -ForegroundColor Green
 Write-Host ("=" * 50) -ForegroundColor DarkGray
-Write-Host "`nRun 'ai-cli' to start" -ForegroundColor Cyan
-Write-Host "Run 'ai-cli --help' for more options" -ForegroundColor Cyan
+Write-Host "`nQuick Start:" -ForegroundColor Cyan
+Write-Host "  ai-cli              # Start interactive launcher"
+Write-Host "  ai-cli --init       # Initialize/update configuration"
+Write-Host "  ai-cli --config     # Edit configuration file"
+Write-Host "  ai-cli --version    # Show version information"
+Write-Host "  ai-cli --uninstall  # Uninstall AI-CLI"
+Write-Host "  ai-cli --help       # Show all options"
+Write-Host "`nKeyboard Shortcuts:" -ForegroundColor Cyan
+Write-Host "  ↑↓    Navigate items"
+Write-Host "  Enter Launch tool"
+Write-Host "  I     Install tool"
+Write-Host "  R     Refresh tools"
+Write-Host "  Q     Quit"
 Write-Host ""
