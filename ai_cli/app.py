@@ -146,12 +146,17 @@ class Application:
                 git_manager = GitManager()
                 worktrees = git_manager.detect_worktrees(project.path)
                 
+                # Debug: Show worktree count
+                self.menu.console.print(f"[dim]Debug: Found {len(worktrees)} worktree(s)[/dim]")
+                
                 if len(worktrees) > 1:
+                    self.menu.console.print(f"[yellow]Multiple worktrees detected. Select one:[/yellow]")
                     selected_path = git_manager.select_worktree(worktrees, project.path)
                     if selected_path:
                         project.path = selected_path
-            except:
-                pass
+                        self.menu.console.print(f"[green]Selected: {selected_path}[/green]")
+            except Exception as e:
+                self.menu.console.print(f"[dim]Debug: Worktree detection error: {e}[/dim]")
         
         # Detect tools with progress indicator (uses cache if available)
         self.menu.console.print(f"[yellow]{get_text('detecting_tools')}[/yellow]")

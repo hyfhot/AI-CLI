@@ -87,15 +87,18 @@ class GitManager:
                 if branch.startswith('refs/heads/'):
                     branch = branch[11:]
                 
-                # Get status
+                # Get status (with error handling)
                 status_str = ""
                 if not wt.get('detached') and not wt.get('bare'):
-                    status = self.get_branch_status(wt['path'])
-                    if status:
-                        if status['ahead'] > 0:
-                            status_str += f" ↑{status['ahead']}"
-                        if status['behind'] > 0:
-                            status_str += f" ↓{status['behind']}"
+                    try:
+                        status = self.get_branch_status(wt['path'])
+                        if status:
+                            if status['ahead'] > 0:
+                                status_str += f" ↑{status['ahead']}"
+                            if status['behind'] > 0:
+                                status_str += f" ↓{status['behind']}"
+                    except:
+                        pass  # Skip status if path is invalid
                 
                 prefix = "> " if i == selected else "  "
                 current_mark = " [current]" if is_current else ""
