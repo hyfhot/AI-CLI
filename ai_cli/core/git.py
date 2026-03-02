@@ -77,8 +77,13 @@ class GitManager:
         selected = 0
         input_handler = InputHandler()
         
+        # Initial clear
+        self.console.clear()
+        
         while True:
-            self.console.clear()
+            # Move cursor to top and render (no clear)
+            self.console.print("\033[H", end="")  # Move cursor to home
+            
             self.console.print("\n[bold cyan]=== Select Git Worktree ===[/bold cyan]\n")
             
             for i, wt in enumerate(worktrees):
@@ -108,6 +113,7 @@ class GitManager:
                 self.console.print(f"   [dim]{wt['path']}[/dim]")
             
             self.console.print("\n[dim][↑↓] Select  [Enter] Confirm  [Esc] Cancel[/dim]")
+            self.console.print("\033[J", end="")  # Clear from cursor to end of screen
             
             event = input_handler.get_input()
             
