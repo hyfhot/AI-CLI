@@ -438,89 +438,98 @@ class Application:
                     time.sleep(1)
     
     async def _install_tool_menu(self):
-        """Show menu to install uninstalled tools. Returns True if tools were installed."""
-        # Get all tools and check which are not installed
-        all_tools_config = self.config.tools
-        cache_was_empty = self.tool_detector._is_cache_empty(all_tools_config)
-        detected_tools = await self.tool_detector.detect_all_tools(all_tools_config)
-        
-        # Save config if detection was performed
-        if cache_was_empty:
-            self.config_manager.save(self.config)
-        
-        detected_names = {(t.name, t.environment) for t in detected_tools}
-        
-        # Build list of uninstalled tools
-        uninstalled = []
-        for tool_config in all_tools_config:
-            # Check WSL
-            if tool_config.wsl_install and (tool_config.name, ToolEnvironment.WSL) not in detected_names:
-                uninstalled.append({
-                    "name": f"[WSL] {tool_config.display_name}",
-                    "tool": tool_config,
-                    "env": ToolEnvironment.WSL
-                })
-            # Check Windows
-            if sys.platform == 'win32' and tool_config.win_install and (tool_config.name, ToolEnvironment.WINDOWS) not in detected_names:
-                uninstalled.append({
-                    "name": f"[Win] {tool_config.display_name}",
-                    "tool": tool_config,
-                    "env": ToolEnvironment.WINDOWS
-                })
-            # Check Linux
-            if sys.platform == 'linux' and tool_config.linux_install and (tool_config.name, ToolEnvironment.LINUX) not in detected_names:
-                uninstalled.append({
-                    "name": f"[Linux] {tool_config.display_name}",
-                    "tool": tool_config,
-                    "env": ToolEnvironment.LINUX
-                })
-            # Check macOS
-            if sys.platform == 'darwin' and tool_config.macos_install and (tool_config.name, ToolEnvironment.MACOS) not in detected_names:
-                uninstalled.append({
-                    "name": f"[macOS] {tool_config.display_name}",
-                    "tool": tool_config,
-                    "env": ToolEnvironment.MACOS
-                })
-        
-        if not uninstalled:
-            return False  # Return False to indicate all tools installed
-        
-        # Show selection menu
-        selected_index = 0
+        """Show menu to install uninstalled tools. Returns True if any tool was installed successfully."""
         while True:
-            self.menu.clear()
-            self.menu.console.print(f"\n[cyan]{get_text('install')}[/cyan]\n")
+            # Get all tools and check which are not installed
+            all_tools_config = self.config.tools
+            cache_was_empty = self.tool_detector._is_cache_empty(all_tools_config)
+            detected_tools = await self.tool_detector.detect_all_tools(all_tools_config)
             
-            for i, item in enumerate(uninstalled):
-                prefix = "→ " if i == selected_index else "  "
-                self.menu.console.print(f"{prefix}{item['name']}")
+            # Save config if detection was performed
+            if cache_was_empty:
+                self.config_manager.save(self.config)
             
-            self.menu.console.print(f"\n[dim]↑↓: Navigate | Enter: {get_text('install')} | Esc: {get_text('back')}[/dim]")
+            detected_names = {(t.name, t.environment) for t in detected_tools}
             
-            event = self.input_handler.get_input()
+            # Build list of uninstalled tools
+            uninstalled = []
+            for tool_config in all_tools_config:
+                # Check WSL
+                if tool_config.wsl_install and (tool_config.name, ToolEnvironment.WSL) not in detected_names:
+                    uninstalled.append({
+                        "name": f"[WSL] {tool_config.display_name}",
+                        "tool": tool_config,
+                        "env": ToolEnvironment.WSL
+                    })
+                # Check Windows
+                if sys.platform == 'win32' and tool_config.win_install and (tool_config.name, ToolEnvironment.WINDOWS) not in detected_names:
+                    uninstalled.append({
+                        "name": f"[Win] {tool_config.display_name}",
+                        "tool": tool_config,
+                        "env": ToolEnvironment.WINDOWS
+                    })
+                # Check Linux
+                if sys.platform == 'linux' and tool_config.linux_install and (tool_config.name, ToolEnvironment.LINUX) not in detected_names:
+                    uninstalled.append({
+                        "name": f"[Linux] {tool_config.display_name}",
+                        "tool": tool_config,
+                        "env": ToolEnvironment.LINUX
+                    })
+                # Check macOS
+                if sys.platform == 'darwin' and tool_config.macos_install and (tool_config.name, ToolEnvironment.MACOS) not in detected_names:
+                    uninstalled.append({
+                        "name": f"[macOS] {tool_config.display_name}",
+                        "tool": tool_config,
+                        "env": ToolEnvironment.MACOS
+                    })
             
-            if event == InputEvent.UP:
-                selected_index = max(0, selected_index - 1)
-            elif event == InputEvent.DOWN:
-                selected_index = min(len(uninstalled) - 1, selected_index + 1)
-            elif event == InputEvent.ENTER:
-                # Install selected tool
-                selected = uninstalled[selected_index]
+            if not uninstalled:
+                return False  # Return False to indicate all tools installed
+            
+            # Show selection menu
+            selected_index = 0
+            action_result = None
+            
+            while action_result is None:
                 self.menu.clear()
-                self.menu.console.print(f"\n[cyan]{get_text('installing', selected['name'])}[/cyan]\n")
+                self.menu.console.print(f"\n[cyan]{get_text('install')}[/cyan]\n")
                 
-                success = self.tool_installer.install_tool(selected['tool'], selected['env'])
+                for i, item in enumerate(uninstalled):
+                    prefix = "→ " if i == selected_index else "  "
+                    self.menu.console.print(f"{prefix}{item['name']}")
                 
-                if success:
-                    self.menu.console.print(f"\n[green]{get_text('install_success')}[/green]")
-                else:
-                    self.menu.console.print(f"\n[red]{get_text('install_failed', 'Unknown error')}[/red]")
+                self.menu.console.print(f"\n[dim]↑↓: Navigate | Enter: {get_text('install')} | Esc: {get_text('back')}[/dim]")
                 
-                self.menu.console.print(f"\n[dim]{get_text('press_key')}[/dim]")
-                self.input_handler.get_input()
-                return True  # Return True to indicate installation was attempted
-            elif event == InputEvent.ESCAPE or event == InputEvent.QUIT:
-                return True  # Return True to continue normal flow
+                event = self.input_handler.get_input()
+                
+                if event == InputEvent.UP:
+                    selected_index = max(0, selected_index - 1)
+                elif event == InputEvent.DOWN:
+                    selected_index = min(len(uninstalled) - 1, selected_index + 1)
+                elif event == InputEvent.ENTER:
+                    # Install selected tool
+                    selected = uninstalled[selected_index]
+                    self.menu.clear()
+                    self.menu.console.print(f"\n[cyan]{get_text('installing', selected['name'])}[/cyan]\n")
+                    
+                    try:
+                        success = self.tool_installer.install_tool(selected['tool'], selected['env'])
+                        
+                        if success:
+                            self.menu.console.print(f"\n[green]{get_text('install_success')}[/green]")
+                        else:
+                            self.menu.console.print(f"\n[red]{get_text('install_failed', 'Unknown error')}[/red]")
+                    except Exception as e:
+                        self.menu.console.print(f"\n[red]{get_text('install_failed', str(e))}[/red]")
+                    
+                    self.menu.console.print(f"\n[dim]{get_text('press_key')}[/dim]")
+                    self.input_handler.get_input()
+                    # Break inner loop to refresh the uninstalled list
+                    action_result = "refresh"
+                elif event == InputEvent.ESCAPE or event == InputEvent.QUIT:
+                    return True  # Return True to continue normal flow
+            
+            # If action_result is "refresh", continue outer loop to re-detect tools
     
     def _get_current_node(self) -> Optional[ProjectNode]:
         """Get current node from path."""
