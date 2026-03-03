@@ -20,10 +20,19 @@ try {
 # Install via pip
 Write-Host "`nInstalling AI-CLI..." -ForegroundColor Yellow
 try {
-    pip install -e ".[dev]"
+    # Try to install from current directory (for local development)
+    if (Test-Path "pyproject.toml") {
+        Write-Host "  Installing from local directory..." -ForegroundColor Cyan
+        pip install -e ".[dev]"
+    } else {
+        # Install from GitHub
+        Write-Host "  Installing from GitHub..." -ForegroundColor Cyan
+        pip install git+https://github.com/hyfhot/AI-CLI.git@master
+    }
     Write-Host "  Installation complete!" -ForegroundColor Green
 } catch {
     Write-Host "  Installation failed!" -ForegroundColor Red
+    Write-Host "  Error: $_" -ForegroundColor Red
     exit 1
 }
 
@@ -33,22 +42,33 @@ ai-cli --init
 
 # Create desktop shortcut with icon
 Write-Host "`nCreating desktop shortcut..." -ForegroundColor Yellow
-$desktopPath = [Environment]::GetFolderPath("Desktop")
-$shortcutPath = Join-Path $desktopPath "AI-CLI 3.0.lnk"
-$scriptDir = $PSScriptRoot
-$iconPath = Join-Path $scriptDir "ai-cli.ico"
+try {
+    # Verify ai-cli is installed
+    $aiCliPath = Get-Command ai-cli -ErrorAction SilentlyContinue
+    if (-not $aiCliPath) {
+        Write-Host "  Warning: ai-cli command not found, skipping shortcut creation" -ForegroundColor Yellow
+    } else {
+        $desktopPath = [Environment]::GetFolderPath("Desktop")
+        $shortcutPath = Join-Path $desktopPath "AI-CLI 3.0.lnk"
+        $scriptDir = $PSScriptRoot
+        $iconPath = Join-Path $scriptDir "ai-cli.ico"
 
-$shell = New-Object -ComObject WScript.Shell
-$shortcut = $shell.CreateShortcut($shortcutPath)
-$shortcut.TargetPath = "powershell.exe"
-$shortcut.Arguments = "-NoProfile -Command `"ai-cli`""
-$shortcut.WorkingDirectory = $HOME
-if (Test-Path $iconPath) {
-    $shortcut.IconLocation = $iconPath
+        $shell = New-Object -ComObject WScript.Shell
+        $shortcut = $shell.CreateShortcut($shortcutPath)
+        $shortcut.TargetPath = "powershell.exe"
+        $shortcut.Arguments = "-NoProfile -Command `"ai-cli`""
+        $shortcut.WorkingDirectory = $HOME
+        if (Test-Path $iconPath) {
+            $shortcut.IconLocation = $iconPath
+        }
+        $shortcut.Save()
+
+        Write-Host "  Desktop shortcut created: AI-CLI 3.0" -ForegroundColor Green
+    }
+} catch {
+    Write-Host "  Warning: Failed to create desktop shortcut" -ForegroundColor Yellow
+    Write-Host "  You can still run 'ai-cli' from the command line" -ForegroundColor Cyan
 }
-$shortcut.Save()
-
-Write-Host "  Desktop shortcut created: AI-CLI 3.0" -ForegroundColor Green
 
 Write-Host "`n" -ForegroundColor Green
 Write-Host ("=" * 50) -ForegroundColor DarkGray
