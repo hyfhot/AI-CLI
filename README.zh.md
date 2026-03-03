@@ -49,19 +49,33 @@
 
 ### 安装
 
-#### 使用安装脚本（推荐）
+#### 一行命令安装（推荐）
 
 **Windows**:
 ```powershell
-powershell -ExecutionPolicy Bypass -File install.ps1
+irm https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.ps1 | iex
 ```
 
 **Linux/macOS**:
 ```bash
-bash install.sh
+curl -fsSL https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.sh | bash
 ```
 
-#### 手动安装
+安装脚本会自动：
+- 检查 Python 安装（需要 Python 3.8+）
+- 从 GitHub 安装 AI-CLI
+- 初始化配置文件
+- 创建桌面快捷方式（Windows）
+
+#### 备选方案：从 PyPI 安装（即将推出）
+
+```bash
+pipx install ai-cli
+# 或
+pip install ai-cli
+```
+
+#### 开发者安装
 
 ```bash
 # 克隆仓库
