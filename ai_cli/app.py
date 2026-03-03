@@ -60,6 +60,11 @@ class Application:
         
         while True:
             try:
+                # Check if background detection is complete
+                if self.tool_detector.is_background_complete():
+                    self.config_manager.save(self.config)  # Save updated cache to config
+                    self.tool_detector.cleanup_background_task()
+                
                 project = self._select_project()
                 if not project:
                     break
@@ -237,19 +242,27 @@ class Application:
         
         detecting_lines = []
         if project_info:
-            detecting_lines.append(Text(f"\nProject: {project_info.get('name', 'Unknown')}", style="bold cyan"))
+            detecting_lines.append(Text(f"\n{get_text('project_label').format(project_info.get('name', 'Unknown'))}", style="bold cyan"))
             if project_info.get('path'):
-                detecting_lines.append(Text(f"Path: {project_info['path']}", style="dim"))
+                detecting_lines.append(Text(f"{get_text('path_label').format(project_info['path'])}", style="dim"))
+            if project_info.get('env'):
+                env_str = ', '.join(f"{k}={v}" for k, v in project_info['env'].items())
+                detecting_lines.append(Text(f"{get_text('env_label').format(env_str)}", style="dim"))
             if project_info.get('branch'):
-                detecting_lines.append(Text(f"Branch: {project_info['branch']}", style="dim"))
+                detecting_lines.append(Text(f"{get_text('branch_label').format(project_info['branch'])}", style="dim"))
         
         detecting_lines.append(Text(f"\n=== {get_text('select_tool')} ===\n", style="bold cyan"))
         detecting_lines.append(Text(f"  {get_text('detecting_tools')}", style="yellow"))
         detecting_display = Group(*detecting_lines)
         
         with Live(detecting_display, console=self.menu.console, refresh_per_second=10, screen=False) as live:
-            # Detect tools with progress indicator (uses cache if available)
+            # Detect tools with progress indicator (uses cache from config if available)
+            cache_was_empty = self.tool_detector._is_cache_empty(self.config.tools)
             tools = await self.tool_detector.detect_all_tools(self.config.tools)
+            
+            # Save config if detection was performed
+            if cache_was_empty:
+                self.config_manager.save(self.config)
             
             if not tools:
                 self.menu.clear()
@@ -301,21 +314,75 @@ class Application:
                         result = (tools[self.selected_tool_index], True, working_path)
                         break
                 elif event == InputEvent.INSTALL:
-                    await self._install_tool_menu()
-                    self.tool_detector.clear_cache()
-                    tools = await self.tool_detector.detect_all_tools(self.config.tools)
+                    all_installed = not await self._install_tool_menu()
+                    # Force detection and save config if tools were installed
+                    if not all_installed:
+                        tools = await self.tool_detector.detect_all_tools(self.config.tools, force=True)
+                        self.config_manager.save(self.config)
+                    else:
+                        # Check if cache was empty before detection
+                        cache_was_empty = self.tool_detector._is_cache_empty(self.config.tools)
+                        tools = await self.tool_detector.detect_all_tools(self.config.tools)
+                        if cache_was_empty:
+                            self.config_manager.save(self.config)
+                    
                     if not tools:
                         result = None
                         break
-                    tool_items = [{"name": t.get_display_label()} for t in tools]
+                    tool_items = [{"name": t.display_name, "env": t.environment.value} for t in tools]
+                    
+                    # Show message if all tools were already installed
+                    if all_installed:
+                        from rich.text import Text
+                        from rich.console import Group
+                        
+                        msg_lines = []
+                        if project_info:
+                            msg_lines.append(Text(f"\n{get_text('project_label').format(project_info.get('name', 'Unknown'))}", style="bold cyan"))
+                            if project_info.get('path'):
+                                msg_lines.append(Text(f"{get_text('path_label').format(project_info['path'])}", style="dim"))
+                            if project_info.get('env'):
+                                env_str = ', '.join(f"{k}={v}" for k, v in project_info['env'].items())
+                                msg_lines.append(Text(f"{get_text('env_label').format(env_str)}", style="dim"))
+                            if project_info.get('branch'):
+                                msg_lines.append(Text(f"{get_text('branch_label').format(project_info['branch'])}", style="dim"))
+                        
+                        msg_lines.append(Text(f"\n=== {get_text('select_tool')} ===\n", style="bold cyan"))
+                        msg_lines.append(Text(f"  {get_text('all_tools_installed')}", style="green"))
+                        live.update(Group(*msg_lines))
+                        
+                        # Wait 2 seconds then show tool list
+                        import asyncio
+                        await asyncio.sleep(2)
+                    
                     live.update(self.menu.build_tools_display(
                         tool_items, self.selected_tool_index,
                         show_new_tab=self.wt_available, project_info=project_info
                     ))
                 elif event == InputEvent.RUN:
-                    self.menu.console.print(f"\n[yellow]{get_text('refreshing')}[/yellow]")
-                    self.tool_detector.clear_cache()
-                    tools = await self.tool_detector.detect_all_tools(self.config.tools)
+                    # Show detecting message
+                    from rich.text import Text
+                    from rich.console import Group
+                    
+                    detecting_lines = []
+                    if project_info:
+                        detecting_lines.append(Text(f"\n{get_text('project_label').format(project_info.get('name', 'Unknown'))}", style="bold cyan"))
+                        if project_info.get('path'):
+                            detecting_lines.append(Text(f"{get_text('path_label').format(project_info['path'])}", style="dim"))
+                        if project_info.get('env'):
+                            env_str = ', '.join(f"{k}={v}" for k, v in project_info['env'].items())
+                            detecting_lines.append(Text(f"{get_text('env_label').format(env_str)}", style="dim"))
+                        if project_info.get('branch'):
+                            detecting_lines.append(Text(f"{get_text('branch_label').format(project_info['branch'])}", style="dim"))
+                    
+                    detecting_lines.append(Text(f"\n=== {get_text('select_tool')} ===\n", style="bold cyan"))
+                    detecting_lines.append(Text(f"  {get_text('refreshing')}", style="yellow"))
+                    live.update(Group(*detecting_lines))
+                    
+                    # Force detection and save config
+                    tools = await self.tool_detector.detect_all_tools(self.config.tools, force=True)
+                    self.config_manager.save(self.config)
+                    
                     if not tools:
                         self.menu.console.print(f"\n[red]{get_text('no_tools')}[/red]")
                         time.sleep(1)
@@ -347,30 +414,40 @@ class Application:
             
             # Use Text objects to avoid markup interpretation
             from rich.text import Text
-            self.menu.console.print(Text(f"Tool: {tool.name}", style="dim"))
-            self.menu.console.print(Text(f"Project: {project.name}", style="dim"))
-            self.menu.console.print(Text(f"Path: {project.path}", style="dim"))
-            self.menu.console.print(Text(f"Environment: {tool.environment.value}", style="dim"))
+            self.menu.console.print(Text(get_text('tool_label').format(tool.name), style="dim"))
+            self.menu.console.print(Text(get_text('project_label').format(project.name), style="dim"))
+            self.menu.console.print(Text(get_text('path_label').format(project.path), style="dim"))
+            
+            # Display project environment variables if any
+            if project.env:
+                env_str = ', '.join(f"{k}={v}" for k, v in project.env.items())
+                self.menu.console.print(Text(get_text('env_label').format(env_str), style="dim"))
             
             # Countdown 5 seconds with live update
             with Live(Text(""), console=self.menu.console, refresh_per_second=4) as live:
                 for i in range(5, 0, -1):
-                    live.update(Text(f"Returning to project selection in {i} seconds...", style="yellow"))
+                    live.update(Text(get_text('returning_to_selection').format(i), style="yellow"))
                     time.sleep(1)
         except Exception as e:
-            self.menu.console.print(f"\n[red]✗ Failed to launch tool: {e}[/red]")
+            self.menu.console.print(f"\n[red]{get_text('failed_to_launch').format(e)}[/red]")
             
             # Countdown 5 seconds with live update
             with Live(Text(""), console=self.menu.console, refresh_per_second=4) as live:
                 for i in range(5, 0, -1):
-                    live.update(Text(f"Returning to project selection in {i} seconds...", style="yellow"))
+                    live.update(Text(get_text('returning_to_selection').format(i), style="yellow"))
                     time.sleep(1)
     
     async def _install_tool_menu(self):
-        """Show menu to install uninstalled tools."""
+        """Show menu to install uninstalled tools. Returns True if tools were installed."""
         # Get all tools and check which are not installed
         all_tools_config = self.config.tools
+        cache_was_empty = self.tool_detector._is_cache_empty(all_tools_config)
         detected_tools = await self.tool_detector.detect_all_tools(all_tools_config)
+        
+        # Save config if detection was performed
+        if cache_was_empty:
+            self.config_manager.save(self.config)
+        
         detected_names = {(t.name, t.environment) for t in detected_tools}
         
         # Build list of uninstalled tools
@@ -406,9 +483,7 @@ class Application:
                 })
         
         if not uninstalled:
-            self.menu.console.print(f"\n[green]{get_text('install_success')}[/green]")
-            time.sleep(1)
-            return
+            return False  # Return False to indicate all tools installed
         
         # Show selection menu
         selected_index = 0
@@ -443,9 +518,9 @@ class Application:
                 
                 self.menu.console.print(f"\n[dim]{get_text('press_key')}[/dim]")
                 self.input_handler.get_input()
-                return
+                return True  # Return True to indicate installation was attempted
             elif event == InputEvent.ESCAPE or event == InputEvent.QUIT:
-                return
+                return True  # Return True to continue normal flow
     
     def _get_current_node(self) -> Optional[ProjectNode]:
         """Get current node from path."""
@@ -475,8 +550,8 @@ class Application:
         
         def build_type_display():
             lines = []
-            lines.append(Text("\n=== Add New Item ===\n", style="bold cyan"))
-            lines.append(Text("Select Type:\n", style="cyan"))
+            lines.append(Text(f"\n=== {get_text('add_new_item')} ===\n", style="bold cyan"))
+            lines.append(Text(f"{get_text('select_type')}\n", style="cyan"))
             
             for i, type_name in enumerate(types):
                 icon = "📁" if type_name == "Folder" else "📄"
@@ -508,26 +583,27 @@ class Application:
         
         # Step 2: Input name with ESC support
         self.menu.clear()
-        self.menu.console.print("\n[cyan]=== Add New Item ===[/cyan]")
+        self.menu.console.print(f"\n[cyan]{get_text('add_new_item')}[/cyan]")
         self.menu.console.print("=" * 60, style="dim")
-        self.menu.console.print(f"\nType: [green]{item_type.capitalize()}[/green]")
-        self.menu.console.print("\n[dim](Press ESC to cancel)[/dim]\n")
+        self.menu.console.print(f"\n{get_text('type', item_type.capitalize())}")
+        self.menu.console.print(f"\n[dim]{get_text('press_esc_cancel')}[/dim]\n")
         
         # Loop until valid name or cancel
         while True:
-            item_name = self.input_handler.get_text_input(f"{item_type.capitalize()} Name: ")
+            prompt_key = 'project_name' if item_type == 'project' else 'folder_name'
+            item_name = self.input_handler.get_text_input(get_text(prompt_key))
             if item_name is None:
                 return False
             
             if not item_name:
-                self.menu.console.print("[red]Name is required[/red]")
+                self.menu.console.print(f"[red]{get_text('name_required')}[/red]")
                 continue
             
             # Check for duplicate names
             current_node = self._get_current_node()
             items = current_node.children if current_node else self.config.projects
             if any(item.name == item_name for item in items):
-                self.menu.console.print(f"[red]Name '{item_name}' already exists. Please try another name.[/red]")
+                self.menu.console.print(f"[red]{get_text('name_exists', item_name)}[/red]")
                 continue
             
             # Valid name, break the loop
@@ -537,11 +613,11 @@ class Application:
             # Create folder
             new_item = ProjectNode(type="folder", name=item_name, path="", children=[])
             
-            self.menu.console.print("\n[cyan]Folder Summary:[/cyan]")
-            self.menu.console.print(f"  Name: {item_name}")
+            self.menu.console.print(f"\n[cyan]{get_text('folder_summary')}[/cyan]")
+            self.menu.console.print(get_text('item_name', item_name))
             self.menu.console.print()
             
-            confirm = self.input_handler.get_text_input("Add this folder? (Y/n): ")
+            confirm = self.input_handler.get_text_input(get_text('add_folder_confirm'))
             if confirm is None:
                 return False
             if confirm and confirm.lower() != 'y':
@@ -549,15 +625,15 @@ class Application:
             
             self._add_item_to_current_path(new_item)
             self.config_manager.save(self.config)
-            self.menu.console.print("[green]Folder added successfully![/green]")
+            self.menu.console.print(f"[green]{get_text('folder_added')}[/green]")
             time.sleep(1)
             return True
         
         # Project needs path
         current_dir = os.getcwd()
-        self.menu.console.print(f"[dim](Press Enter to use current directory: {current_dir})[/dim]")
+        self.menu.console.print(f"[dim]{get_text('current_dir_hint', current_dir)}[/dim]")
         
-        project_path = self.input_handler.get_text_input("Project Path: ")
+        project_path = self.input_handler.get_text_input(get_text('project_path'))
         if project_path is None:
             return False
         
@@ -566,7 +642,7 @@ class Application:
         
         # Check if path exists
         if not os.path.exists(project_path):
-            confirm = self.input_handler.get_text_input(f"Path does not exist: {project_path}\nCreate it? (Y/n): ")
+            confirm = self.input_handler.get_text_input(get_text('path_not_exist', project_path))
             if confirm is None:
                 return False
             if confirm and confirm.lower() == 'n':
@@ -574,19 +650,19 @@ class Application:
             
             try:
                 os.makedirs(project_path, exist_ok=True)
-                self.menu.console.print("[green]Directory created successfully[/green]")
+                self.menu.console.print(f"[green]{get_text('dir_created')}[/green]")
             except Exception as e:
-                self.menu.console.print(f"[red]Failed to create directory: {e}[/red]")
+                self.menu.console.print(f"[red]{get_text('dir_create_failed', e)}[/red]")
                 time.sleep(2)
                 return False
         
         # Get environment variables
-        self.menu.console.print("\n[cyan]Environment Variables (optional)[/cyan]")
-        self.menu.console.print("[dim]Format: KEY=VALUE, one per line, empty line to finish[/dim]\n")
+        self.menu.console.print(f"\n[cyan]{get_text('env_vars_title')}[/cyan]")
+        self.menu.console.print(f"[dim]{get_text('env_vars_format')}[/dim]\n")
         
         env_vars = {}
         while True:
-            env_input = self.input_handler.get_text_input("Env Var: ")
+            env_input = self.input_handler.get_text_input(get_text('env_var_prompt'))
             if env_input is None:
                 return False
             
@@ -599,11 +675,11 @@ class Application:
                 value = value.strip()
                 if key:  # Ensure key is not empty
                     env_vars[key] = value
-                    self.menu.console.print(f"  [green]Added: {key}={value}[/green]")
+                    self.menu.console.print(get_text('env_added', key, value))
                 else:
-                    self.menu.console.print("  [red]Invalid format. Key cannot be empty.[/red]")
+                    self.menu.console.print(f"  [red]{get_text('env_invalid_empty')}[/red]")
             else:
-                self.menu.console.print("  [red]Invalid format. Use KEY=VALUE[/red]")
+                self.menu.console.print(f"  [red]{get_text('env_invalid_format')}[/red]")
         
         # Create project
         new_project = ProjectNode(
@@ -614,16 +690,16 @@ class Application:
         )
         
         # Show summary
-        self.menu.console.print("\n[cyan]Project Summary:[/cyan]")
-        self.menu.console.print(f"  Name: {item_name}")
-        self.menu.console.print(f"  Path: {project_path}")
+        self.menu.console.print(f"\n[cyan]{get_text('project_summary')}[/cyan]")
+        self.menu.console.print(get_text('item_name', item_name))
+        self.menu.console.print(get_text('project_path_label', project_path))
         if env_vars:
-            self.menu.console.print(f"  Env Vars: {len(env_vars)} variable(s)")
+            self.menu.console.print(get_text('project_env_count', len(env_vars)))
             for key, value in env_vars.items():
                 self.menu.console.print(f"    [dim]{key}={value}[/dim]")
         self.menu.console.print()
         
-        confirm = self.input_handler.get_text_input("Add this project? (Y/n): ")
+        confirm = self.input_handler.get_text_input(get_text('add_project_confirm'))
         if confirm is None:
             return False
         
@@ -633,7 +709,7 @@ class Application:
         
         self._add_item_to_current_path(new_project)
         self.config_manager.save(self.config)
-        self.menu.console.print("[green]Project added successfully![/green]")
+        self.menu.console.print(f"[green]{get_text('project_added')}[/green]")
         time.sleep(1)
         return True
     
@@ -643,38 +719,38 @@ class Application:
         from ai_cli.core.projects import ProjectManager
         
         self.menu.clear()
-        self.menu.console.print("\n[red]Delete Confirmation[/red]")
+        self.menu.console.print(f"\n[red]{get_text('delete_confirmation')}[/red]")
         self.menu.console.print("=" * 60, style="dim")
         self.menu.console.print()
         
         icon = "📁" if item.type == "folder" else "📄"
-        self.menu.console.print(f"[yellow]Item to delete: {icon} {item.name}[/yellow]")
+        self.menu.console.print(f"[yellow]{get_text('item_to_delete', icon, item.name)}[/yellow]")
         
         if item.type == "folder":
             count = ProjectManager.count_children_recursive(item)
-            self.menu.console.print(f"[yellow]Contains: {count} item(s)[/yellow]")
+            self.menu.console.print(f"[yellow]{get_text('contains', count)}[/yellow]")
         else:
-            self.menu.console.print(f"[dim]Path: {item.path}[/dim]")
+            self.menu.console.print(f"[dim]{get_text('path_label', item.path)}[/dim]")
         
         self.menu.console.print()
-        self.menu.console.print("[red]⚠️  WARNING: This action cannot be undone![/red]")
+        self.menu.console.print(f"[red]{get_text('warning_cannot_undo')}[/red]")
         self.menu.console.print()
         
         try:
-            confirmation = Prompt.ask(f"[cyan]Type the name to confirm deletion[/cyan]")
+            confirmation = Prompt.ask(f"[cyan]{get_text('type_name_confirm')}[/cyan]")
             
             if confirmation == item.name:
                 self._remove_item_from_current_path(item.name)
                 self.config_manager.save(self.config)
-                self.menu.console.print("[green]Deleted successfully![/green]")
+                self.menu.console.print(f"[green]{get_text('deleted_successfully')}[/green]")
                 time.sleep(1)
                 return True
             else:
-                self.menu.console.print("[yellow]Name mismatch. Deletion cancelled.[/yellow]")
+                self.menu.console.print(f"[yellow]{get_text('name_mismatch')}[/yellow]")
                 time.sleep(1)
                 return False
         except KeyboardInterrupt:
-            self.menu.console.print("\n[yellow]Cancelled[/yellow]")
+            self.menu.console.print(f"\n[yellow]{get_text('cancelled')}[/yellow]")
             time.sleep(1)
             return False
     

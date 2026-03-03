@@ -78,10 +78,15 @@ class ToolConfig:
     macos_install: Optional[str]
     check_command: str
     url: str
+    # Cache fields (stored in config file)
+    win_available: bool = False
+    wsl_available: bool = False
+    linux_available: bool = False
+    macos_available: bool = False
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
-        return {
+        result = {
             "name": self.name,
             "displayName": self.display_name,
             "winInstall": self.win_install,
@@ -91,6 +96,16 @@ class ToolConfig:
             "checkCommand": self.check_command,
             "url": self.url
         }
+        # Include cache fields
+        if self.win_available:
+            result["winAvailable"] = self.win_available
+        if self.wsl_available:
+            result["wslAvailable"] = self.wsl_available
+        if self.linux_available:
+            result["linuxAvailable"] = self.linux_available
+        if self.macos_available:
+            result["macosAvailable"] = self.macos_available
+        return result
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'ToolConfig':
@@ -103,7 +118,11 @@ class ToolConfig:
             linux_install=data.get("linuxInstall"),
             macos_install=data.get("macosInstall"),
             check_command=data["checkCommand"],
-            url=data["url"]
+            url=data["url"],
+            win_available=data.get("winAvailable", False),
+            wsl_available=data.get("wslAvailable", False),
+            linux_available=data.get("linuxAvailable", False),
+            macos_available=data.get("macosAvailable", False)
         )
 
 
