@@ -49,19 +49,33 @@
 
 ### Installation
 
-#### Mit Installationsskript (Empfohlen)
+#### Ein-Zeilen-Installation (Empfohlen)
 
 **Windows**:
 ```powershell
-powershell -ExecutionPolicy Bypass -File install.ps1
+irm https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.ps1 | iex
 ```
 
 **Linux/macOS**:
 ```bash
-bash install.sh
+curl -fsSL https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.sh | bash
 ```
 
-#### Manuelle Installation
+Das Skript führt automatisch aus:
+- Überprüfung der Python-Installation (Python 3.8+ erforderlich)
+- Installation von AI-CLI von GitHub
+- Initialisierung der Konfiguration
+- Erstellung einer Desktop-Verknüpfung (Windows)
+
+#### Alternative: Installation von PyPI (Demnächst)
+
+```bash
+pipx install ai-cli
+# oder
+pip install ai-cli
+```
+
+#### Für Entwickler
 
 ```bash
 # Repository klonen

@@ -49,19 +49,33 @@
 
 ### インストール
 
-#### インストールスクリプトを使用（推奨）
+#### ワンラインインストール（推奨）
 
 **Windows**:
 ```powershell
-powershell -ExecutionPolicy Bypass -File install.ps1
+irm https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.ps1 | iex
 ```
 
 **Linux/macOS**:
 ```bash
-bash install.sh
+curl -fsSL https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.sh | bash
 ```
 
-#### 手動インストール
+スクリプトは自動的に以下を実行します：
+- Python のインストール確認（Python 3.8+ が必要）
+- GitHub から AI-CLI をインストール
+- 設定ファイルの初期化
+- デスクトップショートカットの作成（Windows）
+
+#### 代替方法：PyPI からインストール（近日公開）
+
+```bash
+pipx install ai-cli
+# または
+pip install ai-cli
+```
+
+#### 開発者向けインストール
 
 ```bash
 # リポジトリをクローン
