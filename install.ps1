@@ -50,16 +50,34 @@ try {
     } else {
         $desktopPath = [Environment]::GetFolderPath("Desktop")
         $shortcutPath = Join-Path $desktopPath "AI-CLI 3.0.lnk"
-        $scriptDir = $PSScriptRoot
-        $iconPath = Join-Path $scriptDir "ai-cli.ico"
+        
+        # Download icon from GitHub
+        $iconPath = Join-Path $env:TEMP "ai-cli.ico"
+        try {
+            Invoke-WebRequest -Uri "https://raw.githubusercontent.com/hyfhot/AI-CLI/master/ai-cli.ico" -OutFile $iconPath -ErrorAction SilentlyContinue
+        } catch {
+            # If download fails, check local directory
+            if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot "ai-cli.ico"))) {
+                $iconPath = Join-Path $PSScriptRoot "ai-cli.ico"
+            } else {
+                $iconPath = $null
+            }
+        }
 
         $shell = New-Object -ComObject WScript.Shell
         $shortcut = $shell.CreateShortcut($shortcutPath)
         $shortcut.TargetPath = "powershell.exe"
         $shortcut.Arguments = "-NoProfile -Command `"ai-cli`""
         $shortcut.WorkingDirectory = $HOME
-        if (Test-Path $iconPath) {
-            $shortcut.IconLocation = $iconPath
+        if ($iconPath -and (Test-Path $iconPath)) {
+            # Copy icon to permanent location
+            $permanentIconPath = Join-Path $env:APPDATA "AI-CLI\ai-cli.ico"
+            $iconDir = Split-Path $permanentIconPath -Parent
+            if (-not (Test-Path $iconDir)) {
+                New-Item -ItemType Directory -Path $iconDir -Force | Out-Null
+            }
+            Copy-Item $iconPath $permanentIconPath -Force
+            $shortcut.IconLocation = $permanentIconPath
         }
         $shortcut.Save()
 
