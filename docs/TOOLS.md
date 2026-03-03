@@ -1,6 +1,6 @@
-🌐 [English](TOOLS.md) | [中文](TOOLS.zh.md) | [日本語](TOOLS.ja.md)
-
 # AI CLI Tools Reference
+
+> 🌐 **English** | [中文](TOOLS.zh.md) | [日本語](TOOLS.ja.md) | [Deutsch](TOOLS.de.md)
 
 This document lists the mainstream AI programming tools supported by AI-CLI along with their installation and configuration information.
 
@@ -16,9 +16,9 @@ This document lists the mainstream AI programming tools supported by AI-CLI alon
   - Supports agentic workflows
   - Integrated AWS services
   - Supports Model Context Protocol (MCP)
-- **Installation Command**:
-  - WSL/Linux: `curl -fsSL https://cli.kiro.dev/install | bash`
-  - Windows: Native installation not supported
+- **Installation**:
+  - **Linux/macOS/WSL**: `curl -fsSL https://cli.kiro.dev/install | bash`
+  - **Windows**: `winget install kiro-cli` (if available)
 - **Verification**: `kiro-cli --version`
 
 ---
@@ -28,202 +28,132 @@ This document lists the mainstream AI programming tools supported by AI-CLI alon
 - **Developer**: Anthropic
 - **Features**:
   - Agentic coding assistant
-  - 100K+ context window
-  - Multi-file operation support
-  - Integrated Git workflows
-  - MCP protocol support
-- **Installation Command**:
-  - Windows: `npm install -g @anthropic-ai/claude-code`
-  - WSL/Linux: `npm install -g @anthropic-ai/claude-code`
-- **Verification**: `claude --version`
-- **Requirements**: Node.js 18+
+  - Natural language code generation
+  - Context-aware suggestions
+- **Installation**:
+  - **All platforms**: `npm install -g @anthropic-ai/claude-code`
+- **Verification**: `claude-code --version`
 
 ---
 
-### 3. OpenAI Codex CLI
-- **Official Website**: https://www.npmjs.com/package/@openai/codex
-- **Developer**: OpenAI
+### 3. Cursor Agent
+- **Official Website**: https://cursor.sh
+- **Developer**: Cursor Team
 - **Features**:
-  - Lightweight coding agent
-  - Local execution, code not uploaded
-  - Natural language command support
-  - Open source project
-- **Installation Command**:
-  - Windows: `npm install -g @openai/codex`
-  - WSL/Linux: `npm install -g @openai/codex`
-- **Verification**: `codex --version`
-- **Requirements**: Node.js 18+
+  - AI-powered code editor
+  - Inline code suggestions
+  - Chat-based coding assistance
+- **Installation**:
+  - **Windows**: `winget install Cursor`
+  - **macOS**: `brew install --cask cursor`
+  - **Linux**: Download from official website
+- **Verification**: `cursor --version`
 
 ---
 
-### 4. Kimi CLI (Moonshot AI)
-- **Official Website**: https://pypi.org/project/kimi-cli/
-- **Developer**: Moonshot AI
+### 4. GitHub Copilot CLI
+- **Official Website**: https://githubnext.com/projects/copilot-cli
+- **Developer**: GitHub
 - **Features**:
-  - Terminal AI agent
-  - Supports code read/write and command execution
-  - Supports web search and scraping
-  - Autonomous planning and action adjustment
-- **Installation Command**:
-  - Windows: `pip install kimi-cli`
-  - WSL/Linux: `uv tool install --python 3.13 kimi-cli`
-- **Verification**: `kimi --version`
-- **Requirements**: Python 3.13+, uv (recommended)
+  - Command-line AI assistant
+  - Shell command suggestions
+  - Git workflow assistance
+- **Installation**:
+  - **All platforms**: `npm install -g @githubnext/github-copilot-cli`
+- **Verification**: `github-copilot-cli --version`
 
 ---
 
-### 5. Gemini CLI (Google)
-- **Official Website**: https://www.npmjs.com/package/@google/gemini-cli
-- **Developer**: Google
+### 5. Aider
+- **Official Website**: https://aider.chat
+- **Developer**: Aider Team
 - **Features**:
-  - Open source AI agent
-  - 1M token context window
-  - Multimodal AI capabilities
-  - Free to use
-- **Installation Command**:
-  - Windows: `npm install -g @google/gemini-cli`
-  - WSL/Linux: `npm install -g @google/gemini-cli`
-- **Verification**: `gemini --version`
-- **Requirements**: Node.js
-
----
-
-### 6. Cursor Agent CLI
-- **Official Website**: https://docs.cursor.com/en/cli/installation
-- **Developer**: Cursor
-- **Features**:
-  - Terminal AI assistant
-  - Supports remote servers and containers
-  - Integrated GitHub Actions
-  - Auto-update
-- **Installation Command**:
-  - WSL/Linux: `curl https://cursor.com/install -fsS | bash`
-  - Windows: Native installation not supported
-- **Verification**: `cursor-agent --version`
-- **Usage**: `cursor-agent` or `agent chat "prompt"`
-
----
-
-### 7. OpenCode
-- **Official Website**: https://opencode.ai/docs
-- **Developer**: Open Source Community
-- **Features**:
-  - Open source AI coding agent
-  - Privacy-first, code not stored
-  - Supports free built-in models
-  - Can connect to external AI providers
-  - Native terminal UI
-- **Installation Command**:
-  - Windows: `curl -fsSL https://opencode.ai/install.ps1 | powershell`
-  - WSL/Linux: `curl -fsSL https://opencode.ai/install.sh | bash`
-- **Verification**: `opencode --version`
-
----
-
-### 8. Aider
-- **Official Website**: https://aider.chat/docs/install
-- **Developer**: Open Source Community
-- **Features**:
-  - Terminal AI programming assistant
-  - Deep Git integration
-  - Supports multiple LLMs (GPT-4, Claude, DeepSeek)
-  - Automatic code testing
-  - Budget-friendly ($0.007/file)
-- **Installation Command**:
-  - Windows: `pip install aider-install && aider-install`
-  - WSL/Linux: `pip install aider-install && aider-install`
+  - AI pair programming in terminal
+  - Git integration
+  - Multiple LLM support
+- **Installation**:
+  - **All platforms**: `pip install aider-chat`
 - **Verification**: `aider --version`
-- **Requirements**: Python 3.9+, Git
 
 ---
 
-## 📊 Tools Comparison
+## 📝 Configuration Example
 
-| Tool | Developer | Free | Open Source | Windows | WSL/Linux | Features |
-|------|--------|------|------|---------|-----------|------|
-| Kiro CLI | AWS | ✅ | ❌ | ❌ | ✅ | Specification-driven, AWS integration |
-| Claude Code | Anthropic | ❌ | ❌ | ✅ | ✅ | 100K context, MCP |
-| Codex CLI | OpenAI | ❌ | ✅ | ✅ | ✅ | Local execution, privacy |
-| Kimi CLI | Moonshot | ❌ | ❌ | ✅ | ✅ | Web search, Chinese optimized |
-| Gemini CLI | Google | ✅ | ✅ | ✅ | ✅ | 1M context, free |
-| Cursor Agent | Cursor | ❌ | ❌ | ❌ | ✅ | CI/CD integration |
-| OpenCode | Community | ✅ | ✅ | ✅ | ✅ | Privacy-first, multi-model |
-| Aider | Community | ✅ | ✅ | ✅ | ✅ | Git integration, multi-LLM |
-
----
-
-## 🔧 Prerequisites
-
-### General Requirements
-- **Git**: Most tools require Git for version control
-- **Terminal**: Windows Terminal (recommended) or other modern terminals
-
-### Node.js Tools (Claude, Codex, Gemini)
-- Node.js 18+
-- npm or pnpm
-
-### Python Tools (Kimi, Aider)
-- Python 3.9+ (Aider) or 3.13+ (Kimi)
-- pip or uv
-
-### Shell Script Tools (Kiro, Cursor, OpenCode)
-- bash (WSL/Linux)
-- curl
-
----
-
-## 💡 Usage Recommendations
-
-### Factors for Choosing Tools
-
-1. **Budget**:
-   - Free: Gemini CLI, OpenCode, Aider
-   - Paid: Claude Code, Codex CLI, Kimi CLI, Cursor Agent
-
-2. **Privacy**:
-   - Local execution: Codex CLI, OpenCode
-   - Cloud-based: Other tools
-
-3. **Feature Requirements**:
-   - AWS integration: Kiro CLI
-   - Deep Git integration: Aider
-   - Multi-model support: OpenCode
-   - Large context: Gemini CLI (1M), Claude Code (100K)
-
-4. **Language Preference**:
-   - Chinese optimized: Kimi CLI
-   - English: Other tools
-
----
-
-## 🔄 Update Configuration
-
-To add new tools or modify existing tool configurations, edit the `config.json` file:
+Add tools to your `config.json`:
 
 ```json
 {
-  "name": "tool-command",
-  "displayName": "Tool Display Name",
-  "winInstall": "Windows install command or null",
-  "wslInstall": "WSL/Linux install command or null",
-  "checkCommand": "tool-command --version",
-  "url": "https://official-website.com"
+  "tools": [
+    {
+      "name": "kiro-cli",
+      "displayName": "Kiro CLI",
+      "windowsInstall": "winget install kiro-cli",
+      "wslInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "linuxInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "macosInstall": "brew install kiro-cli",
+      "checkCommand": "kiro-cli --version",
+      "url": "https://kiro.dev/cli/"
+    },
+    {
+      "name": "cursor",
+      "displayName": "Cursor Agent",
+      "windowsInstall": "winget install Cursor",
+      "wslInstall": "curl -fsSL https://cursor.sh/install | bash",
+      "linuxInstall": "curl -fsSL https://cursor.sh/install | bash",
+      "macosInstall": "brew install --cask cursor",
+      "checkCommand": "cursor --version",
+      "url": "https://cursor.sh"
+    },
+    {
+      "name": "aider",
+      "displayName": "Aider",
+      "windowsInstall": "pip install aider-chat",
+      "wslInstall": "pip install aider-chat",
+      "linuxInstall": "pip install aider-chat",
+      "macosInstall": "pip install aider-chat",
+      "checkCommand": "aider --version",
+      "url": "https://aider.chat"
+    }
+  ]
 }
 ```
 
 ---
 
-## 📚 Reference Resources
+## 🔧 Adding Custom Tools
 
-- [Kiro CLI Documentation](https://kiro.dev/docs/cli/installation/)
-- [Claude Code Guide](https://www.npmjs.com/package/@anthropic-ai/claude-code)
-- [Codex CLI GitHub](https://github.com/openai/codex-cli)
-- [Kimi CLI Documentation](https://moonshotai.github.io/kimi-cli/en/)
-- [Gemini CLI Official Site](https://gemini-cli.click/)
-- [Cursor CLI Documentation](https://docs.cursor.com/en/cli/)
-- [OpenCode Documentation](https://opencode.ai/docs)
-- [Aider Documentation](https://aider.chat/docs/)
+To add a new tool:
+
+1. **Find installation commands** for each platform
+2. **Determine check command** to verify installation
+3. **Add to config.json** following the format above
+
+### Required Fields
+
+- `name`: Command name (used for detection)
+- `displayName`: Display name in UI
+- `checkCommand`: Command to verify installation
+
+### Platform-Specific Install Commands
+
+- `windowsInstall`: Windows native installation
+- `wslInstall`: WSL environment installation
+- `linuxInstall`: Linux installation
+- `macosInstall`: macOS installation
+
+### Optional Fields
+
+- `url`: Official website (displayed in tool list)
 
 ---
 
-*Last updated: 2026-02-26*
+## 💡 Tips
+
+1. **Use package managers** when possible (winget, brew, apt, etc.)
+2. **Test check commands** to ensure they work correctly
+3. **Keep URLs updated** for user reference
+4. **Document prerequisites** if tools need specific dependencies
+
+---
+
+For more information, see the [main README](../README.md).

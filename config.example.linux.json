@@ -1,0 +1,71 @@
+{
+  "projects": [
+    {
+      "type": "folder",
+      "name": "Web Projects",
+      "children": [
+        {
+          "type": "project",
+          "name": "Frontend App",
+          "path": "/home/user/projects/frontend",
+          "env": {
+            "NODE_ENV": "development",
+            "API_URL": "http://localhost:3000"
+          }
+        },
+        {
+          "type": "project",
+          "name": "Backend API",
+          "path": "/home/user/projects/backend",
+          "env": {
+            "FLASK_ENV": "development",
+            "DATABASE_URL": "postgresql://localhost/mydb"
+          }
+        }
+      ]
+    },
+    {
+      "type": "project",
+      "name": "AI-CLI Project",
+      "path": "/home/user/projects/ai-cli",
+      "env": {}
+    }
+  ],
+  "tools": [
+    {
+      "name": "kiro-cli",
+      "displayName": "Kiro CLI",
+      "winInstall": null,
+      "wslInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "linuxInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "macosInstall": "brew install kiro-cli",
+      "checkCommand": "kiro-cli --version",
+      "url": "https://kiro.dev/cli/"
+    },
+    {
+      "name": "claude",
+      "displayName": "Claude Code",
+      "winInstall": "npm install -g @anthropic-ai/claude-code",
+      "wslInstall": "npm install -g @anthropic-ai/claude-code",
+      "linuxInstall": "npm install -g @anthropic-ai/claude-code",
+      "macosInstall": "npm install -g @anthropic-ai/claude-code",
+      "checkCommand": "claude --version",
+      "url": "https://claude.ai/code"
+    },
+    {
+      "name": "aider",
+      "displayName": "Aider",
+      "winInstall": "pip install aider-chat",
+      "wslInstall": "pip install aider-chat",
+      "linuxInstall": "pip install aider-chat",
+      "macosInstall": "pip install aider-chat",
+      "checkCommand": "aider --version",
+      "url": "https://aider.chat"
+    }
+  ],
+  "settings": {
+    "language": "auto",
+    "terminalEmulator": "default",
+    "theme": "default"
+  }
+}

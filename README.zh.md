@@ -1,409 +1,726 @@
-# AI CLI Launcher (AI 编程工作台启动器)
+# AI-CLI (Python 版本)
 
-> 🌐 [English](README.md) | **中文** | [日本語](README.ja.md)
+> 🌐 [English](README.md) | **中文** | [日本語](README.ja.md) | [Deutsch](README.de.md)
 
-## 1. 简介
+[![Python 版本](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![许可证](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![状态](https://img.shields.io/badge/status-beta-yellow.svg)](https://github.com/hyfhot/AI-CLI)
 
-**AI CLI Launcher** 是一款基于 PowerShell 编写的轻量级终端启动工具。它专为现代 AI 辅助编程场景设计，旨在统一管理和快速启动各类 AI CLI 工具（如 `kiro-cli`, `Claude Code`, `Kimi CLI`, `Cursor Agent`, `OpenCode` 等）。
+**AI-CLI** 是一个跨平台的终端启动器，用于管理多个 AI 编程助手。无缝切换 Kiro CLI、Claude Code、Cursor Agent 等工具。
 
-该工具打破了 Windows 原生环境与 Windows Subsystem for Linux (WSL) 之间的环境壁垒，允许开发者在一个统一的终端界面中选择目标项目，并一键唤起对应的 AI 编程工具，自动完成路径转换与终端环境初始化。
+## ✨ 核心特性
 
-> 📚 **查看支持的工具**: 详细的工具列表、安装说明和对比请参考 [docs/TOOLS.zh.md](docs/TOOLS.zh.md)
+### 🌍 跨平台支持
+- **Windows**: 原生支持 + WSL 集成
+- **Linux**: 完整支持所有主流发行版
+- **macOS**: 支持 Terminal.app 和 iTerm2
 
-### 🎯 为什么选择 AI-CLI？
+### 🔄 WSL 深度集成
+- 自动检测 WSL 环境
+- Windows ↔ WSL 路径自动转换
+- 支持在 Windows 中启动 WSL 工具
+- 支持在 WSL 中启动 Windows 工具
 
-**对于使用多个 AI 编程助手的开发者**，AI-CLI 解决了这些痛点：
+### 📁 项目管理
+- **树形结构**: 使用文件夹组织项目
+- **Git Worktree**: 自动检测和选择 Git worktrees
+- **环境变量**: 为每个项目配置独立的环境变量
+- **路径规范化**: 自动处理不同平台的路径格式
 
-✅ **告别记忆命令** - 一个 `ai-cli` 命令替代 8+ 个工具专用命令  
-✅ **Windows ↔ WSL 无缝切换** - 自动路径转换，无需手动翻译  
-✅ **Git Worktree 智能支持** - 自动检测分支，即时切换工作树实现并行开发  
-✅ **环境变量自动注入** - 项目专属环境变量自动加载，告别手动 `export`  
-✅ **多标签工作流** - `Ctrl+Enter` 并行启动多个 AI 工具，动态标签名称便于管理  
+### ⚡ 工具检测与管理
+- **异步检测**: 使用 async/await 并行检测工具
+- **智能缓存**: 后台检测并缓存结果
+- **一键安装**: 按 `I` 键安装未安装的工具
+- **手动刷新**: 按 `R` 键刷新工具列表
+- **环境识别**: 自动识别 Windows、WSL、Linux、macOS 环境
 
-**实际效果**：从打开终端 → 导航路径 → 设置环境变量 → 启动工具（2-3 分钟）缩短到 **3 次按键**（↓ Enter Enter）。
+### 🎨 用户界面
+- **Rich UI**: 基于 Rich 库的美观终端界面
+- **键盘导航**: 完整的键盘快捷键支持
+- **实时反馈**: 显示工具检测和安装进度
+- **主题支持**: 可自定义的颜色主题
 
-## 2. 核心特性
+### 🌐 国际化
+- **多语言支持**: 英语、中文、日语、德语
+- **自动检测**: 根据系统语言自动选择
+- **可配置**: 在配置文件中手动指定语言
 
-* **🤖 智能双轨探测**：启动时后台异步检测 Windows 和 WSL 环境中的 AI CLI 工具，界面立即响应，检测完成后自动更新。
-* **📂 统一项目管理**：通过 `config.json` 集中管理项目路径，支持跨盘符、跨环境。
-* **🔄 跨环境路径转换**：内置路径转化引擎，自动将 Windows 绝对路径（如 `C:\Projects\...`）转化为符合 WSL 规范的挂载路径（如 `/mnt/c/Projects/...`）。
-* **⚡ 纯终端交互**：快速键盘驱动的 CLI 界面，无 GUI 加载延迟，即时响应。
-* **🔁 循环启动模式**：程序不退出，支持连续选择工具和项目，提升工作效率。
-* **📑 多页签支持**：Ctrl+Enter 在 Windows Terminal 新页签中启动工具，方便多任务管理。
-* **🛠️ 工具安装功能**：按 I 键快速安装未安装的 AI CLI 工具，安装后自动添加到 PATH 环境变量。
-* **🔄 手动刷新功能**：按 R 键手动刷新工具列表，方便验证工具安装状态。
-* **🏷️ 动态页签命名**：启动时通过 ANSI 转义序列和 Windows 原生指令，动态修改终端页签标题（如 `KIRO-CLI BT2400`），极大提升多任务管理的清晰度。
+## 🚀 快速开始
 
----
+### 安装
 
-## 3. 安装与配置指南
+#### 使用安装脚本（推荐）
 
-### 3.1 环境要求
-
-* 操作系统：Windows 10 / Windows 11
-* 运行环境：PowerShell 5.1 或更高版本
-* 依赖组件：已安装并配置好 WSL（如需使用 Linux 下的工具）
-
-### 3.2 快速安装（推荐）
-
-项目提供了自动安装脚本，只需运行以下命令即可完成安装：
-
+**Windows**:
 ```powershell
-irm https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.ps1 | iex
+powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
-安装脚本会自动：
-1. 从 GitHub 下载最新版本（包含图标文件）
-2. 将程序文件复制到 `%LOCALAPPDATA%\AI-CLI` 目录
-3. 创建桌面快捷方式（带自定义图标）
-4. 添加到系统 PATH 环境变量
-
-安装完成后，您可以通过以下方式启动：
-- 双击桌面上的 "AI-CLI" 快捷方式
-- 在命令行中运行 `ai-cli`（需重新打开终端）
-
-**常用命令：**
-```powershell
-ai-cli           # 启动交互式界面
-ai-cli --help    # 查看帮助信息
-ai-cli --init    # 初始化配置
-ai-cli --config  # 编辑配置
+**Linux/macOS**:
+```bash
+bash install.sh
 ```
 
-**卸载命令：**
-```powershell
-ai-cli -Uninstall
-```
+#### 手动安装
 
-如果尚未添加到 PATH，可使用以下方式卸载：
-```powershell
-& "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall
-```
-
-**参数说明**：支持 `-` 和 `--` 两种参数前缀，例如 `-Init` 和 `--init` 等效（不区分大小写）。
-
-### 3.3 手动部署步骤
-
-**第一步：克隆或下载项目**
-```powershell
+```bash
+# 克隆仓库
 git clone https://github.com/hyfhot/AI-CLI.git
 cd AI-CLI
+
+# 如果使用 Git worktree
+git worktree add ../ai-cli-multi-platform python-migration
+cd ../ai-cli-multi-platform
+
+# 安装依赖
+pip install -e ".[dev]"
 ```
 
-**第二步：初始化配置**
-```powershell
-.\ai-cli.ps1 -Init
+### 初始化配置
+
+```bash
+ai-cli --init
 ```
 
-这将在用户配置目录（`%APPDATA%\AI-CLI\config.json`）创建配置文件。如果程序目录存在默认配置，会自动复制；否则创建新配置。
+这将创建默认配置文件，包含常用 AI 工具的配置。
 
-您可以手动编辑配置文件添加项目：
+### 运行
 
-```json
-{
-  "projects": [
-    {
-      "name": "项目名称",
-      "path": "C:\\Projects\\MyProject",
-      "description": "项目描述（可选）"
-    }
-  ]
-}
+```bash
+ai-cli
 ```
 
-**第三步：运行程序**
-```powershell
-.\ai-cli.ps1
+## 📖 使用说明
+
+### 命令行选项
+
+```bash
+ai-cli                    # 启动交互界面
+ai-cli --init             # 初始化配置文件
+ai-cli --config           # 编辑配置文件
+ai-cli --lang zh          # 使用中文启动
+ai-cli --lang ja          # 使用日语启动
+ai-cli --uninstall        # 卸载 AI-CLI
+ai-cli --version          # 显示版本信息
+ai-cli --help             # 显示帮助信息
 ```
 
-**查看帮助**
-```powershell
-.\ai-cli.ps1 --help
-```
+**语言选项** (`--lang` / `-l`):
+- `auto` - 自动检测系统语言（默认）
+- `en` - 英语 (English)
+- `zh` - 中文
+- `ja` - 日语 (日本語)
+- `de` - 德语 (Deutsch)
 
----
+**注意**: 命令行语言参数优先级高于配置文件设置。
 
-## 4. 使用说明
-
-### 4.1 启动与界面说明
-
-运行 `ai-cli` 后，将进入纯终端交互界面：
-
-#### 项目选择界面（树状结构）
-```
-=== 选择项目 ===
-> 📁 前端项目 (3 item(s))
-  📁 后端项目 (2 item(s))
-  📄 独立项目 (C:\Projects\standalone)
-
-[↑↓] 选择  [Enter] 进入/确认  [N] 新增  [D] 删除  [Q] 退出
-```
-
-进入文件夹后：
-```
-  Home > 前端项目
-
-=== 选择项目 ===
-> 📄 Vue 项目 (C:\Projects\vue-app)
-  📁 React 项目 (2 item(s))
-  📄 Angular 项目 (C:\Projects\angular-app)
-
-[↑↓] 选择  [Enter] 进入/确认  [N] 新增  [D] 删除  [Esc] 返回  [Q] 退出
-```
-
-#### 工具选择界面
-```
-=== 选择 AI 工具 (项目：项目 1) ===
-> [WSL] kiro-cli
-  [Win] claude
-  [WSL] opencode
-  [Win] aider
-
-[↑↓] 选择  [Enter] 启动  [Ctrl+Enter] 新页签  [I] 安装  [R] 刷新  [Esc] 返回  [Q] 退出
-```
-
-#### 新增界面（类型选择）
-```
-=== 选择类型 ===
-> 📄 Project
-  📁 Folder
-
-[↑↓] 选择  [Enter] 确认  [Esc] 取消
-```
-
-#### 删除确认界面
-```
-=== 删除确认 ===
-项目名称：MyProject_
-
-项目名称：MyProject
-项目路径：C:\Projects\MyProject
-环境变量 (可选，按 Enter 跳过):
-  格式：KEY=VALUE，每行一个，空行结束
-  Env Var: API_KEY=sk-xxx
-    已添加：API_KEY=sk-xxx
-将要删除：📁 前端项目 (包含 5 个子项)
-
-⚠️  警告：此操作不可恢复！
-请输入名称以确认删除：前端项目_
-
-[输入名称] 确认  [Esc] 取消
-```
-
-### 4.2 快捷键
+### 键盘快捷键
 
 #### 项目选择界面
-- `↑↓` - 导航选择
-- `Enter` - 进入文件夹或选择项目
-- `N` - 新增项目或文件夹
-- `D` - 删除项目或文件夹
-- `Esc` - 返回上级文件夹
-- `Q` - 退出程序
+
+| 按键 | 功能 |
+|------|------|
+| `↑` / `↓` | 上下导航 |
+| `Enter` | 选择项目 / 进入文件夹 |
+| `Esc` | 返回上级文件夹 |
+| `N` | 新建项目或文件夹 |
+| `D` | 删除选中的项目或文件夹 |
+| `Q` | 退出程序 |
 
 #### 工具选择界面
-- `↑↓` - 导航选择
-- `Enter` - 在新窗口启动工具
-- `Ctrl+Enter` - 在新页签启动工具（需要 Windows Terminal）
-- `I` - 安装新工具
-- `Esc` - 返回项目选择
-- `Q` - 退出程序
 
-#### 新增界面
-- 输入项目名称（必填，不能重复）
-- 输入项目路径（必填，自动检测路径是否存在）
-- 输入环境变量（可选，格式：KEY=VALUE）
-- 确认添加或取消
+| 按键 | 功能 |
+|------|------|
+| `↑` / `↓` | 上下导航 |
+| `Enter` | 启动工具（新窗口） |
+| `Ctrl+Enter` | 启动工具（新标签页） |
+| `I` | 安装未安装的工具 |
+| `R` | 刷新工具列表 |
+| `Esc` | 返回项目选择界面 |
+| `Q` | 退出程序 |
 
-### 4.3 树状结构管理
+### 工作流程
 
-项目支持树状结构组织：
-- **文件夹**：用于分类管理项目，可以包含项目和子文件夹
-- **项目**：实际的工作目录，包含路径和环境变量
-- **面包屑导航**：显示当前位置，方便多层级导航
-- **递归删除**：删除文件夹时会提示包含的子项数量
+1. **启动程序**: 运行 `ai-cli`
+2. **选择项目**: 使用方向键选择项目，按 `Enter` 确认
+3. **选择工具**: 选择要使用的 AI 工具
+4. **开始工作**: 工具将在新窗口或标签页中启动
 
-### 4.4 运行效果
+## 🔧 配置详解
 
-* 脚本会自动拉起对应的终端（Cmd 或 WSL）。
-* 终端会自动 `cd` 进入所选项目的对应路径。
-* 项目配置的环境变量会自动注入到运行环境中。
-  * **智能路径转换**：WSL 环境下，Windows 路径格式的环境变量值（如 `C:\Projects\...`）会自动转换为 WSL 路径格式（`/mnt/c/Projects/...`）。
-* 终端顶部页签名称会自动变更为 `[工具名] [项目名]`，方便多开辨识。
+### 配置文件位置
 
----
+- **Windows**: `%APPDATA%\AI-CLI\config.json`
+- **Linux**: `~/.config/ai-cli/config.json`
+- **macOS**: `~/Library/Application Support/ai-cli/config.json`
 
-## 5. 技术架构与实现原理
+### 配置文件结构
 
-### 5.1 树状结构实现
-
-项目配置采用递归树状结构：
 ```json
 {
   "projects": [
     {
       "type": "folder",
-      "name": "前端项目",
+      "name": "我的项目",
       "children": [
         {
           "type": "project",
-          "name": "Vue 项目",
-          "path": "C:\\Projects\\vue-app"
+          "name": "Web 应用",
+          "path": "/path/to/project",
+          "env": {
+            "API_KEY": "your-api-key",
+            "DEBUG": "true"
+          }
         }
       ]
-    }
-  ]
-}
-```
-
-- 自动迁移旧版本平面配置到树状结构
-- 支持递归遍历、添加、删除操作
-- 面包屑导航跟踪当前路径
-
-### 5.2 路径解析引擎 (`ConvertTo-WslPath`)
-
-利用正则表达式 `^([a-zA-Z]):(.*)` 捕获 Windows 盘符，将其转化为 `/mnt/盘符小写` 格式，并将反斜杠 `\` 统一替换为正斜杠 `/`，确保 WSL 能够正确挂载和访问 Windows 文件系统。
-
-### 5.3 工具检测机制
-
-* **Windows 环境**：使用 PowerShell 内置 cmdlet `Get-Command -ErrorAction SilentlyContinue` 进行低开销静默探测。
-* **WSL 环境**：通过 `wsl.exe -e bash -ic "command -v tool"` 执行检测，使用 `-ic` 参数确保加载 `.bashrc` 环境变量。
-
-### 5.4 终端拉起与进程分发
-
-根据工具环境标志（`[Win]` / `[WSL]`），执行不同策略：
-
-* **针对 WSL**：
-组合使用 `-e bash -ic` 确保加载完整的 Linux 环境变量（解决诸如 `command not found` 的问题），并利用 `echo -ne '\033]0;TITLE\007'` 发送 ANSI 序列设置终端标题。
-* **针对 Windows**：
-利用 `cmd.exe /k` 保持控制台窗口打开，通过 `title` 指令修改标题，利用 `cd /d` 实现安全的跨盘符目录切换。
-
----
-
-## 6. 工具安装功能
-
-### 6.1 使用方法
-
-在工具选择界面按 `I` 键，进入工具安装界面：
-
-```
-=== 安装 AI 工具 ===
-> [WSL] kiro-cli
-  [Win] gemini
-  [WSL] cursor-agent
-
-[↑↓] 选择  [Enter] 安装  [Esc] 返回  [Q] 退出
-```
-
-选择要安装的工具，按 Enter 确认，程序会自动执行安装命令。
-
-### 6.2 支持的工具
-
-根据 `config.json` 配置，当前支持安装 8 个主流 AI CLI 工具。详细信息请参考 [docs/TOOLS.zh.md](docs/TOOLS.zh.md) 和 [docs/INSTALL-GUIDE.zh.md](docs/INSTALL-GUIDE.zh.md)。
-
----
-
-## 7. 配置文件说明
-
-配置文件位置：`%APPDATA%\AI-CLI\config.json`（通常为 `C:\Users\<用户名>\AppData\Roaming\AI-CLI\config.json`）
-
-**配置优先级**：
-1. 优先读取用户配置目录的 `config.json`
-2. 如果不存在，则读取程序目录的默认 `config.json`
-3. 所有修改都保存到用户配置目录
-
-**注意**：配置文件与程序分离存储，卸载程序时配置不会丢失。
-
-### 7.1 config.json 结构
-
-```json
-{
-  "projects": [
-    {
-      "name": "项目名称",
-      "path": "项目路径",
-      "description": "项目描述（可选）",
-      "env": {
-        "API_KEY": "your-api-key",
-        "DEBUG": "true"
-      }
     }
   ],
   "tools": [
     {
-      "name": "工具命令",
-      "displayName": "显示名称",
-      "winInstall": "Windows 安装命令或 null",
-      "wslInstall": "WSL 安装命令或 null",
-      "checkCommand": "检测命令",
-      "url": "官方网站"
+      "name": "kiro-cli",
+      "displayName": "Kiro CLI",
+      "windowsInstall": "winget install kiro-cli",
+      "wslInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "linuxInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "macosInstall": "brew install kiro-cli",
+      "checkCommand": "kiro-cli --version",
+      "url": "https://kiro.dev/cli/"
     }
   ],
   "settings": {
     "language": "auto",
-    "defaultEnv": "wsl",
-    "terminalEmulator": "default"
+    "terminalEmulator": "default",
+    "theme": "default"
   }
 }
 ```
 
-### 7.2 添加项目
+### 项目配置
 
-编辑 `config.json`，在 `projects` 数组中添加：
+#### 项目类型
 
+**文件夹 (folder)**:
 ```json
 {
-  "name": "MyProject",
-  "path": "C:\\Projects\\MyProject",
-  "description": "我的项目"
+  "type": "folder",
+  "name": "项目组名称",
+  "children": [...]
 }
 ```
 
-### 7.3 添加自定义工具
-
-编辑 `config.json`，在 `tools` 数组中添加：
-
+**项目 (project)**:
 ```json
 {
-  "name": "mytool",
-  "displayName": "My Tool",
-  "winInstall": "npm install -g mytool",
-  "wslInstall": "npm install -g mytool",
-  "checkCommand": "mytool --version",
-  "url": "https://mytool.com"
+  "type": "project",
+  "name": "项目名称",
+  "path": "/absolute/path/to/project",
+  "env": {
+    "KEY": "value"
+  }
 }
 ```
 
+#### 环境变量
+
+为每个项目配置独立的环境变量：
+
+```json
+{
+  "type": "project",
+  "name": "API 项目",
+  "path": "/path/to/api",
+  "env": {
+    "API_KEY": "sk-xxx",
+    "API_BASE_URL": "https://api.example.com",
+    "DEBUG": "true",
+    "LOG_LEVEL": "info"
+  }
+}
+```
+
+### 工具配置
+
+#### 必需字段
+
+- `name`: 工具的命令名称（用于检测）
+- `displayName`: 显示名称
+- `checkCommand`: 用于检测工具是否安装的命令
+
+#### 安装命令（按平台）
+
+- `windowsInstall`: Windows 原生安装命令
+- `wslInstall`: WSL 环境安装命令
+- `linuxInstall`: Linux 安装命令
+- `macosInstall`: macOS 安装命令
+
+#### 可选字段
+
+- `url`: 工具的官方网站（显示在工具列表中）
+
+#### 示例配置
+
+```json
+{
+  "name": "cursor",
+  "displayName": "Cursor Agent",
+  "windowsInstall": "winget install Cursor",
+  "wslInstall": "curl -fsSL https://cursor.sh/install | bash",
+  "linuxInstall": "curl -fsSL https://cursor.sh/install | bash",
+  "macosInstall": "brew install --cask cursor",
+  "checkCommand": "cursor --version",
+  "url": "https://cursor.sh"
+}
+```
+
+### 设置选项
+
+#### language（语言）
+
+- `auto`: 自动检测系统语言（默认）
+- `en`: 英语
+- `zh`: 中文
+- `ja`: 日语
+- `de`: 德语
+
+#### terminalEmulator（终端模拟器）
+
+- `default`: 使用系统默认终端（默认）
+- `wt`: Windows Terminal（仅 Windows）
+- `iterm`: iTerm2（仅 macOS）
+- `gnome-terminal`: GNOME Terminal（仅 Linux）
+- `konsole`: Konsole（仅 Linux）
+
+#### theme（主题）
+
+- `default`: 默认深色主题
+- 未来版本将支持更多主题
+
+## 🏗️ 项目架构
+
+### 目录结构
+
+```
+ai_cli/
+├── __init__.py        # 包初始化
+├── cli.py             # CLI 入口点
+├── app.py             # 主应用逻辑
+├── models.py          # 数据模型
+├── config.py          # 配置管理
+├── utils.py           # 路径转换工具
+├── core/              # 核心功能模块
+│   ├── __init__.py
+│   ├── tools.py       # 工具检测
+│   ├── projects.py    # 项目管理
+│   ├── git.py         # Git 集成
+│   └── installer.py   # 工具安装
+├── ui/                # 用户界面模块
+│   ├── __init__.py
+│   ├── theme.py       # 主题配置
+│   ├── menu.py        # 菜单渲染
+│   └── input.py       # 键盘输入处理
+├── platform/          # 平台适配模块
+│   ├── __init__.py
+│   ├── base.py        # 抽象基类
+│   ├── windows.py     # Windows 适配器
+│   ├── linux.py       # Linux 适配器
+│   ├── macos.py       # macOS 适配器
+│   └── factory.py     # 平台工厂
+└── i18n/              # 国际化模块
+    ├── __init__.py
+    └── manager.py     # 语言管理器
+```
+
+### 核心模块说明
+
+#### models.py - 数据模型
+
+定义了所有数据结构：
+- `Config`: 主配置对象
+- `Settings`: 设置选项
+- `ProjectNode`: 项目节点（支持树形结构）
+- `Tool`: 工具对象
+- `ToolConfig`: 工具配置
+- `ToolEnvironment`: 工具运行环境枚举
+
+#### config.py - 配置管理
+
+- 跨平台配置文件路径处理
+- 配置文件加载和保存
+- 从旧版本配置迁移
+- 创建默认配置
+
+#### app.py - 主应用
+
+- 应用主循环
+- 项目选择逻辑
+- 工具选择逻辑
+- 工具启动逻辑
+- 项目和文件夹的增删改
+
+#### core/tools.py - 工具检测
+
+- 异步并行检测工具
+- 平台特定的检测逻辑
+- Windows 原生工具检测
+- WSL 工具检测
+- 工具缓存管理
+
+#### core/git.py - Git 集成
+
+- 检测 Git worktrees
+- 显示分支状态
+- 交互式 worktree 选择
+
+#### core/installer.py - 工具安装
+
+- 根据平台选择安装命令
+- 执行安装过程
+- 安装后路径更新
+- 查找已安装的工具
+
+#### ui/menu.py - 菜单渲染
+
+- 渲染项目树
+- 渲染工具列表
+- 显示面包屑导航
+- 清屏和刷新
+
+#### ui/input.py - 键盘输入
+
+- 跨平台键盘输入处理
+- Windows 和 Unix 系统的不同实现
+- 文本输入支持
+- 特殊键处理
+
+#### platform/ - 平台适配
+
+- 抽象平台接口
+- Windows 特定实现（支持 Windows Terminal）
+- Linux 特定实现（支持多种终端）
+- macOS 特定实现（支持 iTerm2）
+- 平台工厂模式
+
+#### i18n/manager.py - 国际化
+
+- 语言检测
+- 翻译字典管理
+- 文本获取接口
+
+## 🔍 高级功能
+
+### Git Worktree 支持
+
+当项目路径是 Git worktree 时，AI-CLI 会：
+
+1. 自动检测所有 worktrees
+2. 显示每个 worktree 的分支和状态
+3. 允许选择要使用的 worktree
+4. 显示分支的领先/落后提交数
+
+### WSL 路径转换
+
+AI-CLI 自动处理 Windows 和 WSL 之间的路径转换：
+
+- Windows 路径: `C:\Users\username\project`
+- WSL 路径: `/mnt/c/Users/username/project`
+
+转换是双向的，支持：
+- Windows 中启动 WSL 工具
+- WSL 中启动 Windows 工具
+
+### 异步工具检测
+
+工具检测使用异步并行处理：
+
+1. **启动时**: 快速显示界面，后台检测工具
+2. **缓存**: 检测结果被缓存，避免重复检测
+3. **刷新**: 按 `R` 键清除缓存并重新检测
+
+### 环境变量注入
+
+为每个项目配置的环境变量会在启动工具时注入：
+
+```json
+{
+  "type": "project",
+  "name": "API 项目",
+  "path": "/path/to/api",
+  "env": {
+    "API_KEY": "sk-xxx",
+    "DEBUG": "true"
+  }
+}
+```
+
+启动工具时，这些环境变量会被添加到工具的运行环境中。
+
+## 🧪 测试
+
+### 运行测试
+
+```bash
+# 运行所有测试
+pytest
+
+# 运行特定测试文件
+pytest tests/test_models.py
+
+# 运行特定测试
+pytest tests/test_models.py::TestConfig::test_from_dict
+
+# 显示详细输出
+pytest -v
+
+# 显示打印输出
+pytest -s
+```
+
+### 测试覆盖率
+
+```bash
+# 运行测试并生成覆盖率报告
+pytest --cov=ai_cli
+
+# 生成 HTML 覆盖率报告
+pytest --cov=ai_cli --cov-report=html
+
+# 查看报告
+open htmlcov/index.html  # macOS
+xdg-open htmlcov/index.html  # Linux
+start htmlcov/index.html  # Windows
+```
+
+### 测试文件说明
+
+- `test_models.py`: 数据模型测试
+- `test_config.py`: 配置管理测试
+- `test_utils.py`: 路径转换测试
+- `test_platform.py`: 平台适配器测试
+- `test_git.py`: Git 集成测试
+- `test_tools.py`: 工具检测测试
+- `test_projects.py`: 项目管理测试
+- `test_ui.py`: UI 组件测试
+- `test_app.py`: 应用集成测试
+- `test_cli.py`: CLI 入口测试
+
+## 📝 开发指南
+
+### 环境要求
+
+- **Python**: 3.8 或更高版本
+- **依赖库**:
+  - `rich`: 终端 UI 渲染
+  - `prompt-toolkit`: 键盘输入处理
+  - `click`: CLI 框架
+  - `platformdirs`: 跨平台路径
+
+### 开发环境设置
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/hyfhot/AI-CLI.git
+cd AI-CLI
+
+# 2. 创建 Python 版本的 worktree（如果需要）
+git worktree add ../ai-cli-multi-platform python-migration
+cd ../ai-cli-multi-platform
+
+# 3. 创建虚拟环境（推荐）
+python -m venv venv
+
+# 激活虚拟环境
+# Windows:
+venv\Scripts\activate
+# Linux/macOS:
+source venv/bin/activate
+
+# 4. 安装开发依赖
+pip install -e ".[dev]"
+
+# 5. 运行测试确认环境
+pytest
+```
+
+### 代码风格
+
+项目遵循 PEP 8 代码风格指南：
+
+```bash
+# 安装代码检查工具
+pip install flake8 black mypy
+
+# 运行代码检查
+flake8 ai_cli tests
+
+# 自动格式化代码
+black ai_cli tests
+
+# 类型检查
+mypy ai_cli
+```
+
+### 添加新工具
+
+在 `config.json` 中添加新工具配置：
+
+```json
+{
+  "name": "new-tool",
+  "displayName": "New Tool",
+  "windowsInstall": "winget install new-tool",
+  "wslInstall": "curl -fsSL https://example.com/install | bash",
+  "linuxInstall": "curl -fsSL https://example.com/install | bash",
+  "macosInstall": "brew install new-tool",
+  "checkCommand": "new-tool --version",
+  "url": "https://example.com"
+}
+```
+
+### 添加新语言
+
+在 `ai_cli/i18n/manager.py` 中添加翻译：
+
+```python
+translations = {
+    'new_lang': {
+        'app_title': 'AI-CLI',
+        'select_project': 'Select Project',
+        # ... 其他翻译
+    }
+}
+```
+
+### 调试技巧
+
+```bash
+# 启用调试模式
+ai-cli --debug
+
+# 使用 Python 调试器
+python -m pdb -m ai_cli.cli
+
+# 查看详细日志
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+## 🐛 故障排除
+
+### Windows 相关问题
+
+**问题**: 无法检测到 Windows Terminal
+```bash
+# 解决方案：确保 Windows Terminal 已安装
+winget install Microsoft.WindowsTerminal
+```
+
+**问题**: WSL 工具检测失败
+```bash
+# 解决方案：确保 WSL 已启用
+wsl --install
+```
+
+### Linux 相关问题
+
+**问题**: 终端模拟器检测失败
+```bash
+# 解决方案：安装支持的终端
+sudo apt install gnome-terminal  # Ubuntu/Debian
+sudo dnf install gnome-terminal  # Fedora
+```
+
+### macOS 相关问题
+
+**问题**: iTerm2 未被检测到
+```bash
+# 解决方案：确保 iTerm2 已安装
+brew install --cask iterm2
+```
+
+### 通用问题
+
+**问题**: 配置文件损坏
+```bash
+# 解决方案：重新初始化配置
+ai-cli --init
+```
+
+**问题**: 工具检测缓存过期
+```bash
+# 解决方案：在工具选择界面按 R 键刷新
+```
+
+## 🤝 贡献指南
+
+我们欢迎所有形式的贡献！
+
+### 贡献方式
+
+1. **报告 Bug**: 在 [GitHub Issues](https://github.com/hyfhot/AI-CLI/issues) 提交问题
+2. **功能建议**: 提出新功能的想法
+3. **代码贡献**: 提交 Pull Request
+4. **文档改进**: 改进文档和示例
+5. **翻译**: 添加新语言支持
+
+### Pull Request 流程
+
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+### 提交规范
+
+遵循 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
+
+```
+feat: 添加新功能
+fix: 修复 bug
+docs: 文档更新
+style: 代码格式调整
+refactor: 代码重构
+test: 测试相关
+chore: 构建/工具链更新
+```
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
+
+## 🔗 相关链接
+
+- **原项目**: [AI-CLI (PowerShell 版本)](https://github.com/hyfhot/AI-CLI)
+- **文档**: [docs/](docs/)
+- **问题反馈**: [GitHub Issues](https://github.com/hyfhot/AI-CLI/issues)
+- **更新日志**: [CHANGELOG.md](CHANGELOG.md)
+
+## 🙏 致谢
+
+感谢以下开源项目：
+
+- [Rich](https://github.com/Textualize/rich) - 强大的终端 UI 库
+- [Prompt Toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit) - 交互式命令行工具
+- [Click](https://github.com/pallets/click) - Python CLI 框架
+- [platformdirs](https://github.com/platformdirs/platformdirs) - 跨平台目录路径
+
+## 📊 项目状态
+
+- **版本**: Beta
+- **Python 版本**: 3.8+
+- **平台**: Windows, Linux, macOS
+- **维护状态**: 活跃开发中
+
+## 🗺️ 路线图
+
+- [ ] 支持更多 AI 工具
+- [ ] 插件系统
+- [ ] 配置文件验证
+- [ ] 更多主题选项
+- [ ] 工具使用统计
+- [ ] 云端配置同步
+- [ ] 项目模板支持
+
 ---
 
-## 8. 常见问题 (FAQ)
-
-**Q1：如何添加新项目？**
-编辑 `config.json` 文件，在 `projects` 数组中添加项目信息，或运行 `ai-cli -Init` 重新初始化配置。
-
-**Q2：运行时提示找不到工具？**
-1. 确认工具已正确安装
-2. 检查 PATH 环境变量
-3. 对于 WSL 工具，确认 WSL 环境已正确配置
-4. 运行 `ai-cli` 重新检测工具
-
-**Q3：WSL 启动后提示 `No such file or directory`？**
-检查项目路径是否正确，确保该盘符（如 C 盘、D 盘）已经被 WSL 正常挂载。
-
-**Q4：如何使用多页签功能？**
-确保已安装 Windows Terminal，然后在工具选择界面按 `Ctrl+Enter` 启动工具。
-
-**Q5：如何卸载？**
-运行 `ai-cli -Uninstall` 或 `& "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall`。
-
----
-
-## 9. 相关文档
-
-- **[docs/TOOLS.zh.md](docs/TOOLS.zh.md)** - 8 个主流 AI CLI 工具的详细参考手册
-- **[docs/INSTALL-GUIDE.zh.md](docs/INSTALL-GUIDE.zh.md)** - 工具安装功能使用指南
-- **[docs/BUGFIX.zh.md](docs/BUGFIX.zh.md)** - Bug 修复记录和技术细节
-- **[docs/CHANGELOG.zh.md](docs/CHANGELOG.zh.md)** - 版本更新日志
-
----
-
-*最后更新：2026-02-26*
+**用 ❤️ 制作 by AI-CLI 团队**

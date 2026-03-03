@@ -1,411 +1,726 @@
-# AI CLI Launcher
+# AI-CLI (Python Edition)
 
-> 🌐 **English** | [中文](README.zh.md) | [日本語](README.ja.md)
+> 🌐 **English** | [中文](README.zh.md) | [日本語](README.ja.md) | [Deutsch](README.de.md)
 
-## 1. Introduction
+[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-beta-yellow.svg)](https://github.com/hyfhot/AI-CLI)
 
-**AI CLI Launcher** is a lightweight terminal launcher tool based on PowerShell. Designed for modern AI-assisted programming scenarios, it aims to unify management and quickly launch various AI CLI tools (such as `kiro-cli`, `Claude Code`, `Kimi CLI`, `Cursor Agent`, `OpenCode`, etc.).
+**AI-CLI** is a cross-platform terminal launcher for managing multiple AI coding assistants. Seamlessly switch between tools like Kiro CLI, Claude Code, Cursor Agent, and more.
 
-This tool breaks down the barriers between native Windows environment and Windows Subsystem for Linux (WSL), allowing developers to select target projects in a unified terminal interface and launch corresponding AI programming tools with one click, automatically completing path conversion and terminal environment initialization.
+## ✨ Core Features
 
-> 📚 **View Supported Tools**: For detailed tool list, installation instructions, and comparison, please refer to [docs/TOOLS.md](docs/TOOLS.md)
+### 🌍 Cross-Platform Support
+- **Windows**: Native support + WSL integration
+- **Linux**: Full support for all major distributions
+- **macOS**: Support for Terminal.app and iTerm2
 
-### 🎯 Why Choose AI-CLI?
+### 🔄 Deep WSL Integration
+- Automatic WSL environment detection
+- Automatic Windows ↔ WSL path conversion
+- Launch WSL tools from Windows
+- Launch Windows tools from WSL
 
-**For developers using multiple AI coding assistants**, AI-CLI solves these pain points:
+### 📁 Project Management
+- **Tree Structure**: Organize projects in folders
+- **Git Worktree**: Auto-detect and select Git worktrees
+- **Environment Variables**: Configure per-project environment variables
+- **Path Normalization**: Automatic handling of different platform path formats
 
-✅ **No more memorizing commands** - One `ai-cli` command replaces 8+ tool-specific commands  
-✅ **Seamless Windows ↔ WSL switching** - Automatic path conversion, no manual translation needed  
-✅ **Git Worktree intelligence** - Auto-detect branches, switch worktrees instantly for parallel development  
-✅ **Environment auto-injection** - Project-specific env vars loaded automatically, no more manual `export`  
-✅ **Multi-tab workflow** - Launch multiple AI tools in parallel with `Ctrl+Enter`, organized by dynamic tab names  
+### ⚡ Tool Detection & Management
+- **Async Detection**: Parallel tool detection using async/await
+- **Smart Caching**: Background detection with result caching
+- **One-Click Install**: Press `I` to install missing tools
+- **Manual Refresh**: Press `R` to refresh tool list
+- **Environment Recognition**: Auto-detect Windows, WSL, Linux, macOS environments
 
-**Real-world impact**: From opening terminal → navigating paths → setting env vars → launching tool (2-3 minutes) down to **3 keystrokes** (↓ Enter Enter).
+### 🎨 User Interface
+- **Rich UI**: Beautiful terminal interface powered by Rich library
+- **Keyboard Navigation**: Full keyboard shortcut support
+- **Real-time Feedback**: Display tool detection and installation progress
+- **Theme Support**: Customizable color themes
 
-## 2. Core Features
+### 🌐 Internationalization
+- **Multi-language**: English, Chinese, Japanese, German
+- **Auto-detection**: Automatically select based on system language
+- **Configurable**: Manually specify language in config file
 
-* **🤖 Intelligent Dual-Environment Detection**: Automatically detects AI CLI tools installed in Windows host and WSL environments at startup with background async detection, UI responds immediately and updates automatically when detection completes.
-* **📂 Unified Project Management**: Centrally manages project paths through `config.json`, supporting cross-drive and cross-environment projects.
-* **🔄 Cross-Environment Path Conversion**: Built-in path conversion engine automatically converts Windows absolute paths (e.g., `C:\Projects\...`) to WSL-compliant mount paths (e.g., `/mnt/c/Projects/...`).
-* **⚡ Pure Terminal Interaction**: Fast keyboard-driven CLI interface, no GUI loading delay, instant response.
-* **🔁 Loop Launch Mode**: The program does not exit, supports continuous selection of tools and projects, improving work efficiency.
-* **📑 Multi-Tab Support**: Ctrl+Enter launches tools in new Windows Terminal tabs, convenient for multi-task management.
-* **🛠️ Tool Installation Feature**: Press I key to quickly install uninstalled AI CLI tools, automatically adds to PATH environment variable after installation.
-* **🔄 Manual Refresh Feature**: Press R key to manually refresh tool list, convenient for verifying tool installation status.
-* **🏷️ Dynamic Tab Naming**: Dynamically modifies terminal tab titles at startup through ANSI escape sequences and Windows native commands (e.g., `KIRO-CLI BT2400`), greatly improving multi-task management clarity.
-* **🌳 Git Worktree Support**: Automatically detects multiple worktrees in Git repositories, allows quick switching between branches for parallel development, displays branch status (ahead/behind commits).
+## 🚀 Quick Start
 
----
+### Installation
 
-## 3. Installation and Configuration Guide
+#### Using Installation Script (Recommended)
 
-### 3.1 Environment Requirements
-
-* Operating System: Windows 10 / Windows 11
-* Runtime Environment: PowerShell 5.1 or higher
-* Dependencies: WSL installed and configured (if you need to use Linux tools)
-
-### 3.2 Quick Installation (Recommended)
-
-The project provides an automatic installation script. Just run the following command to complete the installation:
-
+**Windows**:
 ```powershell
-irm https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.ps1 | iex
+powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
-The installation script will automatically:
-1. Download the latest version from GitHub (including icon files)
-2. Copy program files to `%LOCALAPPDATA%\AI-CLI` directory
-3. Create desktop shortcuts (with custom icons)
-4. Add to system PATH environment variable
-
-After installation, you can start by:
-- Double-clicking the "AI-CLI" shortcut on the desktop
-- Running `ai-cli` in the command line (need to reopen the terminal)
-
-**Common Commands:**
-```powershell
-ai-cli           # Launch interactive interface
-ai-cli --help    # View help information
-ai-cli --init    # Initialize configuration
-ai-cli --config  # Edit configuration
+**Linux/macOS**:
+```bash
+bash install.sh
 ```
 
-**Uninstall Command:**
-```powershell
-ai-cli -Uninstall
-```
+#### Manual Installation
 
-If not yet added to PATH, you can uninstall using:
-```powershell
-& "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall
-```
-
-**Parameter Description**: Supports both `-` and `--` parameter prefixes, e.g., `-Init` and `--init` are equivalent (case-insensitive).
-
-### 3.3 Manual Deployment Steps
-
-**Step 1: Clone or Download the Project**
-```powershell
+```bash
+# Clone repository
 git clone https://github.com/hyfhot/AI-CLI.git
 cd AI-CLI
+
+# If using Git worktree
+git worktree add ../ai-cli-multi-platform python-migration
+cd ../ai-cli-multi-platform
+
+# Install dependencies
+pip install -e ".[dev]"
 ```
 
-**Step 2: Initialize Configuration**
-```powershell
-.\ai-cli.ps1 -Init
+### Initialize Configuration
+
+```bash
+ai-cli --init
 ```
 
-This will create a configuration file in the user configuration directory (`%APPDATA%\AI-CLI\config.json`). If a default configuration exists in the program directory, it will be copied automatically; otherwise, a new configuration will be created.
+This creates a default configuration file with common AI tool configurations.
 
-You can manually edit the configuration file to add projects:
+### Run
 
-```json
-{
-  "projects": [
-    {
-      "name": "Project Name",
-      "path": "C:\\Projects\\MyProject",
-      "description": "Project description (optional)"
-    }
-  ]
-}
+```bash
+ai-cli
 ```
 
-**Step 3: Run the Program**
-```powershell
-.\ai-cli.ps1
+## 📖 Usage
+
+### Command Line Options
+
+```bash
+ai-cli                    # Start interactive interface
+ai-cli --init             # Initialize configuration file
+ai-cli --config           # Edit configuration file
+ai-cli --lang zh          # Start with Chinese language
+ai-cli --lang ja          # Start with Japanese language
+ai-cli --uninstall        # Uninstall AI-CLI
+ai-cli --version          # Show version information
+ai-cli --help             # Show help information
 ```
 
-**View Help**
-```powershell
-.\ai-cli.ps1 --help
-```
+**Language Options** (`--lang` / `-l`):
+- `auto` - Auto-detect system language (default)
+- `en` - English
+- `zh` - Chinese (中文)
+- `ja` - Japanese (日本語)
+- `de` - German (Deutsch)
 
----
+**Note**: CLI language parameter takes priority over config file settings.
 
-## 4. Usage Instructions
+### Keyboard Shortcuts
 
-### 4.1 Launch and Interface Description
+#### Project Selection Screen
 
-After running `ai-cli`, you will enter the pure terminal interaction interface:
+| Key | Function |
+|-----|----------|
+| `↑` / `↓` | Navigate up/down |
+| `Enter` | Select project / Enter folder |
+| `Esc` | Go back to parent folder |
+| `N` | Create new project or folder |
+| `D` | Delete selected project or folder |
+| `Q` | Quit application |
 
-#### Project Selection Interface (Tree Structure)
-```
-=== Select Project ===
-> 📁 Frontend Projects (3 item(s))
-  📁 Backend Projects (2 item(s))
-  📄 Standalone Project (C:\Projects\standalone)
+#### Tool Selection Screen
 
-[↑↓] Select  [Enter] Enter/Confirm  [N] New  [D] Delete  [Q] Quit
-```
+| Key | Function |
+|-----|----------|
+| `↑` / `↓` | Navigate up/down |
+| `Enter` | Launch tool (new window) |
+| `Ctrl+Enter` | Launch tool (new tab) |
+| `I` | Install missing tools |
+| `R` | Refresh tool list |
+| `Esc` | Return to project selection |
+| `Q` | Quit application |
 
-After entering a folder:
-```
-  Home > Frontend Projects
+### Workflow
 
-=== Select Project ===
-> 📄 Vue Project (C:\Projects\vue-app)
-  📁 React Projects (2 item(s))
-  📄 Angular Project (C:\Projects\angular-app)
+1. **Launch**: Run `ai-cli`
+2. **Select Project**: Use arrow keys to select a project, press `Enter` to confirm
+3. **Select Tool**: Choose the AI tool you want to use
+4. **Start Working**: Tool launches in a new window or tab
 
-[↑↓] Select  [Enter] Enter/Confirm  [N] New  [D] Delete  [Esc] Back  [Q] Quit
-```
+## 🔧 Configuration Guide
 
-#### Tool Selection Interface
-```
-=== Select AI Tool (Project: Project 1) ===
-> [WSL] kiro-cli
-  [Win] claude
-  [WSL] opencode
-  [Win] aider
+### Configuration File Location
 
-[↑↓] Select  [Enter] Launch  [Ctrl+Enter] New Tab  [I] Install  [R] Refresh  [Esc] Back  [Q] Quit
-```
+- **Windows**: `%APPDATA%\AI-CLI\config.json`
+- **Linux**: `~/.config/ai-cli/config.json`
+- **macOS**: `~/Library/Application Support/ai-cli/config.json`
 
-#### New Item Interface (Type Selection)
-```
-=== Select Type ===
-> 📄 Project
-  📁 Folder
+### Configuration File Structure
 
-[↑↓] Select  [Enter] Confirm  [Esc] Cancel
-```
-
-#### Delete Confirmation Interface
-```
-=== Delete Confirmation ===
-Project Name: MyProject_
-
-Project Name: MyProject
-Project Path: C:\Projects\MyProject
-Environment Variables (optional, press Enter to skip):
-  Format: KEY=VALUE, one per line, empty line to end
-  Env Var: API_KEY=sk-xxx
-    Added: API_KEY=sk-xxx
-To delete: 📁 Frontend Projects (contains 5 items)
-
-⚠️  Warning: This action cannot be undone!
-Please enter the name to confirm deletion: Frontend Projects_
-
-[Enter name] Confirm  [Esc] Cancel
-```
-
-### 4.2 Keyboard Shortcuts
-
-#### Project Selection Interface
-- `↑↓` - Navigate selection
-- `Enter` - Enter folder or select project
-- `N` - New project or folder
-- `D` - Delete project or folder
-- `Esc` - Return to parent folder
-- `Q` - Quit program
-
-#### Tool Selection Interface
-- `↑↓` - Navigate selection
-- `Enter` - Launch tool in new window
-- `Ctrl+Enter` - Launch tool in new tab (requires Windows Terminal)
-- `I` - Install new tool
-- `Esc` - Return to project selection
-- `Q` - Quit program
-
-#### New Item Interface
-- Enter project name (required, cannot be duplicate)
-- Enter project path (required, automatically detects if path exists)
-- Enter environment variables (optional, format: KEY=VALUE)
-- Confirm add or cancel
-
-### 4.3 Tree Structure Management
-
-Projects support tree structure organization:
-- **Folders**: Used to categorize and manage projects, can contain projects and subfolders
-- **Projects**: Actual working directories, containing paths and environment variables
-- **Breadcrumb Navigation**: Shows current location, convenient for multi-level navigation
-- **Recursive Delete**: Prompts the number of contained items when deleting a folder
-
-### 4.4 Runtime Effects
-
-* The script automatically launches the corresponding terminal (Cmd or WSL).
-* The terminal automatically `cd` into the corresponding path of the selected project.
-* Environment variables configured in the project are automatically injected into the runtime environment.
-  * **Intelligent Path Conversion**: In WSL environment, Windows path format environment variable values (e.g., `C:\Projects\...`) are automatically converted to WSL path format (`/mnt/c/Projects/...`).
-* The terminal tab title at the top is automatically changed to `[Tool Name] [Project Name]`, convenient for multi-instance identification.
-
----
-
-## 5. Technical Architecture and Implementation Principles
-
-### 5.1 Tree Structure Implementation
-
-Project configuration uses a recursive tree structure:
 ```json
 {
   "projects": [
     {
       "type": "folder",
-      "name": "Frontend Projects",
+      "name": "My Projects",
       "children": [
         {
           "type": "project",
-          "name": "Vue Project",
-          "path": "C:\\Projects\\vue-app"
+          "name": "Web App",
+          "path": "/path/to/project",
+          "env": {
+            "API_KEY": "your-api-key",
+            "DEBUG": "true"
+          }
         }
       ]
-    }
-  ]
-}
-```
-
-- Automatically migrates old version flat configurations to tree structure
-- Supports recursive traversal, add, and delete operations
-- Breadcrumb navigation tracks current path
-
-### 5.2 Path Resolution Engine (`ConvertTo-WslPath`)
-
-Uses regular expression `^([a-zA-Z]):(.*)` to capture Windows drive letters, converts them to `/mnt/lowercase-drive-letter` format, and replaces backslashes `\` with forward slashes `/` to ensure WSL can correctly mount and access Windows file systems.
-
-### 5.3 Tool Detection Mechanism
-
-* **Windows Environment**: Uses PowerShell built-in cmdlet `Get-Command -ErrorAction SilentlyContinue` for low-overhead silent detection.
-* **WSL Environment**: Executes detection through `wsl.exe -e bash -ic "command -v tool"`, using `-ic` parameter to ensure `.bashrc` environment variables are loaded.
-
-### 5.4 Terminal Launch and Process Distribution
-
-Based on tool environment flags (`[Win]` / `[WSL]`), different strategies are executed:
-
-* **For WSL**:
-Combines `-e bash -ic` to ensure complete Linux environment variables are loaded (solving issues like `command not found`), and uses `echo -ne '\033]0;TITLE\007'` to send ANSI sequences to set terminal titles.
-* **For Windows**:
-Uses `cmd.exe /k` to keep the console window open, modifies titles through `title` command, and uses `cd /d` to achieve safe cross-drive directory switching.
-
----
-
-## 6. Tool Installation Feature
-
-### 6.1 Usage
-
-In the tool selection interface, press the `I` key to enter the tool installation interface:
-
-```
-=== Install AI Tools ===
-> [WSL] kiro-cli
-  [Win] gemini
-  [WSL] cursor-agent
-
-[↑↓] Select  [Enter] Install  [Esc] Back  [Q] Quit
-```
-
-Select the tool you want to install, press Enter to confirm, and the program will automatically execute the installation command.
-
-### 6.2 Supported Tools
-
-According to `config.json` configuration, currently supports installing 8 mainstream AI CLI tools. For detailed information, please refer to [docs/TOOLS.md](docs/TOOLS.md) and [docs/INSTALL-GUIDE.md](docs/INSTALL-GUIDE.md).
-
----
-
-## 7. Configuration File Description
-
-Configuration file location: `%APPDATA%\AI-CLI\config.json` (typically `C:\Users\<Username>\AppData\Roaming\AI-CLI\config.json`)
-
-**Configuration Priority**:
-1. Prioritize reading `config.json` from the user configuration directory
-2. If it does not exist, read the default `config.json` from the program directory
-3. All modifications are saved to the user configuration directory
-
-**Note**: Configuration files are stored separately from the program, and configurations are not lost when uninstalling the program.
-
-### 7.1 config.json Structure
-
-```json
-{
-  "projects": [
-    {
-      "name": "Project Name",
-      "path": "Project Path",
-      "description": "Project description (optional)",
-      "env": {
-        "API_KEY": "your-api-key",
-        "DEBUG": "true"
-      }
     }
   ],
   "tools": [
     {
-      "name": "Tool Command",
-      "displayName": "Display Name",
-      "winInstall": "Windows installation command or null",
-      "wslInstall": "WSL installation command or null",
-      "checkCommand": "Detection command",
-      "url": "Official website"
+      "name": "kiro-cli",
+      "displayName": "Kiro CLI",
+      "windowsInstall": "winget install kiro-cli",
+      "wslInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "linuxInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "macosInstall": "brew install kiro-cli",
+      "checkCommand": "kiro-cli --version",
+      "url": "https://kiro.dev/cli/"
     }
   ],
   "settings": {
     "language": "auto",
-    "defaultEnv": "wsl",
-    "terminalEmulator": "default"
+    "terminalEmulator": "default",
+    "theme": "default"
   }
 }
 ```
 
-### 7.2 Adding Projects
+### Project Configuration
 
-Edit `config.json`, add to the `projects` array:
+#### Project Types
 
+**Folder**:
 ```json
 {
-  "name": "MyProject",
-  "path": "C:\\Projects\\MyProject",
-  "description": "My Project"
+  "type": "folder",
+  "name": "Project Group Name",
+  "children": [...]
 }
 ```
 
-### 7.3 Adding Custom Tools
-
-Edit `config.json`, add to the `tools` array:
-
+**Project**:
 ```json
 {
-  "name": "mytool",
-  "displayName": "My Tool",
-  "winInstall": "npm install -g mytool",
-  "wslInstall": "npm install -g mytool",
-  "checkCommand": "mytool --version",
-  "url": "https://mytool.com"
+  "type": "project",
+  "name": "Project Name",
+  "path": "/absolute/path/to/project",
+  "env": {
+    "KEY": "value"
+  }
 }
 ```
 
+#### Environment Variables
+
+Configure independent environment variables for each project:
+
+```json
+{
+  "type": "project",
+  "name": "API Project",
+  "path": "/path/to/api",
+  "env": {
+    "API_KEY": "sk-xxx",
+    "API_BASE_URL": "https://api.example.com",
+    "DEBUG": "true",
+    "LOG_LEVEL": "info"
+  }
+}
+```
+
+### Tool Configuration
+
+#### Required Fields
+
+- `name`: Tool command name (used for detection)
+- `displayName`: Display name
+- `checkCommand`: Command to check if tool is installed
+
+#### Installation Commands (by Platform)
+
+- `windowsInstall`: Windows native installation command
+- `wslInstall`: WSL environment installation command
+- `linuxInstall`: Linux installation command
+- `macosInstall`: macOS installation command
+
+#### Optional Fields
+
+- `url`: Tool's official website (displayed in tool list)
+
+#### Example Configuration
+
+```json
+{
+  "name": "cursor",
+  "displayName": "Cursor Agent",
+  "windowsInstall": "winget install Cursor",
+  "wslInstall": "curl -fsSL https://cursor.sh/install | bash",
+  "linuxInstall": "curl -fsSL https://cursor.sh/install | bash",
+  "macosInstall": "brew install --cask cursor",
+  "checkCommand": "cursor --version",
+  "url": "https://cursor.sh"
+}
+```
+
+### Settings Options
+
+#### language
+
+- `auto`: Auto-detect system language (default)
+- `en`: English
+- `zh`: Chinese
+- `ja`: Japanese
+- `de`: German
+
+#### terminalEmulator
+
+- `default`: Use system default terminal (default)
+- `wt`: Windows Terminal (Windows only)
+- `iterm`: iTerm2 (macOS only)
+- `gnome-terminal`: GNOME Terminal (Linux only)
+- `konsole`: Konsole (Linux only)
+
+#### theme
+
+- `default`: Default dark theme
+- More themes coming in future versions
+
+## 🏗️ Project Architecture
+
+### Directory Structure
+
+```
+ai_cli/
+├── __init__.py        # Package initialization
+├── cli.py             # CLI entry point
+├── app.py             # Main application logic
+├── models.py          # Data models
+├── config.py          # Configuration management
+├── utils.py           # Path conversion utilities
+├── core/              # Core functionality modules
+│   ├── __init__.py
+│   ├── tools.py       # Tool detection
+│   ├── projects.py    # Project management
+│   ├── git.py         # Git integration
+│   └── installer.py   # Tool installation
+├── ui/                # User interface modules
+│   ├── __init__.py
+│   ├── theme.py       # Theme configuration
+│   ├── menu.py        # Menu rendering
+│   └── input.py       # Keyboard input handling
+├── platform/          # Platform adapter modules
+│   ├── __init__.py
+│   ├── base.py        # Abstract base class
+│   ├── windows.py     # Windows adapter
+│   ├── linux.py       # Linux adapter
+│   ├── macos.py       # macOS adapter
+│   └── factory.py     # Platform factory
+└── i18n/              # Internationalization modules
+    ├── __init__.py
+    └── manager.py     # Language manager
+```
+
+### Core Module Descriptions
+
+#### models.py - Data Models
+
+Defines all data structures:
+- `Config`: Main configuration object
+- `Settings`: Settings options
+- `ProjectNode`: Project node (supports tree structure)
+- `Tool`: Tool object
+- `ToolConfig`: Tool configuration
+- `ToolEnvironment`: Tool runtime environment enum
+
+#### config.py - Configuration Management
+
+- Cross-platform config file path handling
+- Config file loading and saving
+- Migration from legacy config versions
+- Default config creation
+
+#### app.py - Main Application
+
+- Application main loop
+- Project selection logic
+- Tool selection logic
+- Tool launch logic
+- Project and folder CRUD operations
+
+#### core/tools.py - Tool Detection
+
+- Async parallel tool detection
+- Platform-specific detection logic
+- Windows native tool detection
+- WSL tool detection
+- Tool cache management
+
+#### core/git.py - Git Integration
+
+- Detect Git worktrees
+- Display branch status
+- Interactive worktree selection
+
+#### core/installer.py - Tool Installation
+
+- Select installation command by platform
+- Execute installation process
+- Post-installation path updates
+- Find installed tools
+
+#### ui/menu.py - Menu Rendering
+
+- Render project tree
+- Render tool list
+- Display breadcrumb navigation
+- Clear screen and refresh
+
+#### ui/input.py - Keyboard Input
+
+- Cross-platform keyboard input handling
+- Different implementations for Windows and Unix
+- Text input support
+- Special key handling
+
+#### platform/ - Platform Adapters
+
+- Abstract platform interface
+- Windows-specific implementation (Windows Terminal support)
+- Linux-specific implementation (multiple terminal support)
+- macOS-specific implementation (iTerm2 support)
+- Platform factory pattern
+
+#### i18n/manager.py - Internationalization
+
+- Language detection
+- Translation dictionary management
+- Text retrieval interface
+
+## 🔍 Advanced Features
+
+### Git Worktree Support
+
+When a project path is a Git worktree, AI-CLI will:
+
+1. Auto-detect all worktrees
+2. Display branch and status for each worktree
+3. Allow selection of the worktree to use
+4. Show ahead/behind commit counts for branches
+
+### WSL Path Conversion
+
+AI-CLI automatically handles path conversion between Windows and WSL:
+
+- Windows path: `C:\Users\username\project`
+- WSL path: `/mnt/c/Users/username/project`
+
+Conversion is bidirectional, supporting:
+- Launch WSL tools from Windows
+- Launch Windows tools from WSL
+
+### Async Tool Detection
+
+Tool detection uses async parallel processing:
+
+1. **On Startup**: Quickly display interface, detect tools in background
+2. **Caching**: Detection results are cached to avoid repeated checks
+3. **Refresh**: Press `R` to clear cache and re-detect
+
+### Environment Variable Injection
+
+Environment variables configured for each project are injected when launching tools:
+
+```json
+{
+  "type": "project",
+  "name": "API Project",
+  "path": "/path/to/api",
+  "env": {
+    "API_KEY": "sk-xxx",
+    "DEBUG": "true"
+  }
+}
+```
+
+When launching a tool, these environment variables are added to the tool's runtime environment.
+
+## 🧪 Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run specific test file
+pytest tests/test_models.py
+
+# Run specific test
+pytest tests/test_models.py::TestConfig::test_from_dict
+
+# Show verbose output
+pytest -v
+
+# Show print output
+pytest -s
+```
+
+### Test Coverage
+
+```bash
+# Run tests with coverage report
+pytest --cov=ai_cli
+
+# Generate HTML coverage report
+pytest --cov=ai_cli --cov-report=html
+
+# View report
+open htmlcov/index.html  # macOS
+xdg-open htmlcov/index.html  # Linux
+start htmlcov/index.html  # Windows
+```
+
+### Test File Descriptions
+
+- `test_models.py`: Data model tests
+- `test_config.py`: Configuration management tests
+- `test_utils.py`: Path conversion tests
+- `test_platform.py`: Platform adapter tests
+- `test_git.py`: Git integration tests
+- `test_tools.py`: Tool detection tests
+- `test_projects.py`: Project management tests
+- `test_ui.py`: UI component tests
+- `test_app.py`: Application integration tests
+- `test_cli.py`: CLI entry point tests
+
+## 📝 Development Guide
+
+### Requirements
+
+- **Python**: 3.8 or higher
+- **Dependencies**:
+  - `rich`: Terminal UI rendering
+  - `prompt-toolkit`: Keyboard input handling
+  - `click`: CLI framework
+  - `platformdirs`: Cross-platform paths
+
+### Development Environment Setup
+
+```bash
+# 1. Clone repository
+git clone https://github.com/hyfhot/AI-CLI.git
+cd AI-CLI
+
+# 2. Create Python version worktree (if needed)
+git worktree add ../ai-cli-multi-platform python-migration
+cd ../ai-cli-multi-platform
+
+# 3. Create virtual environment (recommended)
+python -m venv venv
+
+# Activate virtual environment
+# Windows:
+venv\Scripts\activate
+# Linux/macOS:
+source venv/bin/activate
+
+# 4. Install development dependencies
+pip install -e ".[dev]"
+
+# 5. Run tests to verify environment
+pytest
+```
+
+### Code Style
+
+Project follows PEP 8 style guide:
+
+```bash
+# Install code checking tools
+pip install flake8 black mypy
+
+# Run code checks
+flake8 ai_cli tests
+
+# Auto-format code
+black ai_cli tests
+
+# Type checking
+mypy ai_cli
+```
+
+### Adding New Tools
+
+Add new tool configuration in `config.json`:
+
+```json
+{
+  "name": "new-tool",
+  "displayName": "New Tool",
+  "windowsInstall": "winget install new-tool",
+  "wslInstall": "curl -fsSL https://example.com/install | bash",
+  "linuxInstall": "curl -fsSL https://example.com/install | bash",
+  "macosInstall": "brew install new-tool",
+  "checkCommand": "new-tool --version",
+  "url": "https://example.com"
+}
+```
+
+### Adding New Languages
+
+Add translations in `ai_cli/i18n/manager.py`:
+
+```python
+translations = {
+    'new_lang': {
+        'app_title': 'AI-CLI',
+        'select_project': 'Select Project',
+        # ... other translations
+    }
+}
+```
+
+### Debugging Tips
+
+```bash
+# Enable debug mode
+ai-cli --debug
+
+# Use Python debugger
+python -m pdb -m ai_cli.cli
+
+# View detailed logs
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+## 🐛 Troubleshooting
+
+### Windows Issues
+
+**Issue**: Cannot detect Windows Terminal
+```bash
+# Solution: Ensure Windows Terminal is installed
+winget install Microsoft.WindowsTerminal
+```
+
+**Issue**: WSL tool detection fails
+```bash
+# Solution: Ensure WSL is enabled
+wsl --install
+```
+
+### Linux Issues
+
+**Issue**: Terminal emulator detection fails
+```bash
+# Solution: Install supported terminal
+sudo apt install gnome-terminal  # Ubuntu/Debian
+sudo dnf install gnome-terminal  # Fedora
+```
+
+### macOS Issues
+
+**Issue**: iTerm2 not detected
+```bash
+# Solution: Ensure iTerm2 is installed
+brew install --cask iterm2
+```
+
+### General Issues
+
+**Issue**: Config file corrupted
+```bash
+# Solution: Reinitialize configuration
+ai-cli --init
+```
+
+**Issue**: Tool detection cache stale
+```bash
+# Solution: Press R key in tool selection screen to refresh
+```
+
+## 🤝 Contributing
+
+We welcome all forms of contribution!
+
+### Ways to Contribute
+
+1. **Report Bugs**: Submit issues on [GitHub Issues](https://github.com/hyfhot/AI-CLI/issues)
+2. **Feature Requests**: Propose new feature ideas
+3. **Code Contributions**: Submit Pull Requests
+4. **Documentation**: Improve docs and examples
+5. **Translations**: Add new language support
+
+### Pull Request Process
+
+1. Fork the project
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
+
+### Commit Convention
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+feat: Add new feature
+fix: Fix bug
+docs: Documentation update
+style: Code formatting
+refactor: Code refactoring
+test: Test related
+chore: Build/toolchain updates
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🔗 Related Links
+
+- **Original Project**: [AI-CLI (PowerShell Edition)](https://github.com/hyfhot/AI-CLI)
+- **Documentation**: [docs/](docs/)
+- **Issue Tracker**: [GitHub Issues](https://github.com/hyfhot/AI-CLI/issues)
+- **Changelog**: [CHANGELOG.md](CHANGELOG.md)
+
+## 🙏 Acknowledgments
+
+Thanks to these open source projects:
+
+- [Rich](https://github.com/Textualize/rich) - Powerful terminal UI library
+- [Prompt Toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit) - Interactive command-line tools
+- [Click](https://github.com/pallets/click) - Python CLI framework
+- [platformdirs](https://github.com/platformdirs/platformdirs) - Cross-platform directory paths
+
+## 📊 Project Status
+
+- **Version**: Beta
+- **Python Version**: 3.8+
+- **Platforms**: Windows, Linux, macOS
+- **Maintenance**: Actively developed
+
+## 🗺️ Roadmap
+
+- [ ] Support more AI tools
+- [ ] Plugin system
+- [ ] Config file validation
+- [ ] More theme options
+- [ ] Tool usage statistics
+- [ ] Cloud config sync
+- [ ] Project template support
+
 ---
 
-## 8. Frequently Asked Questions (FAQ)
-
-**Q1: How to add a new project?**
-Edit the `config.json` file, add project information to the `projects` array, or run `ai-cli -Init` to reinitialize the configuration.
-
-**Q2: Tool not found when running?**
-1. Confirm the tool is correctly installed
-2. Check the PATH environment variable
-3. For WSL tools, confirm the WSL environment is correctly configured
-4. Run `ai-cli` to re-detect tools
-
-**Q3: `No such file or directory` after WSL launch?**
-Check if the project path is correct, and ensure the drive (e.g., C drive, D drive) has been normally mounted by WSL.
-
-**Q4: How to use the multi-tab feature?**
-Make sure Windows Terminal is installed, then press `Ctrl+Enter` in the tool selection interface to launch the tool.
-
-**Q5: How to uninstall?**
-Run `ai-cli -Uninstall` or `& "$env:LOCALAPPDATA\AI-CLI\ai-cli.ps1" -Uninstall`.
-
----
-
-## 9. Related Documentation
-
-- **[docs/TOOLS.md](docs/TOOLS.md)** - Detailed reference manual for 8 mainstream AI CLI tools
-- **[docs/INSTALL-GUIDE.md](docs/INSTALL-GUIDE.md)** - Guide for using the tool installation feature
-- **[docs/GIT-WORKTREE.md](docs/GIT-WORKTREE.md)** - Git Worktree support and usage guide
-- **[docs/BUGFIX.md](docs/BUGFIX.md)** - Bug fix records and technical details
-- **[docs/CHANGELOG.md](docs/CHANGELOG.md)** - Version update log
-
----
-
-*Last updated: 2026-02-28*
+**Made with ❤️ by AI-CLI Team**

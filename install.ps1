@@ -1,109 +1,64 @@
 #!/usr/bin/env pwsh
-# AI-CLI Installer v2.0
+# AI-CLI Installer for Windows
 
-param([switch]$Uninstall)
+$ErrorActionPreference = "Stop"
 
-$installDir = "$env:LOCALAPPDATA\AI-CLI"
-$repoUrl = "https://raw.githubusercontent.com/hyfhot/AI-CLI/master"
+Write-Host "`nAI-CLI Installer" -ForegroundColor Cyan
+Write-Host ("=" * 50) -ForegroundColor DarkGray
 
-function Install-AICLI {
-    Write-Host "Installing AI-CLI..." -ForegroundColor Cyan
-    
-    # 创建安装目录
-    if (-not (Test-Path $installDir)) {
-        New-Item -ItemType Directory -Path $installDir -Force | Out-Null
-    }
-    
-    # 下载文件
-    $files = @("ai-cli.ps1", "config.json", "ai-cli.ico")
-    foreach ($file in $files) {
-        $url = "$repoUrl/$file"
-        $dest = Join-Path $installDir $file
-        try {
-            Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing
-            Write-Host "  Downloaded: $file" -ForegroundColor Green
-        } catch {
-            Write-Host "  Failed to download: $file" -ForegroundColor Red
-        }
-    }
-    
-    # 复制默认配置到用户目录
-    $userConfigDir = Join-Path $env:APPDATA "AI-CLI"
-    $userConfigPath = Join-Path $userConfigDir "config.json"
-    if (-not (Test-Path $userConfigDir)) {
-        New-Item -ItemType Directory -Path $userConfigDir -Force | Out-Null
-    }
-    if (-not (Test-Path $userConfigPath)) {
-        $defaultConfig = Join-Path $installDir "config.json"
-        if (Test-Path $defaultConfig) {
-            Copy-Item $defaultConfig $userConfigPath -Force
-            Write-Host "  Copied config to user directory" -ForegroundColor Green
-        }
-    }
-    
-    # 创建启动脚本
-    $launcherPath = Join-Path $installDir "ai-cli.bat"
-    @"
-@echo off
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$installDir\ai-cli.ps1" %*
-"@ | Set-Content $launcherPath -Encoding ASCII
-    
-    # 添加到 PATH
-    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-    if ($userPath -notlike "*$installDir*") {
-        $newPath = if ($userPath) { "$userPath;$installDir" } else { $installDir }
-        [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
-        Write-Host "  Added to PATH" -ForegroundColor Green
-    }
-    
-    # 创建桌面快捷方式
-    $desktopPath = [Environment]::GetFolderPath("Desktop")
-    $shortcutPath = Join-Path $desktopPath "AI-CLI.lnk"
-    $iconPath = Join-Path $installDir "ai-cli.ico"
-    
-    $shell = New-Object -ComObject WScript.Shell
-    $shortcut = $shell.CreateShortcut($shortcutPath)
-    $shortcut.TargetPath = "powershell.exe"
-    $shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$installDir\ai-cli.ps1`""
-    $shortcut.WorkingDirectory = $installDir
+# Check Python
+Write-Host "`nChecking Python..." -ForegroundColor Yellow
+try {
+    $pythonVersion = python --version 2>&1
+    Write-Host "  Found: $pythonVersion" -ForegroundColor Green
+} catch {
+    Write-Host "  Python not found!" -ForegroundColor Red
+    Write-Host "  Please install Python 3.8+ from https://www.python.org/" -ForegroundColor Yellow
+    exit 1
+}
+
+# Install via pip
+Write-Host "`nInstalling AI-CLI..." -ForegroundColor Yellow
+try {
+    pip install -e ".[dev]"
+    Write-Host "  Installation complete!" -ForegroundColor Green
+} catch {
+    Write-Host "  Installation failed!" -ForegroundColor Red
+    exit 1
+}
+
+# Initialize config
+Write-Host "`nInitializing configuration..." -ForegroundColor Yellow
+ai-cli --init
+
+# Create desktop shortcut with icon
+Write-Host "`nCreating desktop shortcut..." -ForegroundColor Yellow
+$desktopPath = [Environment]::GetFolderPath("Desktop")
+$shortcutPath = Join-Path $desktopPath "AI-CLI 3.0.lnk"
+$scriptDir = $PSScriptRoot
+$iconPath = Join-Path $scriptDir "ai-cli.ico"
+
+$shell = New-Object -ComObject WScript.Shell
+$shortcut = $shell.CreateShortcut($shortcutPath)
+$shortcut.TargetPath = "powershell.exe"
+$shortcut.Arguments = "-NoProfile -Command `"ai-cli`""
+$shortcut.WorkingDirectory = $HOME
+if (Test-Path $iconPath) {
     $shortcut.IconLocation = $iconPath
-    $shortcut.Save()
-    
-    Write-Host "  Created desktop shortcut" -ForegroundColor Green
-    
-    Write-Host "`nInstallation complete!" -ForegroundColor Green
-    Write-Host "  Run 'ai-cli -Init' to initialize config" -ForegroundColor Yellow
-    Write-Host "  Run 'ai-cli -Config' to edit config" -ForegroundColor Yellow
-    Write-Host "  Run 'ai-cli' to start" -ForegroundColor Yellow
 }
+$shortcut.Save()
 
-function Uninstall-AICLI {
-    Write-Host "Uninstalling AI-CLI..." -ForegroundColor Yellow
-    
-    if (Test-Path $installDir) {
-        Remove-Item -Recurse -Force $installDir
-        Write-Host "  Removed installation directory" -ForegroundColor Green
-    }
-    
-    $desktopPath = [Environment]::GetFolderPath("Desktop")
-    $shortcutPath = Join-Path $desktopPath "AI-CLI.lnk"
-    if (Test-Path $shortcutPath) {
-        Remove-Item -Force $shortcutPath
-        Write-Host "  Removed desktop shortcut" -ForegroundColor Green
-    }
-    
-    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-    if ($userPath -like "*$installDir*") {
-        $newPath = ($userPath -split ';' | Where-Object { $_ -and $_ -ne $installDir }) -join ';'
-        [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
-        Write-Host "  Removed from PATH" -ForegroundColor Green
-    }
-    
-    Write-Host "`nUninstallation complete!" -ForegroundColor Green
-}
+Write-Host "  Desktop shortcut created: AI-CLI 3.0" -ForegroundColor Green
 
-if ($Uninstall) {
-    Uninstall-AICLI
-} else {
-    Install-AICLI
-}
+Write-Host "`n" -ForegroundColor Green
+Write-Host ("=" * 50) -ForegroundColor DarkGray
+Write-Host "Installation Complete!" -ForegroundColor Green
+Write-Host ("=" * 50) -ForegroundColor DarkGray
+Write-Host "`nQuick Start:" -ForegroundColor Cyan
+Write-Host "  ai-cli              # Start interactive launcher"
+Write-Host "  ai-cli --init       # Initialize/update configuration"
+Write-Host "  ai-cli --config     # Edit configuration file"
+Write-Host "  ai-cli --version    # Show version information"
+Write-Host "  ai-cli --uninstall  # Uninstall AI-CLI"
+Write-Host "  ai-cli --help       # Show all options"
+Write-Host ""

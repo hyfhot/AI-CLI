@@ -1,126 +1,133 @@
-🌐 [English](INSTALL-GUIDE.md) | [中文](INSTALL-GUIDE.zh.md) | [日本語](INSTALL-GUIDE.ja.md)
+# AI-CLI Installation Guide
 
-# AI-CLI Installation Tool Guide
+> 🌐 **English** | [中文](INSTALL-GUIDE.zh.md) | [日本語](INSTALL-GUIDE.ja.md) | [Deutsch](INSTALL-GUIDE.de.md)
 
-## Feature Overview
+## Quick Installation
+
+### Using Installation Script (Recommended)
+
+**Windows**:
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+**Linux/macOS**:
+```bash
+bash install.sh
+```
+
+### Manual Installation
+
+```bash
+# Clone repository
+git clone https://github.com/hyfhot/AI-CLI.git
+cd AI-CLI
+
+# If using Git worktree
+git worktree add ../ai-cli-multi-platform python-migration
+cd ../ai-cli-multi-platform
+
+# Install dependencies
+pip install -e ".[dev]"
+```
+
+## Tool Installation Feature
 
 Press the `I` key in the tool selection screen to quickly install AI CLI tools that are not yet installed.
 
-## Usage Steps
+### Usage Steps
 
-### 1. Start AI-CLI
-```powershell
-.\ai-cli.ps1
-```
+1. **Start AI-CLI**
+   ```bash
+   ai-cli
+   ```
 
-### 2. Select a Project
-Use the ↑↓ keys to select a project, then press Enter to confirm.
+2. **Select a Project**
+   - Use ↑↓ keys to select a project
+   - Press Enter to confirm
 
-### 3. Press I to Enter the Installation Screen
-In the tool selection screen, press the `I` key to open the installation tool list.
+3. **Press I to Enter Installation Screen**
+   - In the tool selection screen, press the `I` key
+   - Opens the installation tool list
 
-### 4. Select Tools to Install
-- The list displays all tools that are not installed but have installation commands configured
-- `[Win]` or `[WSL]` after the tool name indicates the installation environment
-- Use ↑↓ keys to select, press Enter to confirm installation
-- Press Esc to return to the tool selection screen
+4. **Select Tools to Install**
+   - List displays all tools that are not installed but have installation commands configured
+   - `[Windows]`, `[WSL]`, `[Linux]`, or `[macOS]` indicates the installation environment
+   - Use ↑↓ keys to select
+   - Press Enter to confirm installation
+   - Press Esc to return to tool selection screen
 
-### 5. Wait for Installation to Complete
-- The screen will display the installation command and execution process
-- Press any key to return after installation completes
+5. **Wait for Installation to Complete**
+   - Screen displays the installation command and execution process
+   - Press any key to return after installation completes
 
-## Keyboard Shortcuts
+## Configuration
 
-### Tool Selection Screen
-- `↑↓` - Navigate selection
-- `Enter` - Launch tool in a new window
-- `Ctrl+Enter` - Launch tool in a new tab (requires Windows Terminal)
-- `I` - Install new tool
-- `Esc` - Return to project selection
-- `Q` - Exit program
+### Initialize Configuration
 
-### Installation Tool Screen
-- `↑↓` - Navigate selection
-- `Enter` - Install selected tool
-- `Esc` - Return to tool selection
-- `Q` - Exit program
-
-## Installation Logic
-
-### Windows Environment Tools
-Execute installation commands directly in PowerShell, for example:
-```powershell
-npm install -g @anthropic-ai/claude-code
-```
-
-### WSL Environment Tools
-Execute bash commands through WSL, for example:
 ```bash
-wsl.exe -e bash -ic "curl -fsSL https://cli.kiro.dev/install | bash"
+ai-cli --init
 ```
 
-## Supported Tools
+This creates a default configuration file at:
+- **Windows**: `%APPDATA%\AI-CLI\config.json`
+- **Linux**: `~/.config/ai-cli/config.json`
+- **macOS**: `~/Library/Application Support/ai-cli/config.json`
 
-Based on `config.json` configuration, the following tools are currently supported for installation:
+### Edit Configuration
 
-| Tool | Windows | WSL/Linux |
-|------|---------|-----------|
-| Kiro CLI | ❌ | ✅ |
-| Claude Code | ✅ | ✅ |
-| OpenAI Codex | ✅ | ✅ |
-| Kimi CLI | ✅ | ✅ |
-| Gemini CLI | ✅ | ✅ |
-| Cursor Agent | ❌ | ✅ |
-| OpenCode | ✅ | ✅ |
-| Aider | ✅ | ✅ |
-
-## Important Notes
-
-1. **Permission Requirements**: Some installation commands may require administrator privileges
-2. **Network Connection**: A stable network connection is required during installation
-3. **Dependency Check**: Ensure necessary dependencies are installed (Node.js, Python, pip, etc.)
-4. **WSL Configuration**: WSL tools require WSL environment to be configured first
-5. **Installation Verification**: After installation, tools will be automatically detected on next launch
-
-## Custom Installation Commands
-
-Edit the `config.json` file to modify or add tool installation commands:
-
-```json
-{
-  "name": "tool-name",
-  "displayName": "Tool Display Name",
-  "winInstall": "npm install -g tool-name",
-  "wslInstall": "curl -fsSL https://example.com/install.sh | bash",
-  "checkCommand": "tool-name --version",
-  "url": "https://official-website.com"
-}
+```bash
+ai-cli --config
 ```
 
-- `winInstall`: Windows environment installation command (null means not supported)
-- `wslInstall`: WSL/Linux environment installation command (null means not supported)
-- `checkCommand`: Command used to detect whether the tool is installed
+Or manually edit the configuration file with your preferred text editor.
 
 ## Troubleshooting
 
-### Installation Failure
-1. Check network connection
-2. Confirm dependencies are installed (Node.js, Python, etc.)
-3. Review error messages and manually execute the installation command
-4. Refer to the tool's official documentation
+### Python Version Issues
 
-### Tool Not Detected After Installation
-1. Restart AI-CLI
-2. Check PATH environment variable
-3. Manually run `tool-name --version` to verify installation
-4. Check if `checkCommand` in `config.json` is correct
+**Issue**: Command not found or import errors
 
-### WSL Tool Installation Failure
-1. Confirm WSL is properly installed and configured
-2. Manually execute the installation command in WSL to test
-3. Check WSL network connection
-4. Update WSL: `wsl --update`
+**Solution**: Ensure Python 3.8+ is installed
+```bash
+python --version  # Should be 3.8 or higher
+```
+
+### Permission Issues
+
+**Issue**: Permission denied during installation
+
+**Solution**: 
+- Linux/macOS: Use `sudo` if needed
+- Windows: Run as Administrator
+
+### Path Issues
+
+**Issue**: `ai-cli` command not found after installation
+
+**Solution**: 
+- Ensure pip installation directory is in PATH
+- Try using `python -m ai_cli.cli` instead
+
+### WSL Issues
+
+**Issue**: WSL tools not detected
+
+**Solution**: 
+- Ensure WSL is installed: `wsl --install`
+- Check WSL is accessible: `wsl --list`
+
+## Uninstallation
+
+```bash
+ai-cli --uninstall
+```
+
+This will:
+- Remove the configuration directory
+- Uninstall the Python package
+- Clean up any temporary files
 
 ---
 
-*Last updated: 2026-02-26*
+For more information, see the [main README](../README.md).

@@ -1,8 +1,8 @@
-🌐 [English](TOOLS.md) | [中文](TOOLS.zh.md) | [日本語](TOOLS.ja.md)
-
 # AI CLI 工具参考
 
-本文档列出了 AI-CLI 支持的主流 AI 编程工具及其安装配置信息。
+> 🌐 [English](TOOLS.md) | **中文** | [日本語](TOOLS.ja.md) | [Deutsch](TOOLS.de.md)
+
+本文档列出了 AI-CLI 支持的主流 AI 编程工具及其安装和配置信息。
 
 ---
 
@@ -10,220 +10,150 @@
 
 ### 1. Kiro CLI (AWS)
 - **官方网站**: https://kiro.dev/cli/
-- **开发商**: Amazon Web Services
-- **特点**:
+- **开发者**: Amazon Web Services
+- **特性**:
   - 规范驱动的开发平台
   - 支持代理工作流
   - 集成 AWS 服务
-  - 支持 Model Context Protocol (MCP)
-- **安装命令**:
-  - WSL/Linux: `curl -fsSL https://cli.kiro.dev/install | bash`
-  - Windows: 不支持原生安装
+  - 支持模型上下文协议 (MCP)
+- **安装**:
+  - **Linux/macOS/WSL**: `curl -fsSL https://cli.kiro.dev/install | bash`
+  - **Windows**: `winget install kiro-cli`（如果可用）
 - **验证**: `kiro-cli --version`
 
 ---
 
 ### 2. Claude Code (Anthropic)
 - **官方网站**: https://www.npmjs.com/package/@anthropic-ai/claude-code
-- **开发商**: Anthropic
-- **特点**:
-  - 代理式编码助手
-  - 100K+ 上下文窗口
-  - 支持多文件操作
-  - 集成 Git 工作流
-  - 支持 MCP 协议
-- **安装命令**:
-  - Windows: `npm install -g @anthropic-ai/claude-code`
-  - WSL/Linux: `npm install -g @anthropic-ai/claude-code`
-- **验证**: `claude --version`
-- **要求**: Node.js 18+
+- **开发者**: Anthropic
+- **特性**:
+  - 代理编码助手
+  - 自然语言代码生成
+  - 上下文感知建议
+- **安装**:
+  - **所有平台**: `npm install -g @anthropic-ai/claude-code`
+- **验证**: `claude-code --version`
 
 ---
 
-### 3. OpenAI Codex CLI
-- **官方网站**: https://www.npmjs.com/package/@openai/codex
-- **开发商**: OpenAI
-- **特点**:
-  - 轻量级编码代理
-  - 本地执行，代码不上传
-  - 支持自然语言命令
-  - 开源项目
-- **安装命令**:
-  - Windows: `npm install -g @openai/codex`
-  - WSL/Linux: `npm install -g @openai/codex`
-- **验证**: `codex --version`
-- **要求**: Node.js 18+
+### 3. Cursor Agent
+- **官方网站**: https://cursor.sh
+- **开发者**: Cursor 团队
+- **特性**:
+  - AI 驱动的代码编辑器
+  - 内联代码建议
+  - 基于聊天的编码辅助
+- **安装**:
+  - **Windows**: `winget install Cursor`
+  - **macOS**: `brew install --cask cursor`
+  - **Linux**: 从官方网站下载
+- **验证**: `cursor --version`
 
 ---
 
-### 4. Kimi CLI (Moonshot AI)
-- **官方网站**: https://pypi.org/project/kimi-cli/
-- **开发商**: Moonshot AI (月之暗面)
-- **特点**:
-  - 终端 AI 代理
-  - 支持代码读写和命令执行
-  - 支持网页搜索和抓取
-  - 自主规划和调整行动
-- **安装命令**:
-  - Windows: `pip install kimi-cli`
-  - WSL/Linux: `uv tool install --python 3.13 kimi-cli`
-- **验证**: `kimi --version`
-- **要求**: Python 3.13+, uv (推荐)
+### 4. GitHub Copilot CLI
+- **官方网站**: https://githubnext.com/projects/copilot-cli
+- **开发者**: GitHub
+- **特性**:
+  - 命令行 AI 助手
+  - Shell 命令建议
+  - Git 工作流辅助
+- **安装**:
+  - **所有平台**: `npm install -g @githubnext/github-copilot-cli`
+- **验证**: `github-copilot-cli --version`
 
 ---
 
-### 5. Gemini CLI (Google)
-- **官方网站**: https://www.npmjs.com/package/@google/gemini-cli
-- **开发商**: Google
-- **特点**:
-  - 开源 AI 代理
-  - 1M token 上下文窗口
-  - 多模态 AI 能力
-  - 免费使用
-- **安装命令**:
-  - Windows: `npm install -g @google/gemini-cli`
-  - WSL/Linux: `npm install -g @google/gemini-cli`
-- **验证**: `gemini --version`
-- **要求**: Node.js
-
----
-
-### 6. Cursor Agent CLI
-- **官方网站**: https://docs.cursor.com/en/cli/installation
-- **开发商**: Cursor
-- **特点**:
-  - 终端 AI 助手
-  - 支持远程服务器和容器
-  - 集成 GitHub Actions
-  - 自动更新
-- **安装命令**:
-  - WSL/Linux: `curl https://cursor.com/install -fsS | bash`
-  - Windows: 不支持原生安装
-- **验证**: `cursor-agent --version`
-- **使用**: `cursor-agent` 或 `agent chat "prompt"`
-
----
-
-### 7. OpenCode
-- **官方网站**: https://opencode.ai/docs
-- **开发商**: 开源社区
-- **特点**:
-  - 开源 AI 编码代理
-  - 隐私优先，不存储代码
-  - 支持免费内置模型
-  - 可连接外部 AI 提供商
-  - 原生终端 UI
-- **安装命令**:
-  - Windows: `curl -fsSL https://opencode.ai/install.ps1 | powershell`
-  - WSL/Linux: `curl -fsSL https://opencode.ai/install.sh | bash`
-- **验证**: `opencode --version`
-
----
-
-### 8. Aider
-- **官方网站**: https://aider.chat/docs/install
-- **开发商**: 开源社区
-- **特点**:
-  - 终端 AI 编程助手
-  - 深度集成 Git
-  - 支持多种 LLM (GPT-4, Claude, DeepSeek)
-  - 自动代码测试
-  - 预算友好 ($0.007/文件)
-- **安装命令**:
-  - Windows: `pip install aider-install && aider-install`
-  - WSL/Linux: `pip install aider-install && aider-install`
+### 5. Aider
+- **官方网站**: https://aider.chat
+- **开发者**: Aider 团队
+- **特性**:
+  - 终端中的 AI 结对编程
+  - Git 集成
+  - 支持多种 LLM
+- **安装**:
+  - **所有平台**: `pip install aider-chat`
 - **验证**: `aider --version`
-- **要求**: Python 3.9+, Git
 
 ---
 
-## 📊 工具对比
+## 📝 配置示例
 
-| 工具 | 开发商 | 免费 | 开源 | Windows | WSL/Linux | 特色 |
-|------|--------|------|------|---------|-----------|------|
-| Kiro CLI | AWS | ✅ | ❌ | ❌ | ✅ | 规范驱动，AWS 集成 |
-| Claude Code | Anthropic | ❌ | ❌ | ✅ | ✅ | 100K 上下文，MCP |
-| Codex CLI | OpenAI | ❌ | ✅ | ✅ | ✅ | 本地执行，隐私 |
-| Kimi CLI | Moonshot | ❌ | ❌ | ✅ | ✅ | 网页搜索，中文优化 |
-| Gemini CLI | Google | ✅ | ✅ | ✅ | ✅ | 1M 上下文，免费 |
-| Cursor Agent | Cursor | ❌ | ❌ | ❌ | ✅ | CI/CD 集成 |
-| OpenCode | 社区 | ✅ | ✅ | ✅ | ✅ | 隐私优先，多模型 |
-| Aider | 社区 | ✅ | ✅ | ✅ | ✅ | Git 集成，多 LLM |
-
----
-
-## 🔧 安装前提条件
-
-### 通用要求
-- **Git**: 大多数工具需要 Git 进行版本控制
-- **终端**: Windows Terminal (推荐) 或其他现代终端
-
-### Node.js 工具 (Claude, Codex, Gemini)
-- Node.js 18+
-- npm 或 pnpm
-
-### Python 工具 (Kimi, Aider)
-- Python 3.9+ (Aider) 或 3.13+ (Kimi)
-- pip 或 uv
-
-### Shell 脚本工具 (Kiro, Cursor, OpenCode)
-- bash (WSL/Linux)
-- curl
-
----
-
-## 💡 使用建议
-
-### 选择工具的考虑因素
-
-1. **预算**:
-   - 免费：Gemini CLI, OpenCode, Aider
-   - 付费：Claude Code, Codex CLI, Kimi CLI, Cursor Agent
-
-2. **隐私**:
-   - 本地执行：Codex CLI, OpenCode
-   - 云端：其他工具
-
-3. **功能需求**:
-   - AWS 集成：Kiro CLI
-   - Git 深度集成：Aider
-   - 多模型支持：OpenCode
-   - 大上下文：Gemini CLI (1M), Claude Code (100K)
-
-4. **语言偏好**:
-   - 中文优化：Kimi CLI
-   - 英文：其他工具
-
----
-
-## 🔄 更新配置
-
-要添加新工具或修改现有工具配置，编辑 `config.json` 文件：
+在 `config.json` 中添加工具：
 
 ```json
 {
-  "name": "tool-command",
-  "displayName": "Tool Display Name",
-  "winInstall": "Windows install command or null",
-  "wslInstall": "WSL/Linux install command or null",
-  "checkCommand": "tool-command --version",
-  "url": "https://official-website.com"
+  "tools": [
+    {
+      "name": "kiro-cli",
+      "displayName": "Kiro CLI",
+      "windowsInstall": "winget install kiro-cli",
+      "wslInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "linuxInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
+      "macosInstall": "brew install kiro-cli",
+      "checkCommand": "kiro-cli --version",
+      "url": "https://kiro.dev/cli/"
+    },
+    {
+      "name": "cursor",
+      "displayName": "Cursor Agent",
+      "windowsInstall": "winget install Cursor",
+      "wslInstall": "curl -fsSL https://cursor.sh/install | bash",
+      "linuxInstall": "curl -fsSL https://cursor.sh/install | bash",
+      "macosInstall": "brew install --cask cursor",
+      "checkCommand": "cursor --version",
+      "url": "https://cursor.sh"
+    },
+    {
+      "name": "aider",
+      "displayName": "Aider",
+      "windowsInstall": "pip install aider-chat",
+      "wslInstall": "pip install aider-chat",
+      "linuxInstall": "pip install aider-chat",
+      "macosInstall": "pip install aider-chat",
+      "checkCommand": "aider --version",
+      "url": "https://aider.chat"
+    }
+  ]
 }
 ```
 
 ---
 
-## 📚 参考资源
+## 🔧 添加自定义工具
 
-- [Kiro CLI 文档](https://kiro.dev/docs/cli/installation/)
-- [Claude Code 指南](https://www.npmjs.com/package/@anthropic-ai/claude-code)
-- [Codex CLI GitHub](https://github.com/openai/codex-cli)
-- [Kimi CLI 文档](https://moonshotai.github.io/kimi-cli/en/)
-- [Gemini CLI 官网](https://gemini-cli.click/)
-- [Cursor CLI 文档](https://docs.cursor.com/en/cli/)
-- [OpenCode 文档](https://opencode.ai/docs)
-- [Aider 文档](https://aider.chat/docs/)
+添加新工具的步骤：
+
+1. **查找安装命令** - 为每个平台找到安装命令
+2. **确定检查命令** - 用于验证安装的命令
+3. **添加到 config.json** - 按照上述格式添加
+
+### 必需字段
+
+- `name`: 命令名称（用于检测）
+- `displayName`: UI 中的显示名称
+- `checkCommand`: 验证安装的命令
+
+### 平台特定的安装命令
+
+- `windowsInstall`: Windows 原生安装
+- `wslInstall`: WSL 环境安装
+- `linuxInstall`: Linux 安装
+- `macosInstall`: macOS 安装
+
+### 可选字段
+
+- `url`: 官方网站（显示在工具列表中）
 
 ---
 
-*最后更新：2026-02-26*
+## 💡 提示
+
+1. **尽可能使用包管理器**（winget、brew、apt 等）
+2. **测试检查命令** 确保它们正常工作
+3. **保持 URL 更新** 供用户参考
+4. **记录前置条件** 如果工具需要特定依赖
+
+---
+
+更多信息请参阅[主 README](../README.zh.md)。
