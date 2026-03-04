@@ -25,9 +25,9 @@ try {
         Write-Host "  Installing from local directory..." -ForegroundColor Cyan
         pip install -e ".[dev]"
     } else {
-        # Install from GitHub
-        Write-Host "  Installing from GitHub..." -ForegroundColor Cyan
-        pip install git+https://github.com/hyfhot/AI-CLI.git@master
+        # Install from PyPI
+        Write-Host "  Installing from PyPI..." -ForegroundColor Cyan
+        pip install ai-cli-launcher
     }
     Write-Host "  Installation complete!" -ForegroundColor Green
 } catch {

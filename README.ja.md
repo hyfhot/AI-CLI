@@ -49,7 +49,17 @@
 
 ### インストール
 
-#### ワンラインインストール（推奨）
+#### 方法 1: PyPI からインストール（推奨）
+
+```bash
+# pip を使用
+pip install ai-cli-launcher
+
+# または pipx を使用（分離環境）
+pipx install ai-cli-launcher
+```
+
+#### 方法 2: ワンラインインストールスクリプト
 
 **Windows**:
 ```powershell
@@ -63,30 +73,18 @@ curl -fsSL https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.sh | b
 
 スクリプトは自動的に以下を実行します：
 - Python のインストール確認（Python 3.8+ が必要）
-- GitHub から AI-CLI をインストール
+- PyPI から AI-CLI をインストール
 - 設定ファイルの初期化
 - デスクトップショートカットの作成（Windows）
 
-#### 代替方法：PyPI からインストール（近日公開）
-
-```bash
-pipx install ai-cli
-# または
-pip install ai-cli
-```
-
-#### 開発者向けインストール
+#### 方法 3: ソースからインストール（開発者向け）
 
 ```bash
 # リポジトリをクローン
 git clone https://github.com/hyfhot/AI-CLI.git
 cd AI-CLI
 
-# Git worktree を使用する場合
-git worktree add ../ai-cli-multi-platform python-migration
-cd ../ai-cli-multi-platform
-
-# 依存関係をインストール
+# 開発モードでインストール
 pip install -e ".[dev]"
 ```
 
@@ -97,6 +95,46 @@ ai-cli --init
 ```
 
 これにより、一般的な AI ツールの設定を含むデフォルトの設定ファイルが作成されます。
+
+### 実行
+
+```bash
+ai-cli
+```
+
+### アンインストール
+
+**完全アンインストール（推奨）**：
+
+Windows (PowerShell)：
+```powershell
+ai-cli --uninstall; pip uninstall ai-cli-launcher
+```
+
+Linux/macOS：
+```bash
+ai-cli --uninstall && pip uninstall ai-cli-launcher
+```
+
+**段階的アンインストール**：
+```bash
+# ステップ 1: ショートカットをクリーンアップし、設定ファイルの場所を表示
+ai-cli --uninstall
+
+# ステップ 2: パッケージをアンインストール
+pip uninstall ai-cli-launcher
+```
+
+**クイックアンインストール**：
+```bash
+# パッケージのみをアンインストール（ショートカットは残ります）
+pip uninstall ai-cli-launcher
+```
+
+**手動クリーンアップ**（必要な場合）：
+- Windows: `%APPDATA%\AI-CLI\` とデスクトップショートカットを削除
+- Linux: `~/.config/ai-cli/` を削除
+- macOS: `~/Library/Application Support/ai-cli/` を削除
 
 ### 実行
 

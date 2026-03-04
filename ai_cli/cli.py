@@ -151,7 +151,7 @@ def uninstall_app():
                     click.echo(f"  Removed desktop shortcut: {shortcut_name}")
         
         click.echo("\nUninstallation complete!")
-        click.echo("To remove the program, run: pip uninstall ai-cli")
+        click.echo("To remove the program, run: pip uninstall ai-cli-launcher")
         click.echo("Your configuration has been preserved for future use.")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)

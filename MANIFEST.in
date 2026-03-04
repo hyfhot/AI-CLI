@@ -1,0 +1,8 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+include config.example.json
+include config.example.linux.json
+include config.example.win.json
+include ai-cli.ico
+recursive-include ai_cli *.py

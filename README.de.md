@@ -49,7 +49,17 @@
 
 ### Installation
 
-#### Ein-Zeilen-Installation (Empfohlen)
+#### Methode 1: Installation von PyPI (Empfohlen)
+
+```bash
+# Mit pip
+pip install ai-cli-launcher
+
+# Oder mit pipx (isolierte Umgebung)
+pipx install ai-cli-launcher
+```
+
+#### Methode 2: Ein-Zeilen-Installationsskript
 
 **Windows**:
 ```powershell
@@ -63,30 +73,18 @@ curl -fsSL https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.sh | b
 
 Das Skript führt automatisch aus:
 - Überprüfung der Python-Installation (Python 3.8+ erforderlich)
-- Installation von AI-CLI von GitHub
+- Installation von AI-CLI von PyPI
 - Initialisierung der Konfiguration
 - Erstellung einer Desktop-Verknüpfung (Windows)
 
-#### Alternative: Installation von PyPI (Demnächst)
-
-```bash
-pipx install ai-cli
-# oder
-pip install ai-cli
-```
-
-#### Für Entwickler
+#### Methode 3: Installation aus Quellcode (Für Entwickler)
 
 ```bash
 # Repository klonen
 git clone https://github.com/hyfhot/AI-CLI.git
 cd AI-CLI
 
-# Bei Verwendung von Git Worktree
-git worktree add ../ai-cli-multi-platform python-migration
-cd ../ai-cli-multi-platform
-
-# Abhängigkeiten installieren
+# Im Entwicklungsmodus installieren
 pip install -e ".[dev]"
 ```
 
@@ -97,6 +95,46 @@ ai-cli --init
 ```
 
 Dies erstellt eine Standard-Konfigurationsdatei mit gängigen KI-Tool-Konfigurationen.
+
+### Ausführen
+
+```bash
+ai-cli
+```
+
+### Deinstallation
+
+**Vollständige Deinstallation (Empfohlen)**:
+
+Windows (PowerShell):
+```powershell
+ai-cli --uninstall; pip uninstall ai-cli-launcher
+```
+
+Linux/macOS:
+```bash
+ai-cli --uninstall && pip uninstall ai-cli-launcher
+```
+
+**Schrittweise Deinstallation**:
+```bash
+# Schritt 1: Verknüpfungen bereinigen und Konfigurationsspeicherort anzeigen
+ai-cli --uninstall
+
+# Schritt 2: Paket deinstallieren
+pip uninstall ai-cli-launcher
+```
+
+**Schnelle Deinstallation**:
+```bash
+# Nur Paket deinstallieren (Verknüpfungen bleiben erhalten)
+pip uninstall ai-cli-launcher
+```
+
+**Manuelle Bereinigung** (falls erforderlich):
+- Windows: `%APPDATA%\AI-CLI\` und Desktop-Verknüpfung löschen
+- Linux: `~/.config/ai-cli/` löschen
+- macOS: `~/Library/Application Support/ai-cli/` löschen
 
 ### Ausführen
 

@@ -27,9 +27,9 @@ if [ -f "pyproject.toml" ]; then
     echo "  Installing from local directory..."
     pip3 install -e ".[dev]"
 else
-    # Install from GitHub
-    echo "  Installing from GitHub..."
-    pip3 install git+https://github.com/hyfhot/AI-CLI.git@master
+    # Install from PyPI
+    echo "  Installing from PyPI..."
+    pip3 install ai-cli-launcher
 fi
 echo "  Installation complete!"
 

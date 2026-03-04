@@ -49,7 +49,17 @@
 
 ### Installation
 
-#### One-Line Installation (Recommended)
+#### Method 1: Install from PyPI (Recommended)
+
+```bash
+# Using pip
+pip install ai-cli-launcher
+
+# Or using pipx (isolated environment)
+pipx install ai-cli-launcher
+```
+
+#### Method 2: One-Line Installation Script
 
 **Windows**:
 ```powershell
@@ -63,19 +73,11 @@ curl -fsSL https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.sh | b
 
 The script will automatically:
 - Check Python installation (requires Python 3.8+)
-- Install AI-CLI from GitHub
+- Install AI-CLI from PyPI
 - Initialize configuration
 - Create desktop shortcut (Windows)
 
-#### Alternative: Install from PyPI (Coming Soon)
-
-```bash
-pipx install ai-cli
-# or
-pip install ai-cli
-```
-
-#### For Developers
+#### Method 3: Install from Source (For Developers)
 
 ```bash
 # Clone repository
@@ -98,6 +100,41 @@ This creates a default configuration file with common AI tool configurations.
 
 ```bash
 ai-cli
+```
+
+### Uninstall
+
+**Complete Uninstall (Recommended)**:
+
+Windows (PowerShell):
+```powershell
+ai-cli --uninstall; pip uninstall ai-cli-launcher
+```
+
+Linux/macOS:
+```bash
+ai-cli --uninstall && pip uninstall ai-cli-launcher
+```
+
+**Alternative (Step by Step)**:
+```bash
+# Step 1: Clean up shortcuts and show config location
+ai-cli --uninstall
+
+# Step 2: Uninstall the package
+pip uninstall ai-cli-launcher
+```
+
+**Quick Uninstall**:
+```bash
+# Uninstall package only (shortcuts will remain)
+pip uninstall ai-cli-launcher
+```
+
+**Manual Cleanup** (if needed):
+- Windows: Delete `%APPDATA%\AI-CLI\` and desktop shortcut
+- Linux: Delete `~/.config/ai-cli/`
+- macOS: Delete `~/Library/Application Support/ai-cli/`
 ```
 
 ## 📖 Usage

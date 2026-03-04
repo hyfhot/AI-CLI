@@ -49,7 +49,17 @@
 
 ### 安装
 
-#### 一行命令安装（推荐）
+#### 方式 1：从 PyPI 安装（推荐）
+
+```bash
+# 使用 pip
+pip install ai-cli-launcher
+
+# 或使用 pipx（隔离环境）
+pipx install ai-cli-launcher
+```
+
+#### 方式 2：一行命令安装脚本
 
 **Windows**:
 ```powershell
@@ -63,30 +73,18 @@ curl -fsSL https://raw.githubusercontent.com/hyfhot/AI-CLI/master/install.sh | b
 
 安装脚本会自动：
 - 检查 Python 安装（需要 Python 3.8+）
-- 从 GitHub 安装 AI-CLI
+- 从 PyPI 安装 AI-CLI
 - 初始化配置文件
 - 创建桌面快捷方式（Windows）
 
-#### 备选方案：从 PyPI 安装（即将推出）
-
-```bash
-pipx install ai-cli
-# 或
-pip install ai-cli
-```
-
-#### 开发者安装
+#### 方式 3：从源码安装（开发者）
 
 ```bash
 # 克隆仓库
 git clone https://github.com/hyfhot/AI-CLI.git
 cd AI-CLI
 
-# 如果使用 Git worktree
-git worktree add ../ai-cli-multi-platform python-migration
-cd ../ai-cli-multi-platform
-
-# 安装依赖
+# 开发模式安装
 pip install -e ".[dev]"
 ```
 
@@ -97,6 +95,46 @@ ai-cli --init
 ```
 
 这将创建默认配置文件，包含常用 AI 工具的配置。
+
+### 运行
+
+```bash
+ai-cli
+```
+
+### 卸载
+
+**完整卸载（推荐）**：
+
+Windows (PowerShell)：
+```powershell
+ai-cli --uninstall; pip uninstall ai-cli-launcher
+```
+
+Linux/macOS：
+```bash
+ai-cli --uninstall && pip uninstall ai-cli-launcher
+```
+
+**分步卸载**：
+```bash
+# 步骤 1：清理快捷方式并显示配置文件位置
+ai-cli --uninstall
+
+# 步骤 2：卸载程序包
+pip uninstall ai-cli-launcher
+```
+
+**快速卸载**：
+```bash
+# 仅卸载程序包（快捷方式会保留）
+pip uninstall ai-cli-launcher
+```
+
+**手动清理**（如需要）：
+- Windows: 删除 `%APPDATA%\AI-CLI\` 和桌面快捷方式
+- Linux: 删除 `~/.config/ai-cli/`
+- macOS: 删除 `~/Library/Application Support/ai-cli/`
 
 ### 运行
 
