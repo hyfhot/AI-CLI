@@ -17,6 +17,10 @@ class ToolInstaller:
             return False
         
         try:
+            # Refresh environment variables on Windows before installation
+            if sys.platform == 'win32' and environment == ToolEnvironment.WINDOWS:
+                self._refresh_windows_environment()
+            
             if environment == ToolEnvironment.WSL:
                 # Run in WSL
                 result = subprocess.run(
@@ -41,6 +45,9 @@ class ToolInstaller:
             
             if result.returncode == 0:
                 self._update_path_after_install(tool.name, environment)
+                # Refresh environment after successful installation
+                if sys.platform == 'win32' and environment == ToolEnvironment.WINDOWS:
+                    self._refresh_windows_environment()
                 return True
             
             return False
@@ -166,3 +173,40 @@ class ToolInstaller:
             )
         except Exception as e:
             print(f"Failed to update PATH: {e}")
+    
+    def _refresh_windows_environment(self):
+        """Refresh environment variables from registry (Windows only)."""
+        if sys.platform != 'win32':
+            return
+        
+        try:
+            # Get system PATH
+            result_system = subprocess.run(
+                ["powershell", "-Command",
+                 "[Environment]::GetEnvironmentVariable('Path', 'Machine')"],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            
+            # Get user PATH
+            result_user = subprocess.run(
+                ["powershell", "-Command",
+                 "[Environment]::GetEnvironmentVariable('Path', 'User')"],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            
+            if result_system.returncode == 0 and result_user.returncode == 0:
+                system_path = result_system.stdout.strip()
+                user_path = result_user.stdout.strip()
+                
+                # Combine system and user PATH
+                new_path = f"{system_path};{user_path}" if system_path and user_path else (system_path or user_path)
+                
+                # Update current process environment
+                os.environ['PATH'] = new_path
+                print("Environment variables refreshed from registry")
+        except Exception as e:
+            print(f"Failed to refresh environment: {e}")

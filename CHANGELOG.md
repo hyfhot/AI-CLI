@@ -7,7 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- ✨ Added Qwen Code to default tool list
+  - Windows: `npm install -g @qwen-code/qwen-code@latest`
+  - macOS/Linux: `curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash`
+  - Official docs: https://qwenlm.github.io/qwen-code-docs/
+- ✨ Display actual install command before execution for transparency
+- ✨ Automatic environment variable refresh after tool installation (Windows)
+- ✨ Force refresh tool detection after successful installation
+
 ### Fixed
+- 🐛 Fixed tool installation menu not responding to 'I' key press
+  - Root cause: Rich Live context conflict when calling `_install_tool_menu()` inside Live loop
+  - Solution: Exit Live context before calling install menu, then re-enter after completion
+- 🐛 Fixed hardcoded English text "Navigate" in install menu - now uses i18n
+- 🐛 Fixed environment variable staleness preventing detection of newly installed dependencies
+  - Added `_refresh_windows_environment()` to reload PATH from registry before installation
+  - Ensures subprocess can see latest system and user PATH values
+
+### Changed
+- 🔄 Improved tool installation workflow:
+  1. Show install command before execution
+  2. Execute installation with inherited environment
+  3. Refresh environment variables on success
+  4. Force re-detect all tools (bypass cache)
+  5. Update uninstalled tools list immediately
+
+## [3.0.4] - 2026-03-04
+
+### Added
+- ✨ Desktop shortcut creation on `ai-cli --init` for all platforms
+- ✨ Windows: Creates .lnk shortcut with icon on Desktop
+- ✨ Linux: Creates .desktop file on Desktop or ~/.local/share/applications
+- ✨ macOS: Creates .app bundle on Desktop
+- ✨ Cross-platform desktop shortcut removal on `ai-cli --uninstall`
+
+### Fixed
+- 🐛 Fixed PyPI installation not creating desktop shortcuts
 - 🐛 Fixed tool selection not persisting after launching tool - now remembers last selected tool
 - 🐛 Fixed tool selection resetting after refresh/install operations
 - 🐛 Fixed program exiting when no tools available after install - now stays in tool menu

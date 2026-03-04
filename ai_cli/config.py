@@ -165,6 +165,16 @@ class ConfigManager:
                 check_command="aider --version",
                 url="https://aider.chat/docs/install"
             ),
+            ToolConfig(
+                name="qwen",
+                display_name="Qwen Code",
+                win_install="npm install -g @qwen-code/qwen-code@latest",
+                wsl_install="curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash",
+                linux_install="curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash",
+                macos_install="curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash",
+                check_command="qwen --version",
+                url="https://qwenlm.github.io/qwen-code-docs/"
+            ),
         ]
     
     def _needs_migration(self, data: Dict[str, Any]) -> bool:

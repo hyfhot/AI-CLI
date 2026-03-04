@@ -345,83 +345,9 @@ class Application:
                         result = (selected_tool, True, working_path, tool_items, self.selected_tool_index, project_info)
                         break
                 elif event == InputEvent.INSTALL:
-                    all_installed = not await self._install_tool_menu()
-                    # Force detection and save config if tools were installed
-                    if not all_installed:
-                        tools = await self.tool_detector.detect_all_tools(self.config.tools, force=True)
-                        self.config_manager.save(self.config)
-                    else:
-                        # Check if cache was empty before detection
-                        cache_was_empty = self.tool_detector._is_cache_empty(self.config.tools)
-                        tools = await self.tool_detector.detect_all_tools(self.config.tools)
-                        if cache_was_empty:
-                            self.config_manager.save(self.config)
-                    
-                    if not tools:
-                        # No tools available, show message and continue loop
-                        from rich.text import Text
-                        from rich.console import Group
-                        
-                        msg_lines = []
-                        if project_info:
-                            msg_lines.append(Text(f"\n{get_text('project_label').format(project_info.get('name', 'Unknown'))}", style="bold cyan"))
-                            if project_info.get('path'):
-                                msg_lines.append(Text(f"{get_text('path_label').format(project_info['path'])}", style="dim"))
-                            if project_info.get('env'):
-                                env_str = ', '.join(f"{k}={v}" for k, v in project_info['env'].items())
-                                msg_lines.append(Text(f"{get_text('env_label').format(env_str)}", style="dim"))
-                            if project_info.get('branch'):
-                                msg_lines.append(Text(f"{get_text('branch_label').format(project_info['branch'])}", style="dim"))
-                        
-                        msg_lines.append(Text(f"\n=== {get_text('select_tool')} ===\n", style="bold cyan"))
-                        msg_lines.append(Text(f"\n[red]{get_text('no_tools')}[/red]", style="red"))
-                        msg_lines.append(Text(f"\n[dim][I] {get_text('install')} | [Esc] {get_text('back')}[/dim]", style="dim"))
-                        live.update(Group(*msg_lines))
-                        continue
-                    
-                    # Restore last selected tool
-                    if self.last_selected_tool_name and self.last_selected_tool_env:
-                        for i, tool in enumerate(tools):
-                            if tool.name == self.last_selected_tool_name and tool.environment == self.last_selected_tool_env:
-                                self.selected_tool_index = i
-                                break
-                        else:
-                            if self.selected_tool_index >= len(tools):
-                                self.selected_tool_index = 0
-                    else:
-                        if self.selected_tool_index >= len(tools):
-                            self.selected_tool_index = 0
-                    
-                    tool_items = [{"name": t.display_name, "env": t.environment.value} for t in tools]
-                    
-                    # Show message if all tools were already installed
-                    if all_installed:
-                        from rich.text import Text
-                        from rich.console import Group
-                        
-                        msg_lines = []
-                        if project_info:
-                            msg_lines.append(Text(f"\n{get_text('project_label').format(project_info.get('name', 'Unknown'))}", style="bold cyan"))
-                            if project_info.get('path'):
-                                msg_lines.append(Text(f"{get_text('path_label').format(project_info['path'])}", style="dim"))
-                            if project_info.get('env'):
-                                env_str = ', '.join(f"{k}={v}" for k, v in project_info['env'].items())
-                                msg_lines.append(Text(f"{get_text('env_label').format(env_str)}", style="dim"))
-                            if project_info.get('branch'):
-                                msg_lines.append(Text(f"{get_text('branch_label').format(project_info['branch'])}", style="dim"))
-                        
-                        msg_lines.append(Text(f"\n=== {get_text('select_tool')} ===\n", style="bold cyan"))
-                        msg_lines.append(Text(f"  {get_text('all_tools_installed')}", style="green"))
-                        live.update(Group(*msg_lines))
-                        
-                        # Wait 2 seconds then show tool list
-                        import asyncio
-                        await asyncio.sleep(2)
-                    
-                    live.update(self.menu.build_tools_display(
-                        tool_items, self.selected_tool_index,
-                        show_new_tab=self.wt_available, project_info=project_info
-                    ))
+                    # Exit Live context to call install menu
+                    result = ("INSTALL", None, working_path, tool_items, self.selected_tool_index, project_info)
+                    break
                 elif event == InputEvent.RUN:
                     # Show detecting message
                     from rich.text import Text
@@ -489,6 +415,12 @@ class Application:
                 elif event == InputEvent.QUIT:
                     raise KeyboardInterrupt
         
+        # Handle INSTALL outside Live context
+        if result and result[0] == "INSTALL":
+            await self._install_tool_menu()
+            # Recursively call _select_tool to show tool list again
+            return await self._select_tool(project)
+        
         return result
     
     def _launch_tool(self, tool: Tool, project: ProjectNode, new_tab: bool = False, 
@@ -543,15 +475,22 @@ class Application:
     
     async def _install_tool_menu(self):
         """Show menu to install uninstalled tools. Returns True if any tool was installed successfully."""
+        force_refresh = False  # Track if we need to force refresh
+        
         while True:
             # Get all tools and check which are not installed
             all_tools_config = self.config.tools
-            cache_was_empty = self.tool_detector._is_cache_empty(all_tools_config)
-            detected_tools = await self.tool_detector.detect_all_tools(all_tools_config)
             
-            # Save config if detection was performed
-            if cache_was_empty:
+            # Force refresh after installation, otherwise use cache
+            if force_refresh:
+                detected_tools = await self.tool_detector.detect_all_tools(all_tools_config, force=True)
                 self.config_manager.save(self.config)
+                force_refresh = False  # Reset flag
+            else:
+                cache_was_empty = self.tool_detector._is_cache_empty(all_tools_config)
+                detected_tools = await self.tool_detector.detect_all_tools(all_tools_config)
+                if cache_was_empty:
+                    self.config_manager.save(self.config)
             
             detected_names = {(t.name, t.environment) for t in detected_tools}
             
@@ -602,7 +541,7 @@ class Application:
                     prefix = "→ " if i == selected_index else "  "
                     self.menu.console.print(f"{prefix}{item['name']}")
                 
-                self.menu.console.print(f"\n[dim]↑↓: Navigate | Enter: {get_text('install')} | Esc: {get_text('back')}[/dim]")
+                self.menu.console.print(f"\n[dim]↑↓: {get_text('navigate')} | Enter: {get_text('install')} | Esc: {get_text('back')}[/dim]")
                 
                 event = self.input_handler.get_input()
                 
@@ -616,11 +555,17 @@ class Application:
                     self.menu.clear()
                     self.menu.console.print(f"\n[cyan]{get_text('installing', selected['name'])}[/cyan]\n")
                     
+                    # Show the actual install command
+                    install_cmd = self.tool_installer._get_install_command(selected['tool'], selected['env'])
+                    if install_cmd:
+                        self.menu.console.print(f"[dim]Command: {install_cmd}[/dim]\n")
+                    
                     try:
                         success = self.tool_installer.install_tool(selected['tool'], selected['env'])
                         
                         if success:
                             self.menu.console.print(f"\n[green]{get_text('install_success')}[/green]")
+                            force_refresh = True  # Set flag to force refresh on next iteration
                         else:
                             self.menu.console.print(f"\n[red]{get_text('install_failed', 'Unknown error')}[/red]")
                     except Exception as e:
