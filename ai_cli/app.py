@@ -672,7 +672,7 @@ class Application:
                 style = "green" if i == selected_type else "white"
                 lines.append(Text(f"{prefix}{icon} {type_name}", style=style))
             
-            lines.append(Text("\n[↑↓] Navigate  [Enter] Confirm  [Esc] Cancel  [Q] Quit", style="dim"))
+            lines.append(Text(f"\n[↑↓] {get_text('navigate')}  [Enter] {get_text('confirm')}  [Esc] {get_text('cancel')}  [Q] {get_text('quit')}", style="dim"))
             return Group(*lines)
         
         with Live(build_type_display(), console=self.menu.console, refresh_per_second=10, screen=False) as live:

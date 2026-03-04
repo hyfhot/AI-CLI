@@ -111,7 +111,7 @@ class GitManager:
                 lines.append(Text(f"{prefix}{branch}{status_str}{current_mark}", style=style))
                 lines.append(Text(f"   {wt['path']}", style="dim"))
             
-            lines.append(Text("\n[↑↓] Select  [Enter] Confirm  [Esc] Cancel", style="dim"))
+            lines.append(Text(f"\n[↑↓] {get_text('select')}  [Enter] {get_text('confirm')}  [Esc] {get_text('cancel')}", style="dim"))
             return Group(*lines)
         
         self.console.clear()

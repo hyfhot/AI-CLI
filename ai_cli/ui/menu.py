@@ -52,7 +52,7 @@ class MenuRenderer:
         
         # Show scroll indicator (top)
         if offset > 0:
-            lines.append(Text(f"  ↑ {offset} more above", style="dim"))
+            lines.append(Text(f"  {get_text('more_above', offset)}", style="dim"))
         
         # Show visible items
         for i, item in enumerate(visible_items):
@@ -84,12 +84,12 @@ class MenuRenderer:
         # Show scroll indicator (bottom)
         if offset + max_display < total:
             remaining = total - offset - max_display
-            lines.append(Text(f"  ↓ {remaining} more below", style="dim"))
+            lines.append(Text(f"  {get_text('more_below', remaining)}", style="dim"))
         
         lines.append(Text())  # Empty line
         
         # Show menu hint
-        hint = f"  [↑↓] Navigate  [Enter] Select  [N] {get_text('new')}  [D] {get_text('delete')}"
+        hint = f"  [↑↓] {get_text('navigate')}  [Enter] {get_text('select')}  [N] {get_text('new')}  [D] {get_text('delete')}"
         if breadcrumb and len(breadcrumb) > 1:  # Show Back only when not at root
             hint += f"  [Esc] {get_text('back')}"
         hint += f"  [Q] {get_text('quit')}"
@@ -103,14 +103,14 @@ class MenuRenderer:
         
         # Show project information
         if project_info:
-            lines.append(Text(f"\nProject: {project_info.get('name', 'Unknown')}", style="bold cyan"))
+            lines.append(Text(f"\n{get_text('project_label', project_info.get('name', 'Unknown'))}", style="bold cyan"))
             if project_info.get('path'):
-                lines.append(Text(f"Path: {project_info['path']}", style="dim"))
+                lines.append(Text(f"{get_text('path_label', project_info['path'])}", style="dim"))
             if project_info.get('branch'):
-                lines.append(Text(f"Branch: {project_info['branch']}", style="dim"))
+                lines.append(Text(f"{get_text('branch_label', project_info['branch'])}", style="dim"))
             if project_info.get('env'):
                 env_str = ', '.join([f"{k}={v}" for k, v in project_info['env'].items()])
-                lines.append(Text(f"Env: {env_str}", style="dim"))
+                lines.append(Text(f"{get_text('env_label', env_str)}", style="dim"))
         
         lines.append(Text(f"\n=== {get_text('select_tool')} ===\n", style="bold cyan"))
         
@@ -125,7 +125,7 @@ class MenuRenderer:
         
         # Show scroll indicator (top)
         if offset > 0:
-            lines.append(Text(f"  ↑ {offset} more above", style="dim"))
+            lines.append(Text(f"  {get_text('more_above', offset)}", style="dim"))
         
         # Show visible tools
         for i, tool in enumerate(visible_tools):
@@ -146,13 +146,13 @@ class MenuRenderer:
         # Show scroll indicator (bottom)
         if offset + max_display < total:
             remaining = total - offset - max_display
-            lines.append(Text(f"  ↓ {remaining} more below", style="dim"))
+            lines.append(Text(f"  {get_text('more_below', remaining)}", style="dim"))
         
         # Show [T] New Tab only if Windows Terminal is available
         if show_new_tab:
-            lines.append(Text(f"\n[↑↓] Select  [Enter] {get_text('new_window')}  [T] {get_text('new_tab')}  [I] {get_text('install')}  [R] {get_text('refresh')}  [Esc] {get_text('back')}  [Q] {get_text('quit')}", style="dim"))
+            lines.append(Text(f"\n[↑↓] {get_text('select')}  [Enter] {get_text('launch')}  [T] {get_text('launch_new_tab')}  [I] {get_text('install')}  [R] {get_text('refresh')}  [Esc] {get_text('back')}  [Q] {get_text('quit')}", style="dim"))
         else:
-            lines.append(Text(f"\n[↑↓] Select  [Enter] {get_text('new_window')}  [I] {get_text('install')}  [R] {get_text('refresh')}  [Esc] {get_text('back')}  [Q] {get_text('quit')}", style="dim"))
+            lines.append(Text(f"\n[↑↓] {get_text('select')}  [Enter] {get_text('launch')}  [I] {get_text('install')}  [R] {get_text('refresh')}  [Esc] {get_text('back')}  [Q] {get_text('quit')}", style="dim"))
         
         return Group(*lines)
         
