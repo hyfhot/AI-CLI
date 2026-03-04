@@ -3,7 +3,7 @@ import asyncio
 import subprocess
 import sys
 import time
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict, Any
 from ai_cli.config import ConfigManager
 from ai_cli.models import Config, ProjectNode, Tool, ToolEnvironment
 from ai_cli.ui.menu import MenuRenderer
@@ -39,6 +39,10 @@ class Application:
         self.selected_project_index = 0  # For project selection
         self.selected_tool_index = 0  # For tool selection
         
+        # Remember last selected tool (name + environment)
+        self.last_selected_tool_name: Optional[str] = None
+        self.last_selected_tool_env: Optional[ToolEnvironment] = None
+        
         # Detect Windows Terminal availability once at startup
         self.wt_available = self._check_wt_available()
     
@@ -73,12 +77,12 @@ class Application:
                 if not result:
                     continue
                 
-                tool, new_tab, working_path = result
+                tool, new_tab, working_path, tool_items, selected_index, project_info = result
                 # Create temporary project with working_path
                 from copy import copy
                 temp_project = copy(project)
                 temp_project.path = working_path
-                self._launch_tool(tool, temp_project, new_tab)
+                self._launch_tool(tool, temp_project, new_tab, tool_items, selected_index, project_info)
             except KeyboardInterrupt:
                 break
             except Exception as e:
@@ -269,25 +273,44 @@ class Application:
                 self.menu.console.print(f"\n[red]{get_text('no_tools')}[/red]")
                 time.sleep(2)
                 return None
-            
-            self.selected_tool_index = 0
-            
-            # Show tool list
-            tool_items = []
-            for t in tools:
-                tool_items.append({
-                    "name": t.display_name,  # Use display_name without env label
-                    "env": t.environment.value  # Pass env separately
-                })
-            
-            # Update with actual tool list
-            display = self.menu.build_tools_display(
-                tool_items,
-                self.selected_tool_index,
-                show_new_tab=self.wt_available,
-                project_info=project_info
-            )
-            live.update(display)
+        
+        # Clear the detecting message
+        self.menu.clear()
+        
+        # After detection, restore last selected tool
+        # Try to restore last selected tool by name and environment
+        restored_index = self.selected_tool_index  # Default to current index
+        if self.last_selected_tool_name and self.last_selected_tool_env:
+            for i, tool in enumerate(tools):
+                if tool.name == self.last_selected_tool_name and tool.environment == self.last_selected_tool_env:
+                    restored_index = i
+                    break
+            else:
+                # Tool not found, ensure index is valid
+                if restored_index >= len(tools):
+                    restored_index = 0
+        else:
+            # First time, ensure index is valid
+            if restored_index >= len(tools):
+                restored_index = 0
+        
+        self.selected_tool_index = restored_index
+        
+        # Show tool list
+        tool_items = []
+        for t in tools:
+            tool_items.append({
+                "name": t.display_name,  # Use display_name without env label
+                "env": t.environment.value  # Pass env separately
+            })
+        
+        # Build initial display
+        display = self.menu.build_tools_display(
+            tool_items,
+            self.selected_tool_index,
+            show_new_tab=self.wt_available,
+            project_info=project_info
+        )
         
         result = None
         with Live(display, console=self.menu.console, refresh_per_second=10, screen=True) as live:
@@ -307,11 +330,19 @@ class Application:
                         show_new_tab=self.wt_available, project_info=project_info
                     ))
                 elif event == InputEvent.ENTER:
-                    result = (tools[self.selected_tool_index], False, working_path)
+                    selected_tool = tools[self.selected_tool_index]
+                    # Save tool selection for next time
+                    self.last_selected_tool_name = selected_tool.name
+                    self.last_selected_tool_env = selected_tool.environment
+                    result = (selected_tool, False, working_path, tool_items, self.selected_tool_index, project_info)
                     break
                 elif event == InputEvent.NEW_TAB:
                     if self.wt_available:
-                        result = (tools[self.selected_tool_index], True, working_path)
+                        selected_tool = tools[self.selected_tool_index]
+                        # Save tool selection for next time
+                        self.last_selected_tool_name = selected_tool.name
+                        self.last_selected_tool_env = selected_tool.environment
+                        result = (selected_tool, True, working_path, tool_items, self.selected_tool_index, project_info)
                         break
                 elif event == InputEvent.INSTALL:
                     all_installed = not await self._install_tool_menu()
@@ -327,8 +358,40 @@ class Application:
                             self.config_manager.save(self.config)
                     
                     if not tools:
-                        result = None
-                        break
+                        # No tools available, show message and continue loop
+                        from rich.text import Text
+                        from rich.console import Group
+                        
+                        msg_lines = []
+                        if project_info:
+                            msg_lines.append(Text(f"\n{get_text('project_label').format(project_info.get('name', 'Unknown'))}", style="bold cyan"))
+                            if project_info.get('path'):
+                                msg_lines.append(Text(f"{get_text('path_label').format(project_info['path'])}", style="dim"))
+                            if project_info.get('env'):
+                                env_str = ', '.join(f"{k}={v}" for k, v in project_info['env'].items())
+                                msg_lines.append(Text(f"{get_text('env_label').format(env_str)}", style="dim"))
+                            if project_info.get('branch'):
+                                msg_lines.append(Text(f"{get_text('branch_label').format(project_info['branch'])}", style="dim"))
+                        
+                        msg_lines.append(Text(f"\n=== {get_text('select_tool')} ===\n", style="bold cyan"))
+                        msg_lines.append(Text(f"\n[red]{get_text('no_tools')}[/red]", style="red"))
+                        msg_lines.append(Text(f"\n[dim][I] {get_text('install')} | [Esc] {get_text('back')}[/dim]", style="dim"))
+                        live.update(Group(*msg_lines))
+                        continue
+                    
+                    # Restore last selected tool
+                    if self.last_selected_tool_name and self.last_selected_tool_env:
+                        for i, tool in enumerate(tools):
+                            if tool.name == self.last_selected_tool_name and tool.environment == self.last_selected_tool_env:
+                                self.selected_tool_index = i
+                                break
+                        else:
+                            if self.selected_tool_index >= len(tools):
+                                self.selected_tool_index = 0
+                    else:
+                        if self.selected_tool_index >= len(tools):
+                            self.selected_tool_index = 0
+                    
                     tool_items = [{"name": t.display_name, "env": t.environment.value} for t in tools]
                     
                     # Show message if all tools were already installed
@@ -384,10 +447,37 @@ class Application:
                     self.config_manager.save(self.config)
                     
                     if not tools:
-                        self.menu.console.print(f"\n[red]{get_text('no_tools')}[/red]")
-                        time.sleep(1)
-                        result = None
-                        break
+                        # No tools available, show message and continue loop
+                        msg_lines = []
+                        if project_info:
+                            msg_lines.append(Text(f"\n{get_text('project_label').format(project_info.get('name', 'Unknown'))}", style="bold cyan"))
+                            if project_info.get('path'):
+                                msg_lines.append(Text(f"{get_text('path_label').format(project_info['path'])}", style="dim"))
+                            if project_info.get('env'):
+                                env_str = ', '.join(f"{k}={v}" for k, v in project_info['env'].items())
+                                msg_lines.append(Text(f"{get_text('env_label').format(env_str)}", style="dim"))
+                            if project_info.get('branch'):
+                                msg_lines.append(Text(f"{get_text('branch_label').format(project_info['branch'])}", style="dim"))
+                        
+                        msg_lines.append(Text(f"\n=== {get_text('select_tool')} ===\n", style="bold cyan"))
+                        msg_lines.append(Text(f"\n[red]{get_text('no_tools')}[/red]", style="red"))
+                        msg_lines.append(Text(f"\n[dim][I] {get_text('install')} | [Esc] {get_text('back')}[/dim]", style="dim"))
+                        live.update(Group(*msg_lines))
+                        continue
+                    
+                    # Restore last selected tool
+                    if self.last_selected_tool_name and self.last_selected_tool_env:
+                        for i, tool in enumerate(tools):
+                            if tool.name == self.last_selected_tool_name and tool.environment == self.last_selected_tool_env:
+                                self.selected_tool_index = i
+                                break
+                        else:
+                            if self.selected_tool_index >= len(tools):
+                                self.selected_tool_index = 0
+                    else:
+                        if self.selected_tool_index >= len(tools):
+                            self.selected_tool_index = 0
+                    
                     tool_items = [{"name": t.display_name, "env": t.environment.value} for t in tools]
                     live.update(self.menu.build_tools_display(
                         tool_items, self.selected_tool_index,
@@ -401,11 +491,25 @@ class Application:
         
         return result
     
-    def _launch_tool(self, tool: Tool, project: ProjectNode, new_tab: bool = False) -> None:
+    def _launch_tool(self, tool: Tool, project: ProjectNode, new_tab: bool = False, 
+                     tool_items: List = None, selected_index: int = 0, project_info: Dict = None) -> None:
         """Launch tool in terminal."""
         import time
         from rich.live import Live
         from rich.text import Text
+        
+        # Clear screen and redisplay tool list with launch info
+        self.menu.clear()
+        
+        # Display tool list if provided
+        if tool_items and project_info:
+            display = self.menu.build_tools_display(
+                tool_items,
+                selected_index,
+                show_new_tab=self.wt_available,
+                project_info=project_info
+            )
+            self.menu.console.print(display)
         
         try:
             self.platform_adapter.launch_terminal(tool, project, new_tab=new_tab, wt_available=self.wt_available)
