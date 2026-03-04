@@ -2,6 +2,11 @@
 
 > 🌐 **English** | [中文](INSTALL-GUIDE.zh.md) | [日本語](INSTALL-GUIDE.ja.md) | [Deutsch](INSTALL-GUIDE.de.md)
 
+> ⚠️ **Platform Testing Status**:
+> - **Windows**: ✅ Fully tested and supported
+> - **Linux**: ⚠️ Not fully tested - may have issues
+> - **macOS**: ⚠️ Not fully tested - may have issues
+
 ## Quick Installation
 
 ### Using Installation Script (Recommended)

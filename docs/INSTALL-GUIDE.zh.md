@@ -2,6 +2,11 @@
 
 > 🌐 [English](INSTALL-GUIDE.md) | **中文** | [日本語](INSTALL-GUIDE.ja.md) | [Deutsch](INSTALL-GUIDE.de.md)
 
+> ⚠️ **平台测试状态**：
+> - **Windows**：✅ 已完整测试和支持
+> - **Linux**：⚠️ 未完成测试 - 可能存在问题
+> - **macOS**：⚠️ 未完成测试 - 可能存在问题
+
 ## 快速安装
 
 ### 使用安装脚本（推荐）

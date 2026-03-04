@@ -11,9 +11,9 @@
 ## ✨ Core Features
 
 ### 🌍 Cross-Platform Support
-- **Windows**: Native support + WSL integration
-- **Linux**: Full support for all major distributions
-- **macOS**: Support for Terminal.app and iTerm2
+- **Windows**: Native support + WSL integration ✅ Fully tested
+- **Linux**: Full support for all major distributions ⚠️ **Not fully tested - may have issues**
+- **macOS**: Support for Terminal.app and iTerm2 ⚠️ **Not fully tested - may have issues**
 
 ### 🔄 Deep WSL Integration
 - Automatic WSL environment detection

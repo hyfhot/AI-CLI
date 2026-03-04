@@ -11,9 +11,9 @@
 ## ✨ 核心特性
 
 ### 🌍 跨平台支持
-- **Windows**: 原生支持 + WSL 集成
-- **Linux**: 完整支持所有主流发行版
-- **macOS**: 支持 Terminal.app 和 iTerm2
+- **Windows**: 原生支持 + WSL 集成 ✅ 已完整测试
+- **Linux**: 完整支持所有主流发行版 ⚠️ **未完成测试 - 可能存在问题**
+- **macOS**: 支持 Terminal.app 和 iTerm2 ⚠️ **未完成测试 - 可能存在问题**
 
 ### 🔄 WSL 深度集成
 - 自动检测 WSL 环境

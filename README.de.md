@@ -11,9 +11,9 @@
 ## ✨ Hauptfunktionen
 
 ### 🌍 Plattformübergreifende Unterstützung
-- **Windows**: Native Unterstützung + WSL-Integration
-- **Linux**: Vollständige Unterstützung für alle wichtigen Distributionen
-- **macOS**: Unterstützung für Terminal.app und iTerm2
+- **Windows**: Native Unterstützung + WSL-Integration ✅ Vollständig getestet
+- **Linux**: Vollständige Unterstützung für alle wichtigen Distributionen ⚠️ **Nicht vollständig getestet - es können Probleme auftreten**
+- **macOS**: Unterstützung für Terminal.app und iTerm2 ⚠️ **Nicht vollständig getestet - es können Probleme auftreten**
 
 ### 🔄 Tiefe WSL-Integration
 - Automatische WSL-Umgebungserkennung
