@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-cli-launcher"
-version = "3.0.4"
+version = "3.0.6"
 description = "Cross-platform AI CLI launcher for managing multiple AI coding assistants"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -58,6 +58,9 @@ Issues = "https://github.com/hyfhot/AI-CLI/issues"
 where = ["."]
 include = ["ai_cli*"]
 
+[tool.setuptools.package-data]
+ai_cli = ["*.ico"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
@@ -77,7 +80,7 @@ target-version = ["py38", "py39", "py310", "py311"]
 include = '\.pyi?$'
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.0.6"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
@@ -85,6 +88,6 @@ ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 100
-target-version = "py38"
+target-version = "3.0.6"
 select = ["E", "F", "W", "I", "N", "UP"]
 ignore = ["E501"]

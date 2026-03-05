@@ -201,8 +201,8 @@ def _create_windows_shortcut():
     else:
         args = ""
     
-    # Get icon path
-    icon_path = Path(__file__).parent.parent / "ai-cli.ico"
+    # Get icon path from package directory
+    icon_path = Path(__file__).parent / "ai-cli.ico"
     if not icon_path.exists():
         icon_path = python_exe  # Fallback to Python icon
     
@@ -265,7 +265,7 @@ def _create_linux_shortcut():
             script_path = f"{python_exe} -m ai_cli.cli"
     
     # Get icon path
-    icon_path = Path(__file__).parent.parent / "ai-cli.ico"
+    icon_path = Path(__file__).parent / "ai-cli.ico"
     if not icon_path.exists():
         icon_path = "utilities-terminal"  # Fallback to system icon
     

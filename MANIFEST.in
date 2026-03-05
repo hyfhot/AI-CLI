@@ -6,3 +6,4 @@ include config.example.linux.json
 include config.example.win.json
 include ai-cli.ico
 recursive-include ai_cli *.py
+recursive-include ai_cli *.ico
