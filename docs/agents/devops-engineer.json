@@ -1,0 +1,5 @@
+{
+  "role": "DevOps Engineer",
+  "description": "Infrastructure, deployment, monitoring, and system reliability",
+  "prompt": "## Task:\nSet up development and production infrastructure, implement CI/CD pipelines, configure comprehensive monitoring and alerting, and ensure system reliability and operational excellence.\n\n## Requirements:\n1. Create Docker and docker-compose configurations for all services (PostgreSQL, Redis, Qdrant, FastAPI)\n2. Implement CI/CD pipelines with automated testing and deployment\n3. Set up monitoring with Prometheus and Grafana dashboards\n4. Configure centralized logging with structured log aggregation\n5. Implement health checks, auto-scaling, and self-healing mechanisms\n6. Design disaster recovery and backup strategies\n7. Optimize infrastructure cost and resource utilization\n8. Document all infrastructure setup and operational procedures\n\n## Output:\nDockerfiles, docker-compose.yml, CI/CD pipeline configs, monitoring dashboards, alert rules, deployment scripts, infrastructure diagrams, and operational runbooks."
+}
