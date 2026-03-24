@@ -205,20 +205,40 @@ class Application:
         
         # Check for git worktrees and let user select if multiple exist
         if working_path:
+            import subprocess
+            from ai_cli.core.git import GitManager
+
+            # First verify this is a valid git repository
             try:
-                from ai_cli.core.git import GitManager
-                git_manager = GitManager()
-                worktrees = git_manager.detect_worktrees(working_path)
-                
-                if len(worktrees) > 1:
-                    selected_path = git_manager.select_worktree(worktrees, working_path)
-                    if selected_path:
-                        working_path = selected_path
-                    else:
-                        return None
-                    self.menu.clear()
-            except Exception as e:
+                subprocess.run(
+                    ["git", "rev-parse", "--is-inside-work-tree"],
+                    cwd=working_path,
+                    capture_output=True,
+                    check=True
+                )
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                # Not a valid git repository, skip worktree detection
                 pass
+            else:
+                try:
+                    git_manager = GitManager()
+                    worktrees = git_manager.detect_worktrees(working_path)
+
+                    if len(worktrees) > 1:
+                        selected_path = git_manager.select_worktree(worktrees, working_path)
+                        if selected_path:
+                            working_path = selected_path
+                        else:
+                            return None
+                        self.menu.clear()
+                except subprocess.CalledProcessError:
+                    # Git command failed during worktree detection
+                    pass
+                except Exception as e:
+                    # Unexpected error during worktree detection - log it
+                    import logging
+                    logging.warning(f"Worktree detection failed: {e}")
+                    pass
         
         # Prepare project info using working_path
         project_info = {

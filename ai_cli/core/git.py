@@ -1,8 +1,42 @@
 """Git worktree management."""
 import subprocess
-from pathlib import Path
 from typing import List, Dict, Optional
 from rich.console import Console
+from ai_cli.i18n import get_text
+
+
+class GitDetector:
+    """Lightweight git metadata detector."""
+
+    def get_current_branch(self, path: str) -> Optional[str]:
+        """Get current branch name for the given path."""
+        try:
+            result = subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                cwd=path,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            branch = result.stdout.strip()
+            if not branch:
+                return None
+
+            if branch == "HEAD":
+                # Detached HEAD: show short commit hash for better UX
+                detached = subprocess.run(
+                    ["git", "rev-parse", "--short", "HEAD"],
+                    cwd=path,
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                commit = detached.stdout.strip()
+                return f"detached@{commit}" if commit else "detached"
+
+            return branch
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return None
 
 class GitManager:
     """Git worktree management using subprocess."""
@@ -20,10 +54,14 @@ class GitManager:
                 text=True,
                 check=True
             )
-            
+
             worktrees = []
             current = {}
-            
+
+            # Handle empty output case
+            if not result.stdout.strip():
+                return worktrees
+
             for line in result.stdout.strip().split('\n'):
                 if line.startswith('worktree '):
                     if current:
@@ -35,12 +73,15 @@ class GitManager:
                     current['bare'] = True
                 elif line == 'detached':
                     current['detached'] = True
-            
+
             if current:
                 worktrees.append(current)
-                
+
             return worktrees
         except subprocess.CalledProcessError:
+            return []
+        except Exception:
+            # Unexpected error - return empty list to indicate detection failed
             return []
     
     def get_branch_status(self, path: str) -> Optional[Dict[str, int]]:
@@ -71,46 +112,53 @@ class GitManager:
         """Show worktree selection menu and return selected path."""
         if len(worktrees) <= 1:
             return None
-        
+
         from ai_cli.ui.input import InputHandler, InputEvent
         from rich.live import Live
         from rich.console import Group
         from rich.text import Text
-        
+
         selected = 0
         input_handler = InputHandler()
-        
+
+        # Pre-fetch branch status for all worktrees (cache to avoid repeated git calls)
+        worktree_statuses = {}
+        for wt in worktrees:
+            if not wt.get('detached') and not wt.get('bare'):
+                try:
+                    worktree_statuses[wt['path']] = self.get_branch_status(wt['path'])
+                except:
+                    worktree_statuses[wt['path']] = None
+            else:
+                worktree_statuses[wt['path']] = None
+
         def render_menu():
             """Render the worktree selection menu."""
             lines = []
             lines.append(Text("\n=== Select Git Worktree ===\n", style="bold cyan"))
-            
+
             for i, wt in enumerate(worktrees):
                 is_current = wt['path'] == current_path
                 branch = wt.get('branch', 'detached HEAD')
                 if branch.startswith('refs/heads/'):
                     branch = branch[11:]
-                
-                # Get status (with error handling)
+
+                # Use cached status
                 status_str = ""
-                if not wt.get('detached') and not wt.get('bare'):
-                    try:
-                        status = self.get_branch_status(wt['path'])
-                        if status:
-                            if status['ahead'] > 0:
-                                status_str += f" ↑{status['ahead']}"
-                            if status['behind'] > 0:
-                                status_str += f" ↓{status['behind']}"
-                    except:
-                        pass
-                
+                status = worktree_statuses.get(wt['path'])
+                if status:
+                    if status['ahead'] > 0:
+                        status_str += f" ↑{status['ahead']}"
+                    if status['behind'] > 0:
+                        status_str += f" ↓{status['behind']}"
+
                 prefix = "> " if i == selected else "  "
                 current_mark = " [current]" if is_current else ""
                 style = "bold green" if i == selected else "dim"
-                
+
                 lines.append(Text(f"{prefix}{branch}{status_str}{current_mark}", style=style))
                 lines.append(Text(f"   {wt['path']}", style="dim"))
-            
+
             lines.append(Text(f"\n[↑↓] {get_text('select')}  [Enter] {get_text('confirm')}  [Esc] {get_text('cancel')}", style="dim"))
             return Group(*lines)
         
@@ -130,3 +178,5 @@ class GitManager:
                     return worktrees[selected]['path']
                 elif event == InputEvent.ESCAPE or event == InputEvent.QUIT:
                     return None
+
+
