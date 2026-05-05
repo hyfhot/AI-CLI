@@ -18,7 +18,7 @@
   - 支持模型上下文协议 (MCP)
 - **安装**:
   - **Linux/macOS/WSL**: `curl -fsSL https://cli.kiro.dev/install | bash`
-  - **Windows**: `winget install kiro-cli`（如果可用）
+  - **Windows**: `irm 'https://cli.kiro.dev/install.ps1' | iex`
 - **验证**: `kiro-cli --version`
 
 ---
@@ -77,6 +77,24 @@
 
 ---
 
+### 6. DeepSeek TUI
+- **官方网站**: https://github.com/Hmbown/DeepSeek-TUI
+- **开发者**: Hunter Bown
+- **特性**:
+  - 终端原生 AI 编程智能体，针对 DeepSeek V4 深度优化
+  - 100 万 Token 上下文窗口支持
+  - 实时思维链（Chain-of-Thought）流式输出
+  - RLM 并行推理（1-16 个并发任务）
+  - 三种工作模式：Plan（规划）/ Agent（代理）/ YOLO（全自动）
+  - 内置 LSP 诊断功能
+  - 支持 MCP 服务器扩展
+  - 社区 Skills 系统
+- **安装**:
+  - **所有平台**: `npm install -g deepseek-tui`
+- **验证**: `deepseek --version`
+
+---
+
 ## 📝 配置示例
 
 在 `config.json` 中添加工具：
@@ -87,7 +105,7 @@
     {
       "name": "kiro-cli",
       "displayName": "Kiro CLI",
-      "windowsInstall": "winget install kiro-cli",
+      "windowsInstall": "irm 'https://cli.kiro.dev/install.ps1' | iex",
       "wslInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
       "linuxInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
       "macosInstall": "brew install kiro-cli",

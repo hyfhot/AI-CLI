@@ -18,7 +18,7 @@ Dieses Dokument listet die von AI-CLI unterstützten Mainstream-KI-Programmierto
   - Unterstützt Model Context Protocol (MCP)
 - **Installation**:
   - **Linux/macOS/WSL**: `curl -fsSL https://cli.kiro.dev/install | bash`
-  - **Windows**: `winget install kiro-cli` (falls verfügbar)
+  - **Windows**: `irm 'https://cli.kiro.dev/install.ps1' | iex`
 - **Überprüfung**: `kiro-cli --version`
 
 ---
@@ -77,6 +77,24 @@ Dieses Dokument listet die von AI-CLI unterstützten Mainstream-KI-Programmierto
 
 ---
 
+### 6. DeepSeek TUI
+- **Offizielle Website**: https://github.com/Hmbown/DeepSeek-TUI
+- **Entwickler**: Hunter Bown
+- **Funktionen**:
+  - Terminal-nativer KI-Coding-Agent, optimiert für DeepSeek V4
+  - 1M Token Kontextfenster-Unterstützung
+  - Echtzeit Chain-of-Thought-Streaming
+  - RLM parallele Inferenz (1-16 gleichzeitige Aufgaben)
+  - Drei Arbeitsmodi: Plan / Agent / YOLO
+  - Integrierte LSP-Diagnose
+  - MCP-Server-Unterstützung
+  - Skills-System für Erweiterbarkeit
+- **Installation**:
+  - **Alle Plattformen**: `npm install -g deepseek-tui`
+- **Überprüfung**: `deepseek --version`
+
+---
+
 ## 📝 Konfigurationsbeispiel
 
 Tools zu Ihrer `config.json` hinzufügen:
@@ -87,7 +105,7 @@ Tools zu Ihrer `config.json` hinzufügen:
     {
       "name": "kiro-cli",
       "displayName": "Kiro CLI",
-      "windowsInstall": "winget install kiro-cli",
+      "windowsInstall": "irm 'https://cli.kiro.dev/install.ps1' | iex",
       "wslInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
       "linuxInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
       "macosInstall": "brew install kiro-cli",

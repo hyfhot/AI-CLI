@@ -18,7 +18,7 @@
   - モデルコンテキストプロトコル (MCP) をサポート
 - **インストール**:
   - **Linux/macOS/WSL**: `curl -fsSL https://cli.kiro.dev/install | bash`
-  - **Windows**: `winget install kiro-cli`（利用可能な場合）
+  - **Windows**: `irm 'https://cli.kiro.dev/install.ps1' | iex`
 - **検証**: `kiro-cli --version`
 
 ---
@@ -77,6 +77,24 @@
 
 ---
 
+### 6. DeepSeek TUI
+- **公式ウェブサイト**: https://github.com/Hmbown/DeepSeek-TUI
+- **開発者**: Hunter Bown
+- **機能**:
+  - DeepSeek V4 に最適化されたターミナルネイティブ AI コーディングエージェント
+  - 100 万トークンのコンテキストウィンドウをサポート
+  - リアルタイムの Chain-of-Thought ストリーミング
+  - RLM 並列推論（1-16 の同時タスク）
+  - 3 つの作業モード：Plan / Agent / YOLO
+  - 内蔵 LSP 診断機能
+  - MCP サーバーサポート
+  - 拡張用 Skills システム
+- **インストール**:
+  - **すべてのプラットフォーム**: `npm install -g deepseek-tui`
+- **検証**: `deepseek --version`
+
+---
+
 ## 📝 設定例
 
 `config.json` にツールを追加：
@@ -87,7 +105,7 @@
     {
       "name": "kiro-cli",
       "displayName": "Kiro CLI",
-      "windowsInstall": "winget install kiro-cli",
+      "windowsInstall": "irm 'https://cli.kiro.dev/install.ps1' | iex",
       "wslInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
       "linuxInstall": "curl -fsSL https://cli.kiro.dev/install | bash",
       "macosInstall": "brew install kiro-cli",

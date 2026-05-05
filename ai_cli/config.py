@@ -175,6 +175,16 @@ class ConfigManager:
                 check_command="qwen --version",
                 url="https://qwenlm.github.io/qwen-code-docs/"
             ),
+            ToolConfig(
+                name="deepseek",
+                display_name="DeepSeek TUI",
+                win_install="npm install -g deepseek-tui",
+                wsl_install="npm install -g deepseek-tui",
+                linux_install="npm install -g deepseek-tui",
+                macos_install="npm install -g deepseek-tui",
+                check_command="deepseek --version",
+                url="https://github.com/Hmbown/DeepSeek-TUI"
+            ),
         ]
     
     def _needs_migration(self, data: Dict[str, Any]) -> bool:

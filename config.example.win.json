@@ -109,11 +109,11 @@
                   {
                       "name":  "kiro-cli",
                       "displayName":  "Kiro CLI",
-                      "winInstall":  null,
+                      "winInstall":  "irm 'https://cli.kiro.dev/install.ps1' | iex",
                       "wslInstall":  "curl -fsSL https://cli.kiro.dev/install | bash",
                       "checkCommand":  "kiro-cli --version",
                       "url":  "https://kiro.dev/cli/",
-                      "winAvailable":  false,
+                      "winAvailable":  true,
                       "wslAvailable":  true
                   },
                   {
@@ -183,6 +183,16 @@
                       "wslInstall":  "curl -LsSf https://aider.chat/install.sh | sh",
                       "checkCommand":  "aider --version",
                       "url":  "https://aider.chat/docs/install",
+                      "winAvailable":  true,
+                      "wslAvailable":  true
+                  },
+                  {
+                      "name":  "deepseek",
+                      "displayName":  "DeepSeek TUI",
+                      "winInstall":  "npm install -g deepseek-tui",
+                      "wslInstall":  "npm install -g deepseek-tui",
+                      "checkCommand":  "deepseek --version",
+                      "url":  "https://github.com/Hmbown/DeepSeek-TUI",
                       "winAvailable":  true,
                       "wslAvailable":  true
                   }
