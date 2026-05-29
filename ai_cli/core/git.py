@@ -127,7 +127,7 @@ class GitManager:
             if not wt.get('detached') and not wt.get('bare'):
                 try:
                     worktree_statuses[wt['path']] = self.get_branch_status(wt['path'])
-                except:
+                except Exception:
                     worktree_statuses[wt['path']] = None
             else:
                 worktree_statuses[wt['path']] = None

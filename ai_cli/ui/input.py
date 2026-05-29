@@ -169,7 +169,7 @@ class InputHandler:
                         cursor_pos += 1
                         sys.stdout.write(char)
                         sys.stdout.flush()
-                except:
+                except Exception:
                     pass
     
     def _get_input_unix(self) -> Optional[InputEvent]:

@@ -68,8 +68,20 @@ class ConfigManager:
         try:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(config.to_dict(), f, indent=2, ensure_ascii=False)
+            # Set restrictive permissions on Unix (config may contain API keys in env vars)
+            self._set_secure_permissions(self.config_file)
         except (OSError, TypeError) as e:
             raise RuntimeError(f"Failed to save config: {e}")
+    
+    def _set_secure_permissions(self, filepath: Path) -> None:
+        """Set restrictive file permissions on Unix systems (owner read/write only)."""
+        if sys.platform == 'win32':
+            return
+        try:
+            import stat
+            filepath.chmod(stat.S_IRUSR | stat.S_IWUSR)  # 0600
+        except OSError:
+            pass  # Best effort - don't fail if permissions can't be set
     
     def create_default(self) -> Config:
         """Create default configuration."""
