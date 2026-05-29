@@ -43,7 +43,7 @@ class LanguageManager:
                     return 'ja'
                 elif system_lang.startswith('de'):
                     return 'de'
-        except:
+        except Exception:
             pass
         
         return 'en'

@@ -1,10 +1,15 @@
 """Tool detection and management."""
 import asyncio
+import re
 import shutil
 import subprocess
 import sys
 from typing import List, Optional
 from ai_cli.models import Tool, ToolConfig, ToolEnvironment
+
+
+# Regex pattern for valid tool names: alphanumeric, hyphens, underscores, dots
+_VALID_TOOL_NAME_RE = re.compile(r'^[a-zA-Z0-9._-]+$')
 
 
 class WindowsToolDetector:
@@ -20,7 +25,7 @@ class WindowsToolDetector:
                 timeout=2
             )
             return result.returncode == 0
-        except:
+        except Exception:
             return False
     
     async def detect_windows_tools_batch(self, tools_config: List[ToolConfig]) -> None:
@@ -45,7 +50,19 @@ class WindowsToolDetector:
         if not wsl_tools:
             return
         
-        tool_names = ' '.join([tc.name for tc in wsl_tools])
+        # Validate tool names to prevent command injection
+        safe_tools = []
+        for tc in wsl_tools:
+            if _VALID_TOOL_NAME_RE.match(tc.name):
+                safe_tools.append(tc)
+            else:
+                # Skip tools with suspicious names
+                tc.wsl_available = False
+        
+        if not safe_tools:
+            return
+        
+        tool_names = ' '.join([tc.name for tc in safe_tools])
         check_script = f"for t in {tool_names}; do if command -v $t >/dev/null 2>&1; then echo $t; fi; done"
         
         try:
@@ -60,10 +77,10 @@ class WindowsToolDetector:
             if result.returncode == 0 and result.stdout:
                 available_tools = set(line.strip() for line in result.stdout.strip().split('\n') if line.strip())
             
-            for tool_config in wsl_tools:
+            for tool_config in safe_tools:
                 tool_config.wsl_available = tool_config.name in available_tools
-        except:
-            for tool_config in wsl_tools:
+        except Exception:
+            for tool_config in safe_tools:
                 tool_config.wsl_available = False
     
     async def detect_all_tools(self, tools_config: List[ToolConfig]) -> None:
@@ -114,6 +131,7 @@ class ToolDetector:
         else:
             self.detector = LinuxToolDetector()
         self._background_task: Optional[asyncio.Task] = None
+        self._detection_done: bool = False
     
     async def detect_all_tools(self, tools_config: List[ToolConfig], force: bool = False) -> List[Tool]:
         """
@@ -126,10 +144,10 @@ class ToolDetector:
         Returns:
             List of available tools
         """
-        # Check if cache is empty (no detection has been done yet)
-        cache_empty = self._is_cache_empty(tools_config)
+        # Use explicit flag to distinguish "not yet detected" from "detected but none available"
+        needs_detection = not self._detection_done and self._is_cache_empty(tools_config)
         
-        if force or cache_empty:
+        if force or needs_detection:
             # Cancel background task if running
             if self._background_task and not self._background_task.done():
                 self._background_task.cancel()
@@ -141,14 +159,20 @@ class ToolDetector:
             
             # Run detection and update config
             await self.detector.detect_all_tools(tools_config)
+            self._detection_done = True
         
         # Build tool list from cached config
         return self._build_tool_list(tools_config)
     
     def _is_cache_empty(self, tools_config: List[ToolConfig]) -> bool:
-        """Check if cache is empty (no detection has been done)."""
+        """Check if cache is empty (no detection has been done).
+        
+        Note: This is a heuristic check based on availability flags.
+        The _detection_done flag provides an authoritative answer.
+        """
+        if self._detection_done:
+            return False
         if sys.platform == 'win32':
-            # Check if any tool has cache data
             return not any(tc.win_available or tc.wsl_available for tc in tools_config)
         elif sys.platform == 'linux':
             return not any(tc.linux_available for tc in tools_config)
@@ -214,6 +238,7 @@ class ToolDetector:
         """Background detection task."""
         try:
             await self.detector.detect_all_tools(tools_config)
+            self._detection_done = True
         except asyncio.CancelledError:
             raise
         except Exception:

@@ -1,4 +1,5 @@
 """Linux platform adapter."""
+import shlex
 import shutil
 import subprocess
 import sys
@@ -28,11 +29,11 @@ class LinuxPlatformAdapter(PlatformAdapter):
     def get_shell_command(self, tool: Tool, project: ProjectNode) -> str:
         """Generate shell command."""
         title = f"{tool.name} - {project.name}"
-        parts = [f"cd {project.path}"]
+        parts = [f"cd {shlex.quote(project.path)}"]
         
         if project.env:
             for key, value in project.env.items():
-                parts.append(f"export {key}='{value}'")
+                parts.append(f"export {key}={shlex.quote(value)}")
         
         parts.append(f"echo -ne '\\033]0;{title}\\007'")
         parts.append(tool.name)

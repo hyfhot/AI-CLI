@@ -54,7 +54,7 @@ class Application:
             result = subprocess.run(["cmd.exe", "/c", "where", "wt"], 
                                   capture_output=True, timeout=2)
             return result.returncode == 0
-        except:
+        except Exception:
             return False
     
     def run(self) -> None:
@@ -138,20 +138,24 @@ class Application:
                     event = self.input_handler.get_input()
                     
                     if event == InputEvent.UP:
-                        self.selected_project_index = max(0, self.selected_project_index - 1)
-                        live.update(self.menu.build_tree_display(
-                            item_list,
-                            self.selected_project_index,
-                            breadcrumb=breadcrumb
-                        ))
+                        if items:
+                            self.selected_project_index = max(0, self.selected_project_index - 1)
+                            live.update(self.menu.build_tree_display(
+                                item_list,
+                                self.selected_project_index,
+                                breadcrumb=breadcrumb
+                            ))
                     elif event == InputEvent.DOWN:
-                        self.selected_project_index = min(len(items) - 1, self.selected_project_index + 1)
-                        live.update(self.menu.build_tree_display(
-                            item_list,
-                            self.selected_project_index,
-                            breadcrumb=breadcrumb
-                        ))
+                        if items:
+                            self.selected_project_index = min(len(items) - 1, self.selected_project_index + 1)
+                            live.update(self.menu.build_tree_display(
+                                item_list,
+                                self.selected_project_index,
+                                breadcrumb=breadcrumb
+                            ))
                     elif event == InputEvent.ENTER:
+                        if not items:
+                            continue
                         selected = items[self.selected_project_index]
                         if selected.type == "folder":
                             self.current_path.append(selected.name)
@@ -166,6 +170,8 @@ class Application:
                         result = "__ADD_NEW__"
                         break
                     elif event == InputEvent.DELETE:
+                        if not items:
+                            continue
                         # Exit Live context before showing delete dialog
                         result = "__DELETE__"
                         break
@@ -255,7 +261,7 @@ class Application:
                 branch = git_detector.get_current_branch(working_path)
                 if branch:
                     project_info['branch'] = branch
-            except:
+            except Exception:
                 pass
         
         # Show detecting message in tool display

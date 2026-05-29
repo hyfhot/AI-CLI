@@ -13,7 +13,7 @@ class MacOSPlatformAdapter(PlatformAdapter):
     def launch_terminal(self, tool: Tool, project: ProjectNode, new_tab: bool = False) -> None:
         """Launch terminal with tool and project."""
         command = self.get_shell_command(tool, project)
-        escaped_cmd = command.replace('"', '\\"')
+        escaped_cmd = self._escape_for_applescript(command)
         
         if self._has_iterm():
             if new_tab:
@@ -27,6 +27,15 @@ class MacOSPlatformAdapter(PlatformAdapter):
                 script = f'tell app "Terminal" to do script "{escaped_cmd}"'
         
         subprocess.run(["osascript", "-e", script])
+    
+    @staticmethod
+    def _escape_for_applescript(s: str) -> str:
+        """Escape a string for embedding in AppleScript double-quoted strings.
+        
+        AppleScript requires backslashes and double quotes to be escaped.
+        """
+        # Escape backslashes first (order matters), then double quotes
+        return s.replace('\\', '\\\\').replace('"', '\\"')
     
     def get_shell_command(self, tool: Tool, project: ProjectNode) -> str:
         """Generate shell command."""
@@ -57,5 +66,5 @@ class MacOSPlatformAdapter(PlatformAdapter):
                 timeout=2
             )
             return result.returncode == 0
-        except:
+        except Exception:
             return False
