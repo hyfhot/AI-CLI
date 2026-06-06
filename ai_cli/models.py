@@ -200,3 +200,11 @@ class Config:
             tools=tools,
             settings=settings
         )
+
+    def update_cache(self, win_available: bool = False, wsl_available: bool = False,
+                     linux_available: bool = False, macos_available: bool = False) -> None:
+        """Update availability cache fields."""
+        self.win_available = win_available
+        self.wsl_available = wsl_available
+        self.linux_available = linux_available
+        self.macos_available = macos_available

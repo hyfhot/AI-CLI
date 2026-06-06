@@ -68,9 +68,6 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
 addopts = [
-    "--cov=ai_cli",
-    "--cov-report=term-missing",
-    "--cov-report=html",
     "-v"
 ]
 
