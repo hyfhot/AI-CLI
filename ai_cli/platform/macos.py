@@ -1,4 +1,5 @@
 """macOS platform adapter."""
+import os
 import subprocess
 import shlex
 import sys
@@ -46,6 +47,19 @@ class MacOSPlatformAdapter(PlatformAdapter):
         """Set terminal title."""
         sys.stdout.write(f"\033]0;{title}\007")
         sys.stdout.flush()
+    
+    def run_in_current_terminal(self, tool: Tool, project: ProjectNode) -> int:
+        """
+        Run the tool in the current terminal (foreground / blocking).
+        Returns the exit code.
+        """
+        parts = [f"cd {shlex.quote(project.path)}"]
+        if project.env:
+            for key, value in project.env.items():
+                parts.append(f"export {key}={shlex.quote(value)}")
+        parts.append(tool.name)
+        cmd = " && ".join(parts)
+        return os.system(cmd)
     
     def _has_iterm(self) -> bool:
         """Check if iTerm2 is installed."""

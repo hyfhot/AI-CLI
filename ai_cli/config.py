@@ -65,6 +65,10 @@ class ConfigManager:
     
     def save(self, config: Config) -> None:
         """Save configuration to file."""
+        # Prune usage history older than 15 days for all tools
+        for tool in config.tools:
+            tool.prune_usage_history()
+
         try:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(config.to_dict(), f, indent=2, ensure_ascii=False)
@@ -176,14 +180,14 @@ class ConfigManager:
                 url="https://qwenlm.github.io/qwen-code-docs/"
             ),
             ToolConfig(
-                name="deepseek",
-                display_name="DeepSeek TUI",
-                win_install="npm install -g deepseek-tui",
-                wsl_install="npm install -g deepseek-tui",
-                linux_install="npm install -g deepseek-tui",
-                macos_install="npm install -g deepseek-tui",
-                check_command="deepseek --version",
-                url="https://github.com/Hmbown/DeepSeek-TUI"
+                name="codewhale",
+                display_name="CodeWhale",
+                win_install="cargo install codewhale-cli --locked && cargo install codewhale-tui --locked",
+                wsl_install="cargo install codewhale-cli --locked && cargo install codewhale-tui --locked",
+                linux_install="cargo install codewhale-cli --locked && cargo install codewhale-tui --locked",
+                macos_install="cargo install codewhale-cli --locked && cargo install codewhale-tui --locked",
+                check_command="codewhale --version",
+                url="https://github.com/Hmbown/CodeWhale"
             ),
         ]
     

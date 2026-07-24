@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 from . import __version__
+from .i18n import get_text
 
 # Debug output helper
 def debug_print(msg):
@@ -20,7 +21,12 @@ def debug_print(msg):
 @click.option('--uninstall', '-u', is_flag=True, help='Uninstall AI-CLI')
 @click.option('--version', '-v', is_flag=True, help='Show version information')
 @click.option('--lang', '-l', type=click.Choice(['auto', 'en', 'zh', 'ja', 'de'], case_sensitive=False), help='Set language (auto, en, zh, ja, de)')
-def main(init, config, uninstall, version, lang):
+@click.option('--update', is_flag=True, help='Upgrade ai-cli-launcher to the latest version')
+@click.option('--tool', '-t', default=None, help='AI tool name for direct launch (e.g., kiro-cli, claude)')
+@click.option('--project', '-p', default=None, help='Project name for direct launch (skip project selection)')
+@click.option('--dir', '-d', default=None, help='Working directory for direct launch (skip project selection)')
+@click.option('--platform', default=None, type=click.Choice(['windows', 'wsl', 'linux', 'macos'], case_sensitive=False), help='Target platform for direct launch (default: current platform)')
+def main(init, config, uninstall, version, lang, update, tool, project, dir, platform):
     """AI-CLI: Terminal launcher for AI coding assistants."""
     
     # Enable debug mode if --debug flag is present
@@ -45,6 +51,42 @@ def main(init, config, uninstall, version, lang):
     if uninstall:
         uninstall_app()
         return
+    
+    if update:
+        click.echo(get_text('update_upgrading'))
+        from .core.updater import perform_upgrade, check_latest_version
+        info = check_latest_version()
+        if info.is_update_available:
+            click.echo(get_text('update_available', info.latest_version))
+            click.echo()
+            perform_upgrade()
+        else:
+            click.echo(get_text('update_current', __version__))
+        return
+    
+    # ---- Direct-launch mode: --tool triggers skipping the interactive UI ----
+    if tool:
+        try:
+            if debug_mode:
+                print(f"[DEBUG] Direct launch mode: tool={tool}, project={project}, dir={dir}, platform={platform}", flush=True)
+            from .app import Application
+            app = Application(language=lang)
+            success = app.direct_launch(
+                tool_name=tool,
+                project_name=project,
+                directory=dir,
+                platform_name=platform,
+            )
+            sys.exit(0 if success else 1)
+        except KeyboardInterrupt:
+            click.echo("\nGoodbye!")
+            sys.exit(1)
+        except Exception as e:
+            import traceback
+            click.echo(f"Error: {e}", err=True)
+            click.echo("\nFull traceback:", err=True)
+            click.echo(traceback.format_exc(), err=True)
+            sys.exit(1)
     
     # Default: start interactive interface
     try:
@@ -96,6 +138,8 @@ def init_config():
                     # Find matching default tool
                     for default_tool in default_config:
                         if default_tool.name == tool.name:
+                            # Preserve usage history when updating tool definition
+                            default_tool.usage_history = tool.usage_history
                             # Update tool definition
                             existing_config.tools[i] = default_tool
                             click.echo(f"  Updated: {tool.display_name}")

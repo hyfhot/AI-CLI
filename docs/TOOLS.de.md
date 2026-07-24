@@ -77,21 +77,21 @@ Dieses Dokument listet die von AI-CLI unterstützten Mainstream-KI-Programmierto
 
 ---
 
-### 6. DeepSeek TUI
-- **Offizielle Website**: https://github.com/Hmbown/DeepSeek-TUI
-- **Entwickler**: Hunter Bown
+### 6. CodeWhale
+- **Offizielle Website**: https://github.com/Hmbown/CodeWhale
+- **Entwickler**: Hmbown
 - **Funktionen**:
-  - Terminal-nativer KI-Coding-Agent, optimiert für DeepSeek V4
-  - 1M Token Kontextfenster-Unterstützung
-  - Echtzeit Chain-of-Thought-Streaming
-  - RLM parallele Inferenz (1-16 gleichzeitige Aufgaben)
-  - Drei Arbeitsmodi: Plan / Agent / YOLO
-  - Integrierte LSP-Diagnose
-  - MCP-Server-Unterstützung
-  - Skills-System für Erweiterbarkeit
+  - Lokales Terminal-TUI-Agent-Framework für DeepSeek V4 und offene Modelle
+  - Ego-Schicht, Constitution-Rechtssystem und evidenzbasiertes Reasoning
+  - Datei-, Shell-, Git-, Web-, MCP-, RLM- und Sub-Agent-Tools mit Schema
+  - Genehmigungstor, Sandbox, Side-Git-Snapshots und /restore-Rollback
+  - LSP-Diagnose nach der Bearbeitung
+  - Parallele Sub-Agenten, persistente Sitzungen, Fork, Relay-Übergabe und Runtime-API
+  - Erstklassige DeepSeek V4-Unterstützung mit Multi-Provider-Routing (OpenRouter, Ollama usw.)
 - **Installation**:
-  - **Alle Plattformen**: `npm install -g deepseek-tui`
-- **Überprüfung**: `deepseek --version`
+  - **Alle Plattformen**: `cargo install codewhale-cli --locked && cargo install codewhale-tui --locked`
+  - **macOS (Homebrew)**: `brew tap Hmbown/deepseek-tui && brew install deepseek-tui`
+- **Überprüfung**: `codewhale --version`
 
 ---
 

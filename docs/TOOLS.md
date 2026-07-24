@@ -77,21 +77,21 @@ This document lists the mainstream AI programming tools supported by AI-CLI alon
 
 ---
 
-### 6. DeepSeek TUI
-- **Official Website**: https://github.com/Hmbown/DeepSeek-TUI
-- **Developer**: Hunter Bown
+### 6. CodeWhale
+- **Official Website**: https://github.com/Hmbown/CodeWhale
+- **Developer**: Hmbown
 - **Features**:
-  - Terminal-native AI coding agent optimized for DeepSeek V4
-  - 1M token context window support
-  - Real-time Chain-of-Thought streaming
-  - RLM parallel inference (1-16 concurrent tasks)
-  - Three work modes: Plan / Agent / YOLO
-  - Built-in LSP diagnostics
-  - MCP server support
-  - Skills system for extensibility
+  - Local-first terminal TUI agent framework for DeepSeek V4 and open models
+  - Ego layer, Constitution law system, and evidence-based reasoning
+  - File, Shell, Git, Web, MCP, RLM, and sub-agent tools with schema
+  - Approval gate, sandbox, side-git snapshots, and /restore rollback
+  - Post-edit LSP diagnostics feedback
+  - Concurrent sub-agents, persistent sessions, fork, relay handoff, and runtime API
+  - First-class DeepSeek V4 support with multi-provider routing (OpenRouter, Ollama, etc.)
 - **Installation**:
-  - **All platforms**: `npm install -g deepseek-tui`
-- **Verification**: `deepseek --version`
+  - **All platforms**: `cargo install codewhale-cli --locked && cargo install codewhale-tui --locked`
+  - **macOS (Homebrew)**: `brew tap Hmbown/deepseek-tui && brew install deepseek-tui`
+- **Verification**: `codewhale --version`
 
 ---
 

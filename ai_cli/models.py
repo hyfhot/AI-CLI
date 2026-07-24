@@ -1,5 +1,6 @@
 """Core data models for AI-CLI."""
 
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Dict, Optional, Any
@@ -83,6 +84,34 @@ class ToolConfig:
     wsl_available: bool = False
     linux_available: bool = False
     macos_available: bool = False
+    # Usage tracking (15-day rolling window)
+    usage_history: List[str] = field(default_factory=list)  # ISO 8601 timestamps
+    
+    def record_usage(self) -> None:
+        """Record a usage event with the current UTC timestamp."""
+        self.usage_history.append(datetime.now(timezone.utc).isoformat())
+    
+    def usage_count_15d(self) -> int:
+        """Return the number of usage events in the last 15 days."""
+        cutoff = datetime.now(timezone.utc) - timedelta(days=15)
+        count = 0
+        for ts in self.usage_history:
+            try:
+                dt = datetime.fromisoformat(ts)
+                if dt > cutoff:
+                    count += 1
+            except ValueError:
+                continue
+        return count
+    
+    def prune_usage_history(self) -> None:
+        """Remove usage entries older than 15 days."""
+        cutoff = datetime.now(timezone.utc) - timedelta(days=15)
+        cutoff_str = cutoff.isoformat()
+        self.usage_history = [
+            ts for ts in self.usage_history
+            if ts > cutoff_str
+        ]
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
@@ -105,6 +134,9 @@ class ToolConfig:
             result["linuxAvailable"] = self.linux_available
         if self.macos_available:
             result["macosAvailable"] = self.macos_available
+        # Include usage history if non-empty
+        if self.usage_history:
+            result["usageHistory"] = self.usage_history
         return result
     
     @classmethod
@@ -122,7 +154,8 @@ class ToolConfig:
             win_available=data.get("winAvailable", False),
             wsl_available=data.get("wslAvailable", False),
             linux_available=data.get("linuxAvailable", False),
-            macos_available=data.get("macosAvailable", False)
+            macos_available=data.get("macosAvailable", False),
+            usage_history=data.get("usageHistory", [])
         )
 
 

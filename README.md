@@ -150,7 +150,26 @@ ai-cli --lang ja          # Start with Japanese language
 ai-cli --uninstall        # Uninstall AI-CLI
 ai-cli --version          # Show version information
 ai-cli --help             # Show help information
+
+# Direct launch mode (skip project and tool selection UI)
+ai-cli -t kiro-cli                          # Launch kiro-cli in current directory
+ai-cli -t claude -p "My Project"            # Launch claude in a configured project
+ai-cli -t codewhale -d /path/to/project      # Launch codewhale in a specific directory
+ai-cli -t kiro-cli --platform wsl           # Launch in WSL environment
 ```
+
+**Direct Launch Options**:
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--tool NAME` | `-t` | AI tool name (e.g., `kiro-cli`, `claude`). Triggers direct-launch mode. |
+| `--project NAME` | `-p` | Configured project name (used for env-var injection) |
+| `--dir PATH` | `-d` | Working directory path (mutually exclusive with `-p`) |
+| `--platform ENV` | — | Target platform: `windows`/`wsl`/`linux`/`macos` (default: current) |
+
+When `--tool` is provided, AI-CLI skips the interactive UI, runs the tool directly
+in the current terminal, and exits when the tool exits.  Project-specific
+environment variables are injected if a matching project is found.
 
 **Language Options** (`--lang` / `-l`):
 - `auto` - Auto-detect system language (default)
@@ -180,18 +199,52 @@ ai-cli --help             # Show help information
 |-----|----------|
 | `↑` / `↓` | Navigate up/down |
 | `Enter` | Launch tool (new window) |
-| `Ctrl+Enter` | Launch tool (new tab) |
+| `T` | Launch tool (new tab) |
 | `I` | Install missing tools |
 | `R` | Refresh tool list |
+| `S` | Toggle sort mode (usage / name, desc / asc) |
+| `U` | Upgrade AI-CLI (when update available) |
 | `Esc` | Return to project selection |
 | `Q` | Quit application |
 
 ### Workflow
 
+#### Interactive Mode
+
 1. **Launch**: Run `ai-cli`
 2. **Select Project**: Use arrow keys to select a project, press `Enter` to confirm
 3. **Select Tool**: Choose the AI tool you want to use
 4. **Start Working**: Tool launches in a new window or tab
+
+#### Direct Launch Mode
+
+Pass `--tool` to skip the interactive UI and run a tool directly in the current terminal:
+
+```bash
+# Simplest: launch kiro-cli in the current directory
+ai-cli -t kiro-cli
+
+# Launch in a configured project (auto-injects project env vars)
+ai-cli -t claude -p "My API Project"
+
+# Launch in a specific directory
+ai-cli -t codewhale -d ~/code/myproject
+```
+
+Direct launch mode will:
+1. Resolve the project configuration, injecting matching environment variables
+2. Run the AI tool in the **current terminal window** (foreground, not a new window)
+3. Exit when the tool exits
+
+#### Current Directory Awareness
+
+When you launch `ai-cli` from a terminal:
+
+- If the current directory **matches a configured project**, that project is
+  automatically selected.
+- If the current directory **is not a configured project**, a "current directory"
+  entry appears at the top of the project list, allowing you to launch a tool
+  without any prior configuration.
 
 ## 🔧 Configuration Guide
 

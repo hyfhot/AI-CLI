@@ -84,6 +84,12 @@ config.json
 # Serena
 .serena/
 
+# AI tool working directories
+.claude/
+.codewhale/
+.deepseek/
+.qoder/
+
 # Publishing scripts (local only, contain API tokens)
 publish.sh
 publish.bat

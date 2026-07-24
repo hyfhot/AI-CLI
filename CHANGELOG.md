@@ -8,6 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- ✨ Current directory awareness: when launched from an unregistered directory,
+  a "current directory" entry appears at the top of the project list; if the
+  current directory matches a configured project, it is auto-selected.
+- ✨ CLI direct launch mode (`--tool`/`-t`): skips the interactive UI and runs
+  the AI tool directly in the current terminal (foreground, not a new window).
+  Supports `--project`/`-p`, `--dir`/`-d`, and `--platform` for full control.
+- ✨ `run_in_current_terminal()` added to all platform adapters (Windows/Linux/macOS)
+  for foreground tool execution with environment-variable injection.
+- ✨ `_find_project_by_path()` recursive search for matching project paths
+- ✨ `_find_project_by_name()` name-based project lookup
+- ✨ `_resolve_direct_project()` resolves project for direct-launch mode with
+  fallback to a transient ProjectNode
+- ✨ 15-day usage tracking: every tool launch records a timestamp in config;
+  `usageHistory` is pruned automatically on each save to keep a rolling
+  15-day window
+- ✨ Usage-based sorting: tools are sorted by 15-day usage count (descending)
+  by default; press `S` to cycle: Usage ↓ → Usage ↑ → Name ↓ → Name ↑
+- ✨ Sort indicator displayed in the tool selection header
+- ✨ 6 new i18n keys for sort labels and hints (en/zh/ja/de)
+
+### Changed
+- 🎨 Project selection now auto-navigates to the folder containing a matched
+  project on first launch
+
+### Fixed
+- 🐛 `--init` now preserves existing `usageHistory` when updating tool
+  definitions (previously overwrote with defaults)
+- 🎨 Virtual CWD item is protected from edit/delete operations (N/D keys)
 - ✨ Added Qwen Code to default tool list
   - Windows: `npm install -g @qwen-code/qwen-code@latest`
   - macOS/Linux: `curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash`

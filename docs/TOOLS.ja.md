@@ -77,21 +77,21 @@
 
 ---
 
-### 6. DeepSeek TUI
-- **公式ウェブサイト**: https://github.com/Hmbown/DeepSeek-TUI
-- **開発者**: Hunter Bown
+### 6. CodeWhale
+- **公式ウェブサイト**: https://github.com/Hmbown/CodeWhale
+- **開発者**: Hmbown
 - **機能**:
-  - DeepSeek V4 に最適化されたターミナルネイティブ AI コーディングエージェント
-  - 100 万トークンのコンテキストウィンドウをサポート
-  - リアルタイムの Chain-of-Thought ストリーミング
-  - RLM 並列推論（1-16 の同時タスク）
-  - 3 つの作業モード：Plan / Agent / YOLO
-  - 内蔵 LSP 診断機能
-  - MCP サーバーサポート
-  - 拡張用 Skills システム
+  - DeepSeek V4 およびオープンモデル向けのローカルファースト TUI エージェントフレームワーク
+  - Ego 層、Constitution 法体系、証拠ベースの推論
+  - ファイル、Shell、Git、Web、MCP、RLM、サブエージェントなどのスキーマ付きツール
+  - 承認ゲート、サンドボックス、side-git スナップショット、/restore ロールバック
+  - 編集後の LSP 診断フィードバック
+  - 並列サブエージェント、永続セッション、fork、relay 引き継ぎ、ランタイム API
+  - DeepSeek V4 一等サポート、OpenRouter・Ollama 等多プロバイダールーティング
 - **インストール**:
-  - **すべてのプラットフォーム**: `npm install -g deepseek-tui`
-- **検証**: `deepseek --version`
+  - **すべてのプラットフォーム**: `cargo install codewhale-cli --locked && cargo install codewhale-tui --locked`
+  - **macOS（Homebrew）**: `brew tap Hmbown/deepseek-tui && brew install deepseek-tui`
+- **検証**: `codewhale --version`
 
 ---
 

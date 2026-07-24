@@ -185,9 +185,11 @@ ai-cli --help             # Hilfeinformationen anzeigen
 |-------|----------|
 | `↑` / `↓` | Nach oben/unten navigieren |
 | `Enter` | Tool starten (neues Fenster) |
-| `Ctrl+Enter` | Tool starten (neuer Tab) |
+| `T` | Tool starten (neuer Tab) |
 | `I` | Fehlende Tools installieren |
 | `R` | Tool-Liste aktualisieren |
+| `S` | Sortierung umschalten (Nutzung / Name, ab / auf) |
+| `U` | Upgrade (wenn Update verfügbar) |
 | `Esc` | Zurück zur Projektauswahl |
 | `Q` | Anwendung beenden |
 

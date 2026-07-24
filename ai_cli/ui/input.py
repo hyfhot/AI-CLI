@@ -17,6 +17,8 @@ class InputEvent(Enum):
     RUN = "run"
     QUIT = "quit"
     NEW_TAB = "new_tab"  # T key for new tab
+    UPDATE = "update"  # U key for self-update
+    SORT = "sort"  # S key for sort toggle
     CANCEL = "cancel"  # ESC in input mode
 
 class InputHandler:
@@ -214,6 +216,10 @@ class InputHandler:
                 return InputEvent.RUN
             elif ch.lower() == 't':
                 return InputEvent.NEW_TAB
+            elif ch.lower() == 'u':
+                return InputEvent.UPDATE
+            elif ch.lower() == 's':
+                return InputEvent.SORT
             elif ch.lower() == 'q':
                 return InputEvent.QUIT
             
@@ -261,6 +267,10 @@ class InputHandler:
                 return InputEvent.RUN
             elif ch.lower() == b't':
                 return InputEvent.NEW_TAB
+            elif ch.lower() == b'u':
+                return InputEvent.UPDATE
+            elif ch.lower() == b's':
+                return InputEvent.SORT
             elif ch.lower() == b'q':
                 return InputEvent.QUIT
             

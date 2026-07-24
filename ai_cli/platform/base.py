@@ -19,3 +19,11 @@ class PlatformAdapter(ABC):
     def set_terminal_title(self, title: str) -> None:
         """Set terminal window title."""
         pass
+    
+    @abstractmethod
+    def run_in_current_terminal(self, tool, project) -> int:
+        """
+        Run *tool* in the current terminal window (foreground / blocking).
+        Returns the exit code.  Does NOT open a new window.
+        """
+        pass

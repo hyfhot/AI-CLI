@@ -1,4 +1,5 @@
 """Linux platform adapter."""
+import os
 import shutil
 import subprocess
 import sys
@@ -43,6 +44,20 @@ class LinuxPlatformAdapter(PlatformAdapter):
         """Set terminal title."""
         sys.stdout.write(f"\033]0;{title}\007")
         sys.stdout.flush()
+    
+    def run_in_current_terminal(self, tool: Tool, project: ProjectNode) -> int:
+        """
+        Run the tool in the current terminal (foreground / blocking).
+        Returns the exit code.
+        """
+        parts = [f"cd {project.path}"]
+        if project.env:
+            for key, value in project.env.items():
+                safe_value = value.replace("'", "'\"'\"'")
+                parts.append(f"export {key}='{safe_value}'")
+        parts.append(tool.name)
+        cmd = " && ".join(parts)
+        return os.system(cmd)
     
     def _detect_terminal(self) -> Optional[str]:
         """Detect available terminal emulator."""

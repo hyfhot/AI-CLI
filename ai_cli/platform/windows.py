@@ -1,4 +1,5 @@
 """Windows platform adapter."""
+import os
 import subprocess
 import sys
 from typing import Optional
@@ -85,3 +86,32 @@ class WindowsPlatformAdapter(PlatformAdapter):
         """Set terminal title."""
         sys.stdout.write(f"\033]0;{title}\007")
         sys.stdout.flush()
+    
+    def run_in_current_terminal(self, tool: Tool, project: ProjectNode) -> int:
+        """
+        Run the tool in the current terminal (foreground / blocking).
+        Returns the exit code.
+        """
+        title = f"{tool.name} - {project.name}"
+        
+        if tool.environment == ToolEnvironment.WSL:
+            wsl_path = PathConverter.to_wsl_path(project.path)
+            env_parts = []
+            if project.env:
+                for key, value in project.env.items():
+                    if ':\\' in value or ':\\\\' in value:
+                        value = PathConverter.to_wsl_path(value)
+                    # Escape single quotes in values
+                    safe_value = value.replace("'", "'\"'\"'")
+                    env_parts.append(f"export {key}='{safe_value}'")
+            env_prefix = " && ".join(env_parts) + " && " if env_parts else ""
+            cmd = f"cd '{wsl_path}'; {env_prefix}{tool.name}; exec bash"
+            return os.system(f'wsl.exe -e bash -ic "{cmd}"')
+        else:
+            env_parts = []
+            if project.env:
+                for key, value in project.env.items():
+                    env_parts.append(f"set {key}={value}")
+            env_prefix = " && ".join(env_parts) + " && " if env_parts else ""
+            cmd = f"{env_prefix}cd /d {project.path} && {tool.name}"
+            return os.system(cmd)

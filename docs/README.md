@@ -16,6 +16,8 @@ Welcome to the AI-CLI documentation! This directory contains guides and referenc
 
 ### Features & Usage
 - **[Git Worktree Support](GIT-WORKTREE.md)** - Using AI-CLI with Git worktrees
+- **[Direct Launch Mode](../README.md#direct-launch-mode)** - Skip UI and launch tools from CLI
+- **[Current Directory Awareness](../README.md#current-directory-awareness)** - Auto-detect working directory
 - **[Tools Reference](TOOLS.md)** - Supported AI tools and configuration
   - [中文版](TOOLS.zh.md) | [日本語版](TOOLS.ja.md)
 

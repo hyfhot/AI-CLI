@@ -12,9 +12,27 @@ class MenuRenderer:
     def __init__(self):
         self.console = Console()
     
-    def build_tree_display(self, items: List[Dict[str, Any]], selected: int = 0, max_display: int = 15, breadcrumb: List[str] = None) -> Group:
+    @staticmethod
+    def _build_update_banner(update_info) -> str:
+        """Build update notification string if update is available."""
+        if not update_info:
+            return ""
+        checked = getattr(update_info, 'checked', False)
+        if not checked:
+            return ""
+        if getattr(update_info, 'is_update_available', False):
+            latest = getattr(update_info, 'latest_version', '')
+            return get_text('update_available', new=latest)
+        return ""
+
+    def build_tree_display(self, items: List[Dict[str, Any]], selected: int = 0, max_display: int = 15, breadcrumb: List[str] = None, update_info=None) -> Group:
         """Build project tree display for Live rendering."""
         lines = []
+        
+        # Update notification banner
+        banner = self._build_update_banner(update_info)
+        if banner:
+            lines.append(Text(f"  {banner}", style="bold yellow"))
         
         # Breadcrumb
         if breadcrumb:
@@ -92,14 +110,23 @@ class MenuRenderer:
         hint = f"  [↑↓] {get_text('navigate')}  [Enter] {get_text('select')}  [N] {get_text('new')}  [D] {get_text('delete')}"
         if breadcrumb and len(breadcrumb) > 1:  # Show Back only when not at root
             hint += f"  [Esc] {get_text('back')}"
+        if update_info and getattr(update_info, 'is_update_available', False):
+            hint += f"  [U] {get_text('upgrade')}"
         hint += f"  [Q] {get_text('quit')}"
         lines.append(Text(hint, style="dim"))
         
         return Group(*lines)
     
-    def build_tools_display(self, tools: List[Dict[str, Any]], selected: int = 0, show_new_tab: bool = True, project_info: Dict[str, Any] = None, max_display: int = 15) -> Group:
+    def build_tools_display(self, tools: List[Dict[str, Any]], selected: int = 0, show_new_tab: bool = True,
+                            project_info: Dict[str, Any] = None, max_display: int = 15, update_info=None,
+                            usage_counts: Dict = None, sort_mode: str = "usage", sort_descending: bool = True) -> Group:
         """Build tools list display for Live rendering."""
         lines = []
+        
+        # Update notification banner
+        banner = self._build_update_banner(update_info)
+        if banner:
+            lines.append(Text(f"  {banner}", style="bold yellow"))
         
         # Show project information
         if project_info:
@@ -113,7 +140,17 @@ class MenuRenderer:
                 lines.append(Text(f"{get_text('env_label', env_str)}", style="dim"))
         
         lines.append(Text(f"\n=== {get_text('select_tool')} ===\n", style="bold cyan"))
+        # Sort indicator
+        if sort_mode == "usage":
+            sort_key = 'sort_usage_desc' if sort_descending else 'sort_usage_asc'
+        else:
+            sort_key = 'sort_name_desc' if sort_descending else 'sort_name_asc'
+        lines.append(Text(f"  {get_text(sort_key)}  [{get_text('sort_hint')}]", style="dim"))
+        lines.append(Text())
         
+        if usage_counts is None:
+            usage_counts = {}
+
         # Calculate scroll window
         total = len(tools)
         if total <= max_display:
@@ -148,11 +185,13 @@ class MenuRenderer:
             remaining = total - offset - max_display
             lines.append(Text(f"  {get_text('more_below', remaining)}", style="dim"))
         
+        has_update = update_info and getattr(update_info, 'is_update_available', False)
+        update_hint = f"  [U] {get_text('upgrade')}" if has_update else ""
         # Show [T] New Tab only if Windows Terminal is available
         if show_new_tab:
-            lines.append(Text(f"\n[↑↓] {get_text('select')}  [Enter] {get_text('launch')}  [T] {get_text('launch_new_tab')}  [I] {get_text('install')}  [R] {get_text('refresh')}  [Esc] {get_text('back')}  [Q] {get_text('quit')}", style="dim"))
+            lines.append(Text(f"\n[↑↓] {get_text('select')}  [Enter] {get_text('launch')}  [T] {get_text('launch_new_tab')}  [I] {get_text('install')}  [R] {get_text('refresh')}  [S] {get_text('sort_hint')}{update_hint}  [Esc] {get_text('back')}  [Q] {get_text('quit')}", style="dim"))
         else:
-            lines.append(Text(f"\n[↑↓] {get_text('select')}  [Enter] {get_text('launch')}  [I] {get_text('install')}  [R] {get_text('refresh')}  [Esc] {get_text('back')}  [Q] {get_text('quit')}", style="dim"))
+            lines.append(Text(f"\n[↑↓] {get_text('select')}  [Enter] {get_text('launch')}  [I] {get_text('install')}  [R] {get_text('refresh')}  [S] {get_text('sort_hint')}{update_hint}  [Esc] {get_text('back')}  [Q] {get_text('quit')}", style="dim"))
         
         return Group(*lines)
         

@@ -187,12 +187,12 @@
                       "wslAvailable":  true
                   },
                   {
-                      "name":  "deepseek",
-                      "displayName":  "DeepSeek TUI",
-                      "winInstall":  "npm install -g deepseek-tui",
-                      "wslInstall":  "npm install -g deepseek-tui",
-                      "checkCommand":  "deepseek --version",
-                      "url":  "https://github.com/Hmbown/DeepSeek-TUI",
+                      "name":  "codewhale",
+                      "displayName":  "CodeWhale",
+                      "winInstall":  "cargo install codewhale-cli --locked && cargo install codewhale-tui --locked",
+                      "wslInstall":  "cargo install codewhale-cli --locked && cargo install codewhale-tui --locked",
+                      "checkCommand":  "codewhale --version",
+                      "url":  "https://github.com/Hmbown/CodeWhale",
                       "winAvailable":  true,
                       "wslAvailable":  true
                   }

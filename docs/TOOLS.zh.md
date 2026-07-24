@@ -77,21 +77,21 @@
 
 ---
 
-### 6. DeepSeek TUI
-- **官方网站**: https://github.com/Hmbown/DeepSeek-TUI
-- **开发者**: Hunter Bown
+### 6. CodeWhale
+- **官方网站**: https://github.com/Hmbown/CodeWhale
+- **开发者**: Hmbown
 - **特性**:
-  - 终端原生 AI 编程智能体，针对 DeepSeek V4 深度优化
-  - 100 万 Token 上下文窗口支持
-  - 实时思维链（Chain-of-Thought）流式输出
-  - RLM 并行推理（1-16 个并发任务）
-  - 三种工作模式：Plan（规划）/ Agent（代理）/ YOLO（全自动）
-  - 内置 LSP 诊断功能
-  - 支持 MCP 服务器扩展
-  - 社区 Skills 系统
+  - 面向 DeepSeek V4 和开放模型的本地优先终端 TUI Agent 框架
+  - Ego 层、Constitution 法律体系和基于证据的推理
+  - 文件、Shell、Git、Web、MCP、RLM、子 Agent 等带 schema 的工具
+  - 审批门、沙箱、side-git 快照和 /restore 回滚
+  - 编辑后的 LSP 诊断反馈
+  - 并发子 Agent、持久会话、fork、relay 交接和运行时 API
+  - DeepSeek V4 一等支持，同时兼容 OpenRouter、Ollama 等多 Provider
 - **安装**:
-  - **所有平台**: `npm install -g deepseek-tui`
-- **验证**: `deepseek --version`
+  - **所有平台**: `cargo install codewhale-cli --locked && cargo install codewhale-tui --locked`
+  - **macOS（Homebrew）**: `brew tap Hmbown/deepseek-tui && brew install deepseek-tui`
+- **验证**: `codewhale --version`
 
 ---
 
