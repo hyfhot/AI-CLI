@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- ✨ (Nothing yet)
+
+## [3.0.12] - 2026-07-24
+
+### Added
+- ✨ Self-update via PyPI check: `--update` CLI flag and `U` key in tool menu
+  with update banner when a newer version is available
 - ✨ Current directory awareness: when launched from an unregistered directory,
   a "current directory" entry appears at the top of the project list; if the
   current directory matches a configured project, it is auto-selected.
@@ -27,15 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   by default; press `S` to cycle: Usage ↓ → Usage ↑ → Name ↓ → Name ↑
 - ✨ Sort indicator displayed in the tool selection header
 - ✨ 6 new i18n keys for sort labels and hints (en/zh/ja/de)
-
-### Changed
-- 🎨 Project selection now auto-navigates to the folder containing a matched
-  project on first launch
-
-### Fixed
-- 🐛 `--init` now preserves existing `usageHistory` when updating tool
-  definitions (previously overwrote with defaults)
-- 🎨 Virtual CWD item is protected from edit/delete operations (N/D keys)
 - ✨ Added Qwen Code to default tool list
   - Windows: `npm install -g @qwen-code/qwen-code@latest`
   - macOS/Linux: `curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash`
@@ -44,7 +42,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✨ Automatic environment variable refresh after tool installation (Windows)
 - ✨ Force refresh tool detection after successful installation
 
+### Changed
+- 🔄 Rename tool `deepseek` (npm deepseek-tui) → `codewhale` (cargo install codewhale-cli/tui)
+  - Updated README, TOOLS docs, config examples across all languages
+  - Added `.claude/`, `.codewhale/`, `.deepseek/`, `.qoder/` to `.gitignore`
+- 🎨 Project selection now auto-navigates to the folder containing a matched
+  project on first launch
+- 🔄 Improved tool installation workflow:
+  1. Show install command before execution
+  2. Execute installation with inherited environment
+  3. Refresh environment variables on success
+  4. Force re-detect all tools (bypass cache)
+  5. Update uninstalled tools list immediately
+
 ### Fixed
+- 🐛 `--init` now preserves existing `usageHistory` when updating tool
+  definitions (previously overwrote with defaults)
+- 🐛 Virtual CWD item is protected from edit/delete operations (N/D keys)
 - 🐛 Fixed tool installation menu not responding to 'I' key press
   - Root cause: Rich Live context conflict when calling `_install_tool_menu()` inside Live loop
   - Solution: Exit Live context before calling install menu, then re-enter after completion
@@ -52,14 +66,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🐛 Fixed environment variable staleness preventing detection of newly installed dependencies
   - Added `_refresh_windows_environment()` to reload PATH from registry before installation
   - Ensures subprocess can see latest system and user PATH values
-
-### Changed
-- 🔄 Improved tool installation workflow:
-  1. Show install command before execution
-  2. Execute installation with inherited environment
-  3. Refresh environment variables on success
-  4. Force re-detect all tools (bypass cache)
-  5. Update uninstalled tools list immediately
 
 ## [3.0.4] - 2026-03-04
 

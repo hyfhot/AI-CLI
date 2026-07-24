@@ -150,6 +150,7 @@ ai-cli --lang ja          # Start with Japanese language
 ai-cli --uninstall        # Uninstall AI-CLI
 ai-cli --version          # Show version information
 ai-cli --help             # Show help information
+ai-cli --update           # Upgrade AI-CLI to the latest version
 
 # Direct launch mode (skip project and tool selection UI)
 ai-cli -t kiro-cli                          # Launch kiro-cli in current directory
