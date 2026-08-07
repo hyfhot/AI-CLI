@@ -1,9 +1,30 @@
 """Tool installation functionality."""
+import re
 import subprocess
 import sys
 import os
 from typing import Optional
 from ai_cli.models import ToolConfig, ToolEnvironment
+
+
+# Whitelist of allowed install command prefixes for basic validation
+_ALLOWED_INSTALL_PREFIXES = (
+    "npm install", "npm i ",
+    "pip install", "pipx install",
+    "brew install", "winget install",
+    "cargo install",
+    "curl ", "uv tool install",
+    "irm ", "iwr ",
+)
+
+
+def _escape_powershell_string(value: str) -> str:
+    """Escape a string for use inside PowerShell single-quoted strings.
+
+    In PowerShell, single-quoted strings only need single quotes escaped
+    by doubling them: ' -> ''
+    """
+    return value.replace("'", "''")
 
 
 class ToolInstaller:
@@ -14,6 +35,12 @@ class ToolInstaller:
         install_cmd = self._get_install_command(tool, environment)
         
         if not install_cmd:
+            return False
+        
+        # Validate install command has a recognized prefix
+        if not self._validate_install_command(install_cmd):
+            print(f"Warning: Unrecognized install command format: {install_cmd}")
+            print("For security reasons, only commands with known package manager prefixes are allowed.")
             return False
         
         try:
@@ -30,18 +57,11 @@ class ToolInstaller:
                 )
             else:
                 # Run in Windows/Linux/macOS
-                if sys.platform == 'win32':
-                    result = subprocess.run(
-                        install_cmd,
-                        shell=True,
-                        check=False
-                    )
-                else:
-                    result = subprocess.run(
-                        install_cmd,
-                        shell=True,
-                        check=False
-                    )
+                result = subprocess.run(
+                    install_cmd,
+                    shell=True,
+                    check=False
+                )
             
             if result.returncode == 0:
                 self._update_path_after_install(tool.name, environment)
@@ -54,6 +74,17 @@ class ToolInstaller:
         except Exception as e:
             print(f"Installation error: {e}")
             return False
+    
+    def _validate_install_command(self, cmd: str) -> bool:
+        """Validate that install command uses a recognized package manager.
+
+        This is a basic safety check to reduce risk from tampered config files.
+        """
+        cmd_stripped = cmd.strip()
+        for prefix in _ALLOWED_INSTALL_PREFIXES:
+            if cmd_stripped.startswith(prefix):
+                return True
+        return False
     
     def _get_install_command(self, tool: ToolConfig, environment: ToolEnvironment) -> Optional[str]:
         """Get the installation command for a tool."""
@@ -103,7 +134,7 @@ class ToolInstaller:
             
             if result.returncode == 0:
                 return result.stdout.strip().split('\n')[0]
-        except:
+        except Exception:
             pass
         
         # Extended search paths for Windows
@@ -166,9 +197,12 @@ class ToolInstaller:
                 print(f"Warning: PATH too long ({len(new_path)} chars). Skipping PATH update.")
                 return
             
+            # Escape single quotes for PowerShell single-quoted string
+            safe_path = _escape_powershell_string(new_path)
+            
             subprocess.run(
                 ["powershell", "-Command",
-                 f"[Environment]::SetEnvironmentVariable('Path', '{new_path}', 'User')"],
+                 f"[Environment]::SetEnvironmentVariable('Path', '{safe_path}', 'User')"],
                 check=False
             )
         except Exception as e:

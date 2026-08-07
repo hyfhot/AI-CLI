@@ -63,7 +63,7 @@ class Application:
             result = subprocess.run(["cmd.exe", "/c", "where", "wt"], 
                                   capture_output=True, timeout=2)
             return result.returncode == 0
-        except:
+        except Exception:
             return False
 
     def _start_update_check(self):
@@ -371,6 +371,9 @@ class Application:
                                 )
                                 break
                             effective_index -= 1
+                        # Guard against empty list / out-of-range index
+                        if effective_index < 0 or effective_index >= len(items):
+                            continue
                         selected = items[effective_index]
                         if selected.type == "folder":
                             self.current_path.append(selected.name)
@@ -422,6 +425,9 @@ class Application:
                     if (cwd_item and self.selected_project_index > 0)
                     else self.selected_project_index
                 )
+                # Guard against empty list / out-of-range index
+                if effective_index < 0 or effective_index >= len(items):
+                    continue
                 selected = items[effective_index]
                 if self._delete_item(selected):
                     self.selected_project_index = 0
@@ -491,7 +497,7 @@ class Application:
                 branch = git_detector.get_current_branch(working_path)
                 if branch:
                     project_info['branch'] = branch
-            except:
+            except Exception:
                 pass
         
         # Show detecting message in tool display
